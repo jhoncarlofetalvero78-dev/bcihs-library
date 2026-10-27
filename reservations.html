@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="css/reservations.css?v=20261026-visible-tables">
   <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
-<body>
+<body class="admin-page reservations-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -104,8 +105,8 @@
     </section>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by student or book title…">
-      <select id="statusFilter">
+      <input type="text" id="searchInput" aria-label="Search reservations" placeholder="Search by student or book title…">
+      <select id="statusFilter" aria-label="Filter by status">
         <option value="">All statuses</option>
         <option value="waiting">Waiting</option>
         <option value="ready">Ready</option>

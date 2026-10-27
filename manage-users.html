@@ -6,8 +6,9 @@
 <title>Users | BCIHS Library</title>
 <link rel="stylesheet" href="css/manage-users.css?v=20261026-visible-tables">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
-<body>
+<body class="admin-page manage-users-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -110,8 +111,9 @@
           <div class="stat-value" id="countVisitor">…</div>
         </div>
         <div class="stat-card extracted-style-1">
-          <div class="stat-top"><span class="stat-label">Active Users</span><span class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span></div>
+          <div class="stat-top"><span class="stat-label">Approved Users</span><span class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span></div>
           <div class="stat-value" id="countActive">…</div>
+          <p class="metric-help">Accounts approved to sign in</p>
         </div>
       </div>
 
@@ -128,7 +130,7 @@
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by name or user ID…">
+      <input type="text" id="searchInput" aria-label="Search users" placeholder="Search by name or user ID…">
       <select id="roleFilter">
         <option value="">All</option>
         <option value="student">Students</option>
@@ -162,7 +164,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/manage-users.js?v=20261027-phase2b"></script>
+<script src="js/manage-users.js?v=20261027-phase3a"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>
 </body>
 </html>

@@ -1,0 +1,233 @@
+/* Shared finishing styles; page styles still define each module's layout. */
+.admin-page, .catalog-page, .profile-page{
+  --card-shadow:0 3px 12px rgba(60,10,10,.06);
+  --shadow:0 3px 12px rgba(60,10,10,.06);
+  --shadow-sm:0 2px 8px rgba(60,10,10,.05);
+  line-height:1.5;
+}
+.admin-page .main-wrap, .admin-page main, .profile-page .main-content{
+  min-width:0;
+}
+.admin-page main{ padding:28px 30px 48px; }
+.admin-page .page-head{ gap:16px; margin-bottom:24px; }
+.admin-page .page-head h1, .profile-page .page-header h1{
+  color:#5c0f14;
+  font-size:1.5rem;
+  font-weight:700;
+  line-height:1.25;
+}
+.admin-page .page-head p{ max-width:760px; margin-top:6px; line-height:1.5; color:#665b5b; }
+.admin-page .page-head-icon{ width:44px; height:44px; border-radius:12px; }
+.admin-page .panel, .admin-page .calendar-panel, .admin-page .chart-panel,
+.admin-page .stat-card, .catalog-page .book-card{
+  background:#fff;
+  border:1px solid #e9e1df;
+  border-radius:12px;
+  box-shadow:var(--card-shadow);
+  min-width:0;
+}
+.admin-page .panel, .admin-page .calendar-panel{ padding:20px; }
+.admin-page .panel-head{ gap:12px; flex-wrap:wrap; }
+.admin-page .panel-head h2, .admin-page .calendar-heading h2{
+  font-size:1.05rem;
+  font-weight:700;
+  line-height:1.4;
+}
+.admin-page .panel-head a{ color:#246594; }
+.admin-page .post-btn{ background:#246594; }
+.admin-page .type-pill.student{ background:#e5eff9; color:#24577f; }
+.admin-page .type-pill.teacher{ background:#fff0df; color:#805019; }
+.admin-page .type-pill.librarian{ background:#ede8f6; color:#614587; }
+.admin-page .type-pill.visitor{ background:#f5e8f2; color:#7d3e6b; }
+.admin-page .stat-grid{ align-items:stretch; gap:16px; }
+.admin-page .stat-card{ padding:18px; height:100%; transform:none; }
+.admin-page .stat-label{ color:#665b5b; line-height:1.4; }
+.admin-page .stat-value{ font-size:1.65rem; line-height:1.25; margin-top:4px; font-variant-numeric:tabular-nums; }
+.admin-page .stat-icon{ width:40px; height:40px; border-radius:12px; }
+.admin-page .metric-help{ font-size:.75rem; color:#665b5b; margin-top:6px; }
+.admin-dashboard-page .content-grid{ grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); }
+.admin-dashboard-page .stat-card{ align-items:flex-start; }
+.admin-dashboard-page .stat-card .availability-detail{ line-height:1.5; }
+.admin-page .chart-panel{ padding:20px; }
+.admin-page .chart-note{ font-size:.75rem; margin-top:12px; }
+.admin-page .controls{ gap:12px; align-items:flex-end; }
+.admin-page .controls input, .admin-page .controls select,
+.admin-page .pagination select, .admin-page .report-filters input,
+.admin-page .modal-overlay input, .admin-page .modal-overlay select,
+.admin-page .modal-overlay textarea, .admin-page .form-grid input,
+.admin-page .form-grid select, .catalog-page .controls input{
+  min-height:42px;
+  border:1px solid #cbbdbb;
+  border-radius:8px;
+  font:inherit;
+  font-size:.875rem;
+  padding:10px 12px;
+  color:#332828;
+}
+.admin-page .controls input{ min-width:0; }
+.admin-page .controls .filter-label{ font-size:.75rem; color:#665b5b; }
+.admin-page .add-btn, .admin-page .export-btn, .admin-page .clear-btn,
+.admin-page .primary-btn, .admin-page .secondary-btn, .admin-page .print-btn,
+.admin-page .modal-btn, .admin-page .modal-close-btn, .admin-page .request-details-close{
+  min-height:42px;
+  padding:10px 16px;
+  border-radius:8px;
+  font:inherit;
+  font-size:.85rem;
+  font-weight:600;
+  box-shadow:none;
+  justify-content:center;
+}
+.admin-page .primary-btn:hover, .admin-page .secondary-btn:hover{ transform:none; }
+.manage-books-page .controls .export-btn{ background:#fff; color:#5c0f14; border:1px solid #cbbdbb; }
+.manage-books-page .controls input{ flex:1 1 240px; }
+.manage-books-page .controls .add-btn, .manage-books-page .controls .export-btn{ min-width:130px; }
+.admin-page .action-btn{ min-width:34px; min-height:34px; border-radius:7px; }
+.admin-page .action-btn.edit, .admin-page .action-btn.checkout,
+.admin-page .action-btn.ready{ background:#246594; }
+.admin-page .action-btn.qr, .admin-page .action-btn.approve,
+.admin-page .action-btn.fulfill{ background:#287241; }
+.admin-page .action-btn.delete, .admin-page .action-btn.reject,
+.admin-page .action-btn.cancel{ background:#b32936; }
+.admin-page .action-btn.view{ background:#655b5b; }
+.admin-page button:disabled, .catalog-page button:disabled, .profile-page button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+.admin-page :is(button,a,input,select,textarea,[tabindex]):focus-visible,
+.catalog-page :is(button,a,input,select,textarea):focus-visible,
+.profile-page :is(button,a,input,select,textarea):focus-visible{
+  outline:3px solid #956326;
+  outline-offset:3px;
+}
+.admin-page .table-scroll, .admin-page .table-wrap,
+.admin-page .borrowing-table-wrap{ overflow-x:auto; }
+.admin-page thead th, .profile-page .history-table thead th{
+  color:#665555;
+  background:#faf7f6;
+  font-size:.72rem;
+  letter-spacing:.025em;
+  padding:12px;
+  line-height:1.4;
+  border-bottom:1px solid #dfd4d1;
+}
+.admin-page tbody td{ padding:14px 12px; line-height:1.5; vertical-align:middle; }
+.admin-page .count-badge, .admin-page .date-label{ color:#665b5b; }
+.admin-page .book-summary strong{ color:#3e2929; line-height:1.4; }
+.admin-page .pagination{ gap:12px; margin-top:18px; }
+.admin-page .empty-msg, .admin-page .loading-msg,
+.catalog-page .empty-msg, .catalog-page .loading-msg{
+  color:#706161;
+  padding:32px 16px;
+  line-height:1.6;
+}
+.admin-page .status-pill, .profile-page .status-badge{
+  font-size:.75rem;
+  line-height:1.4;
+  padding:5px 10px;
+  white-space:nowrap;
+}
+.status-pill.pending, .status-pill.waiting, .status-pill.skipped,
+.profile-page .status-badge.pending{ background:#fff0ce; color:#76500a; }
+.status-pill.awaiting_pickup, .status-pill.ready{ background:#e5eff9; color:#24577f; }
+.status-pill.checked_out, .status-pill.approved, .status-pill.fulfilled,
+.status-pill.accepted, .status-pill.active, .status-pill.sent{ background:#e4f1e7; color:#25623a; }
+.status-pill.returned, .profile-page .status-badge.returned{ background:#ede8f6; color:#614587; }
+.status-pill.rejected, .status-pill.failed,
+.profile-page .status-badge.rejected{ background:#fbe7e7; color:#9a2632; }
+.status-pill.cancelled, .status-pill.inactive, .status-pill.unknown{ background:#eeeaea; color:#625757; }
+.admin-page #requestsTable{ min-width:1100px; table-layout:auto; }
+.admin-page #requestsTable th{ width:auto; }
+.admin-page #requestsTable th:last-child{ min-width:290px; }
+.admin-page #requestsTable td:first-child{ font-weight:600; min-width:140px; }
+.admin-page #requestsTable td:nth-child(2){ min-width:160px; }
+.admin-page #requestsTable .borrow-actions{ flex-wrap:nowrap; white-space:nowrap; }
+.admin-page #requestsTable .action-btn{ flex-shrink:0; }
+.admin-page .modal-overlay .modal, .admin-page .modal-card,
+.admin-page .request-details-card, .profile-page .modal{
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
+  border-radius:12px;
+  padding:24px;
+}
+.manage-books-page .modal .field{ margin-bottom:0; }
+.admin-page .book-form-main, .admin-page .book-form-side{ gap:18px; }
+.admin-page .field-help, .admin-page .loan-note{ font-size:.78rem; line-height:1.6; color:#665b5b; }
+.admin-page .modal-btn-row{ margin-top:20px; }
+.admin-page .request-detail-row .label, .admin-page .detail-row .label{ color:#665b5b; }
+.admin-page .detail-row .value{ min-width:0; overflow-wrap:anywhere; }
+.admin-page .toast, .profile-page .toast{ max-width:calc(100vw - 32px); width:max-content; text-align:center; }
+.catalog-page .book-grid{ grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
+.catalog-page .book-card{ padding:18px; gap:8px; }
+.catalog-page .book-cover{ height:170px; background:linear-gradient(145deg,#7a2027,#4b1116); }
+.catalog-page .book-card h3{ font-size:1.05rem; line-height:1.45; overflow-wrap:anywhere; }
+.catalog-page .book-card .author, .catalog-page .book-card .genre,
+.catalog-page .book-card .isbn{ color:#665b5b; }
+.catalog-page .avail-row{ display:block; padding-top:14px; border-top:1px solid #eee5e3; }
+.catalog-page .avail-count{ font-size:.85rem; }
+.catalog-page .avail-count.low{ color:#80510b; }
+.catalog-page .availability-detail{ line-height:1.7; }
+.catalog-page .availability-detail span{ display:block; }
+.catalog-page .borrow-btn{ min-height:44px; margin-top:6px; }
+.catalog-page .borrow-btn.unavailable{ color:#655b5b; }
+.catalog-page .borrow-btn.pending{ color:#76500a; }
+.catalog-page .pickup-dialog{ margin:auto; max-height:calc(100dvh - 32px); }
+.profile-page{ --red:#7a1414; --orange:#99603a; --text-light:#665f68; }
+.profile-page .profile-grid{ grid-template-columns:300px minmax(0,1fr); gap:24px; }
+.profile-page .profile-header-gradient{ height:100px; background:linear-gradient(120deg,#7a1414,#4b1116); }
+.profile-page .profile-avatar{ width:100px; height:100px; }
+.profile-page .profile-avatar-wrap{ margin-top:-50px; }
+.profile-page .stats-card{ margin:20px 0; padding:20px; }
+.profile-page .stats-card h3{ margin-bottom:16px; }
+.profile-page .stats-grid{ gap:12px; }
+.profile-page .stat-item{ min-height:96px; padding:14px 10px; }
+.profile-page .stat-item.total{ background:#7a1414; }
+.profile-page .stat-item strong{ font-size:1.65rem; }
+.profile-page .details-header{ gap:12px; flex-wrap:wrap; }
+.profile-page .detail-value{ overflow-wrap:anywhere; }
+.profile-page .history-card{ overflow-x:auto; }
+.profile-page .history-table{ min-width:760px; }
+.profile-page .tab-btn.active{ box-shadow:none; }
+@media(max-width:1100px){
+  .admin-dashboard-page .content-grid{ grid-template-columns:1fr; }
+  .admin-dashboard-page .stat-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:800px){
+  .profile-page .profile-grid{ grid-template-columns:1fr; }
+}
+@media(max-width:760px){
+  .admin-page main{ padding:22px 14px 36px; }
+  .admin-page .panel, .admin-page .calendar-panel{ padding:14px; }
+  .admin-page .page-head h1{ font-size:1.35rem; }
+  .admin-page .controls > input, .admin-page .controls > select{ width:100%; flex:1 1 100%; max-width:100%; }
+  .admin-page .controls .filter-label{ flex:1 1 130px; }
+  .admin-page .controls .filter-label select{ width:100%; max-width:none; }
+  .admin-page .controls .export-btn{ margin-left:0; }
+  .admin-page .calendar-heading, .admin-page .calendar-footer{ flex-wrap:wrap; }
+  .admin-page .calendar-nav{ width:100%; justify-content:space-between; }
+  .admin-page .calendar-month{ min-width:0; }
+  .admin-page #requestsTable th:last-child{ min-width:170px; width:170px; }
+  .admin-page #requestsTable .borrow-actions{ flex-wrap:wrap; }
+  .admin-page #requestsTable th:last-child, .admin-page #requestsTable td:last-child{ position:static; box-shadow:none; }
+  .admin-page .actions-column{ position:static; box-shadow:none; }
+  .admin-page .modal-overlay, .admin-page .request-details-overlay, .admin-page #borrowModal{ padding:16px; }
+  .admin-page .modal-overlay .modal, .admin-page .modal-card,
+  .admin-page .request-details-card, .profile-page .modal{ padding:20px 16px; width:100%; }
+  .admin-page .form-actions{ flex-wrap:wrap; }
+  .admin-page .form-actions button{ flex:1 1 140px; }
+  .admin-page .page-head > div{ min-width:0; }
+  .catalog-page .top-bar{ gap:10px; padding:12px; }
+  .catalog-page .top-bar h1{ font-size:1rem; }
+  .catalog-page .icon-btn{ min-width:32px; min-height:40px; }
+  .catalog-page .book-grid{ grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); }
+  .profile-page .details-header .extracted-style-1{ flex-wrap:wrap; }
+}
+@media(max-width:420px){
+  .admin-dashboard-page .stat-grid, .transactions-page .stat-grid, .reports-page .stat-grid{ grid-template-columns:1fr; }
+  .admin-page .page-head-icon{ display:none; }
+  .profile-page .stats-card{ padding:18px; }
+}
+@media print{
+  .admin-page main{ padding:0; }
+  .admin-page .panel, .admin-page .stat-card{ box-shadow:none; }
+}

@@ -427,18 +427,14 @@ function loadBorrowingHistory(){
           : data.phone;
       }
       renderDetails();
+      document.getElementById('editProfileBtn').disabled = false;
     })
     .catch(() => {
-      // Default to student role with sample data for display
-      profileData.role = 'student';
-      profileData.full_name = 'Maria Santos';
-      profileData.student_id = '2026-00142';
-      profileData.grade_level = 'Grade 10';
-      profileData.section = 'Rizal';
-      profileData.email = 'maria.santos@bcihs.edu.ph';
-      profileData.phone = '+63 912 345 6789';
-      profileData.address = 'Batangas City, Philippines';
-      renderDetails();
+      document.getElementById('profileName').textContent = 'Profile unavailable';
+      document.getElementById('profileGrade').textContent = 'Sign in or reload to try again.';
+      document.getElementById('profileId').textContent = '—';
+      document.getElementById('editProfileBtn').disabled = true;
+      document.getElementById('detailsGrid').innerHTML = '<p class="empty-msg" role="alert">Could not load your profile. Please sign in with your library account or reload to try again.</p>';
     });
 
   // Load borrowing history

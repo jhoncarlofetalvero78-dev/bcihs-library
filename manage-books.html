@@ -6,8 +6,9 @@
 <title>Manage Book | BCIHS Library</title>
 <link rel="stylesheet" href="css/manage-books.css?v=20261027-phase2b">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
-<body>
+<body class="admin-page manage-books-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -178,7 +179,8 @@
           <div class="field-row">
             <div class="field">
               <label for="categoryInput">Category</label>
-              <select id="categoryInput"><option value="">Uncategorized</option></select>
+              <select id="categoryInput" aria-describedby="categoryHelp"><option value="">Uncategorized</option></select>
+              <small class="field-help" id="categoryHelp">Catalog category. Existing Genre metadata is retained separately.</small>
               <div id="newCategoryField" hidden>
                 <label for="newCategoryInput">New category name</label>
                 <input type="text" id="newCategoryInput" maxlength="80" placeholder="Enter a category">

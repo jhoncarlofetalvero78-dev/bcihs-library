@@ -6,8 +6,9 @@
 <title>Announcements | BCIHS Library</title>
 <link rel="stylesheet" href="css/manage-announcements.css?v=20261022-photo">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
-<body>
+<body class="admin-page manage-announcements-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -98,8 +99,8 @@
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by title or description…">
-      <select id="categoryFilter">
+      <input type="text" id="searchInput" aria-label="Search announcements" placeholder="Search by title or description…">
+      <select id="categoryFilter" aria-label="Filter by category">
         <option value="">All categories</option>
         <option value="General">General</option>
         <option value="Event">Event</option>

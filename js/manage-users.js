@@ -290,17 +290,17 @@
         csrfToken = data.csrfToken || '';
 
         const group = { student: 0, teacher: 0, librarian: 0, visitor: 0 };
-        let active = 0;
+        let approved = 0;
         allUsers.forEach(u => {
           const g = roleGroup(u.role);
           if (group[g] !== undefined) group[g]++;
-          if (u.last_login) active++;
+          if (u.account_status === 'accepted') approved++;
         });
         document.getElementById('countStudent').textContent = group.student;
         document.getElementById('countTeacher').textContent = group.teacher;
         document.getElementById('countLibrarian').textContent = group.librarian;
         document.getElementById('countVisitor').textContent = group.visitor;
-        document.getElementById('countActive').textContent = active;
+        document.getElementById('countActive').textContent = approved;
 
         renderChart(allUsers);
 

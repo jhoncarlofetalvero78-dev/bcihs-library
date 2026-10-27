@@ -102,7 +102,7 @@
           <div class="author">${escapeHtml(b.author)}</div>
           ${callNumberFor(b) ? `<div class="call-number">Call No.: ${escapeHtml(callNumberFor(b))}</div>` : ''}
           ${b.isbn ? `<div class="isbn">${escapeHtml(b.isbn)}</div>` : ''}
-          <div class="genre">${escapeHtml(b.category || b.genre) || 'Uncategorized'}</div>
+          <div class="genre">Category: ${escapeHtml(b.category || b.genre) || 'Uncategorized'}</div>
           ${isScannedBook ? `
             <div class="book-details">
               ${b.edition ? `<p><strong>Edition:</strong> ${escapeHtml(b.edition)}</p>` : ''}
@@ -113,8 +113,8 @@
             </div>
           ` : ''}
           <div class="avail-row">
-            <span class="avail-count ${availClass}">${available} available to request</span>
-            <small class="availability-detail">${Number(b.total_copies) - Number(b.borrowed_copies)} physically in library · ${Number(b.held_copies) || 0} held for pickup</small>
+            <span class="avail-count ${availClass}">${available} available for new requests</span>
+            <small class="availability-detail"><span>Physical copies available: ${Number(b.total_copies) - Number(b.borrowed_copies)}</span><span>Held for pickup: ${Number(b.held_copies) || 0}</span></small>
           </div>
           ${buttonFor(b)}
         </div>
