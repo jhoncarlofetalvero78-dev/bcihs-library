@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/book-management.php';
+require_once __DIR__ . '/sms.php';
 
 // Use Philippine library time without changing MySQL's global configuration.
 date_default_timezone_set('Asia/Manila');

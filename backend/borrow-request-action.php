@@ -64,12 +64,11 @@ try {
     if ($action === 'approve') $parameters['pickup_token'] = bin2hex(random_bytes(32));
     $pdo->prepare($sql)->execute($parameters);
     $pdo->commit();
+    $recipient = $request['user_id'] ? (int)$request['user_id'] : null;
     if ($action === 'approve' || $action === 'reject') {
-        $message = $action === 'approve'
-            ? 'is APPROVED and held for pickup. It is not yet checked out; library staff must confirm physical handover.'
-            : 'was NOT APPROVED. Please visit the library for details.';
-        notifyBorrower($pdo, $request['user_id'] ? (int) $request['user_id'] : null,
-            'BCIHS Library: Your request for "' . $book['title'] . '" ' . $message);
+        notifyLibraryEvent($pdo, $recipient, $action === 'approve' ? 'borrow_ready' : 'borrow_rejected', $id, ['title' => $book['title']]);
+    } elseif ($action === 'checkout') {
+        notifyCheckoutEvent($pdo, $recipient, $id, $book['title']);
     }
     echo json_encode(['success' => true]);
 } catch (Throwable $exception) {

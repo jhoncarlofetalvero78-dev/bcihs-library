@@ -9,7 +9,7 @@
       document.getElementById('staffName').textContent = name;
       document.getElementById('staffRole').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
       document.getElementById('staffInitial').textContent = name.charAt(0).toUpperCase();
-    });
+    }).catch(() => {});
 
   document.querySelectorAll('[data-soon]').forEach(button => {
     button.addEventListener('click', () => {
@@ -25,33 +25,49 @@
 
   function formatDateTime(value) {
     if (!value) return '—';
-    const date = new Date(String(value).replace(' ', 'T'));
+    const date = new Date(String(value).replace(' ', 'T') + '+08:00');
     return Number.isNaN(date.getTime())
       ? String(value)
-      : date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      : date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone:'Asia/Manila' });
   }
+
+  const statusLabels = {simulated:'Simulated (no credits)',queued:'Provider queued',pending:'Pending (delivery unconfirmed)',
+    accepted:'Provider accepted (delivery unconfirmed)',failed:'Failed / rejected',skipped:'Skipped',unknown:'Unknown — review before retry',legacy_sent:'Legacy sent (unverified)'};
+  const eventLabels = {account_approved:'Account approval',borrow_ready:'Borrowing ready for pickup',borrow_rejected:'Borrowing rejection',
+    checkout:'Checkout with due date',reservation_ready:'Reservation ready',password_reset:'Password reset',legacy:'Historical / other'};
+  const reasonLabels = {
+    simulation_no_network_no_credits:'Simulation only. Semaphore was not contacted.',missing_or_invalid_phone:'No valid Philippine mobile number.',
+    invalid_message:'Missing or oversized message.',live_sending_not_enabled:'Live sending is disabled.',missing_provider_credentials:'Provider credentials are not configured.',
+    provider_authentication_rejected:'Provider rejected authentication.',provider_rate_limited:'Provider rate limit reached. No automatic retry.',
+    provider_unavailable:'Provider unavailable. No automatic retry.',provider_http_rejected:'Provider rejected this HTTP request.',
+    unsupported_provider_response:'Unsupported response; provider outcome unknown.',unsupported_provider_status:'Unsupported provider status; review required.',
+    provider_queued:'Provider reports queued.',provider_in_transit:'Provider reports in transit.',provider_network_accepted_not_handset_delivery:'Accepted by the network; handset delivery is not established.',
+    provider_message_rejected:'Provider rejected/refunded the message.',transport_interrupted_check_provider_before_retry:'Connection interrupted; acceptance is unknown. Check provider before retry.',
+    attempt_reserved_not_delivery:'Attempt reserved. It may have been interrupted; no automatic retry.',historical_unverified_status:'Historical entry. Raw response is withheld; delivery is unverified.'
+  };
 
   function renderLogs() {
     const query = document.getElementById('searchInput').value.trim().toLowerCase();
     const status = document.getElementById('statusFilter').value;
     const filtered = allLogs.filter(log => {
       if (status && log.status !== status) return false;
-      return !query || [log.full_name, log.phone, log.message, log.response]
+      return !query || [log.full_name, log.phone, log.message, eventLabels[log.event], reasonLabels[log.reason]]
         .filter(Boolean).join(' ').toLowerCase().includes(query);
     });
     const body = document.getElementById('logsBody');
     if (filtered.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" class="empty-msg">No SMS log entries match.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="empty-msg">No SMS log entries match.</td></tr>';
     } else {
       body.innerHTML = filtered.map(log => {
-        const state = ['sent', 'failed', 'skipped'].includes(log.status) ? log.status : 'unknown';
+        const state = Object.hasOwn(statusLabels,log.status) ? log.status : 'unknown';
         return `<tr>
           <td>${escapeHtml(formatDateTime(log.created_at))}</td>
           <td>${escapeHtml(log.full_name || '—')}</td>
           <td>${escapeHtml(log.phone)}</td>
+          <td>${escapeHtml(eventLabels[log.event] || 'Historical / other')}</td>
           <td class="message-cell">${escapeHtml(log.message)}</td>
-          <td><span class="status-pill ${state}">${escapeHtml(state.toUpperCase())}</span></td>
-          <td class="response-cell">${escapeHtml(log.response || '—')}</td>
+          <td><span class="status-pill ${state}">${escapeHtml(statusLabels[state])}</span></td>
+          <td class="response-cell">${escapeHtml(reasonLabels[log.reason] || 'Status requires staff review.')}</td>
         </tr>`;
       }).join('');
     }
@@ -70,6 +86,7 @@
     loading.hidden = false;
     table.hidden = true;
     refresh.disabled = true;
+    allLogs = []; document.getElementById('logsBody').innerHTML = '';
     try {
       const response = await fetch('backend/sms-logs-data.php', { credentials: 'same-origin', cache: 'no-store' });
       const data = await response.json();
@@ -83,6 +100,9 @@
         throw new Error('The server returned an invalid SMS logs response.');
       }
       allLogs = data.logs;
+      document.getElementById('smsMode').textContent = data.mode === 'simulate'
+        ? 'Simulation mode: no Semaphore requests or SMS credits. Recipient numbers are masked.'
+        : 'Live/disabled configuration: review staff configuration. No delivery confirmation is implied.';
       loading.hidden = true;
       table.hidden = false;
       renderLogs();

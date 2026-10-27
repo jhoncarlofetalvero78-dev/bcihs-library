@@ -16,6 +16,6 @@ try {
     if ($current==='accepted') throw new DomainException('Approved accounts cannot be rejected through the pending-account review workflow.',409);
     $pdo->prepare('UPDATE users SET account_status=:status WHERE id=:id')->execute(['status'=>$status,'id'=>$id]);
     $pdo->commit();
-    // Approval has no SMS side effect in the existing workflow.
+    if ($status === 'accepted') notifyLibraryEvent($pdo, $id, 'account_approved', $id, [], 'account');
     echo json_encode(['success'=>true,'status'=>$status]);
 } catch (Throwable $exception) { borrowingFailure($pdo,$exception); }

@@ -73,7 +73,7 @@ $user = $stmt->fetch();
 // are registered.
 $genericOk = [
     'success' => true,
-    'message' => 'If that account exists and the phone number matches our records, a 6-digit reset code has been sent by SMS.',
+    'message' => 'If the account and phone match our records, a reset notification is requested. Delivery is not confirmed. Simulation mode sends no SMS.',
 ];
 
 $storedPhone = $user ? trim((string) $user['phone']) : '';
@@ -95,7 +95,8 @@ $pdo->prepare('UPDATE users SET reset_code = :code, reset_code_expires = :expire
 
 send_sms(
     $pdo, (int) $user['id'], $user['phone'],
-    "BCIHS Library: Your password reset code is {$code}. It expires in 15 minutes. If you didn't request this, you can ignore this message."
+    "BCIHS Library: Your password reset code is {$code}. It expires in 15 minutes. If you didn't request this, you can ignore this message.",
+    'password_reset', 'reset:' . $user['id'] . ':' . hash('sha256', $code . ':' . $expires)
 );
 
 echo json_encode($genericOk);

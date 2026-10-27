@@ -87,4 +87,14 @@
       .sidebar{width:100%; height:auto; position:relative;}
       main{padding:20px 16px 40px;}
     }
-  
+
+/* Notification states describe attempts; none imply handset delivery. */
+.sms-table-scroll{overflow-x:auto;max-width:100%}
+.sms-logs-page .panel{overflow:hidden}
+#smsMode{padding:12px 14px;margin-bottom:16px;background:#fff4df;border-radius:8px;line-height:1.6;overflow-wrap:anywhere}
+.status-pill.simulated{background:#32688a}
+.status-pill.queued,.status-pill.pending{background:#886018}
+.status-pill.accepted{background:#526b48}
+.status-pill.legacy_sent{background:#666}
+.sms-logs-page .main-wrap,.sms-logs-page main{min-width:0}
+@media(max-width:600px){.controls input,.controls select{min-width:0;width:100%;flex-basis:100%}.refresh-btn{width:100%}.sms-logs-page .panel{padding:14px}}

@@ -75,9 +75,10 @@ try {
     if ($sql) $pdo->prepare($sql)->execute(['id' => $id]);
     $pdo->commit();
     if ($action === 'ready') {
-        notifyBorrower($pdo, (int) $reservation['user_id'], 'BCIHS Library: "' . $book['title']
-            . '" is READY FOR PICKUP on ' . date('M j, Y g:i A', strtotime($reservation['pickup_at']))
-            . '. A copy is held; staff must confirm physical checkout.');
+        notifyLibraryEvent($pdo, (int)$reservation['user_id'], 'reservation_ready', $id,
+            ['title' => $book['title'], 'pickup_at' => $reservation['pickup_at']], 'reservation');
+    } elseif ($action === 'fulfill') {
+        notifyCheckoutEvent($pdo, (int)$reservation['user_id'], $id, $book['title'], 'reservation');
     }
     echo json_encode(['success' => true]);
 } catch (Throwable $exception) {
