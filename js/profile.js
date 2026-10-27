@@ -305,15 +305,6 @@ editModal.addEventListener('click', (e) => {
 });
 
 /* ===== BORROWING HISTORY ===== */
-// Realistic sample library data
-const sampleBorrowingHistory = [
-  { book_title: 'To Kill a Mockingbird', author: 'Harper Lee', borrow_date: '2026-09-01', due_date: '2026-09-15', return_date: '2026-09-12', status: 'Returned' },
-  { book_title: '1984', author: 'George Orwell', borrow_date: '2026-09-10', due_date: '2026-09-24', return_date: '—', status: 'Borrowed' },
-  { book_title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', borrow_date: '2026-08-15', due_date: '2026-08-29', return_date: '2026-08-25', status: 'Returned' },
-  { book_title: 'Pride and Prejudice', author: 'Jane Austen', borrow_date: '2026-09-05', due_date: '2026-09-19', return_date: '—', status: 'Overdue' },
-  { book_title: 'Brave New World', author: 'Aldous Huxley', borrow_date: '2026-08-20', due_date: '2026-09-03', return_date: '2026-09-02', status: 'Returned' }
-];
-
 function renderBorrowingHistory(data){
   const container = document.getElementById('historyContent');
   if (!data || data.length === 0){
@@ -322,7 +313,7 @@ function renderBorrowingHistory(data){
     return;
   }
   const rows = data.map(row => {
-    const statusClass = row.status.toLowerCase();
+    const statusClass = row.status_code || row.status.toLowerCase();
     return `<tr>
       <td><strong>${escapeHtml(row.book_title)}</strong></td>
       <td>${escapeHtml(row.author)}</td>
@@ -355,9 +346,9 @@ function updateStats(data){
   if (data && data.length) {
     total = data.length;
     data.forEach(item => {
-      const s = (item.status || '').toLowerCase();
-      if (s === 'borrowed' || s === 'overdue' || s === 'pending' || s === 'approved') borrowed++;
-      else if (s === 'returned' || s === 'fulfilled') returned++;
+      const s = (item.status_code || item.status || '').toLowerCase();
+      if (borrowing.isCheckedOut(s)) borrowed++;
+      else if (s === 'returned') returned++;
     });
   }
   const statBorrowed = document.getElementById('statBorrowed');
@@ -381,16 +372,20 @@ function loadBorrowingHistory(){
       const mapped = requests.map(r => ({
         book_title: r.book_title || 'Unknown',
         author: r.author || '—',
-        borrow_date: r.requested_at || '—',
+        borrow_date: borrowing.loanStart(r) || '—',
         due_date: r.due_date || '—',
         return_date: r.returned_at || '—',
-        status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Unknown'
+        status_code: r.status,
+        status: borrowing.label(r.status)
       }));
       renderBorrowingHistory(mapped);
     })
     .catch(() => {
-      // Fallback to sample data when backend is unavailable
-      renderBorrowingHistory(sampleBorrowingHistory);
+      document.getElementById('historyContent').innerHTML = '<p class="empty-msg">Could not load your borrowing history. Please reload to try again.</p>';
+      ['statBorrowed','statReturned','statTotal'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = '—';
+      });
     });
 }
 

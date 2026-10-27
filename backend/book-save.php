@@ -3,7 +3,7 @@ session_start();
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/../includes/book-management.php';
+require_once __DIR__ . '/../includes/borrowing.php';
 
 function validIsbn(string $isbn): bool
 {
@@ -120,6 +120,9 @@ try {
     $borrowed = (int) ($book['borrowed_copies'] ?? 0);
     if ($total < $borrowed) {
         throw new RuntimeException('Total copies cannot be less than the number currently borrowed (' . $borrowed . ').', 422);
+    }
+    if ($book && $total < $borrowed + borrowingStock($pdo, $book)['held_copies']) {
+        throw new RuntimeException('Total copies cannot be less than the copies borrowed or held for pickup.', 422);
     }
     if (array_key_exists('borrowed_copies', $input)) {
         throw new RuntimeException('Borrowed copies are managed by borrowing and return transactions.', 422);

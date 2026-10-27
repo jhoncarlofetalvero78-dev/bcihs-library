@@ -35,6 +35,8 @@
       document.getElementById('totalBooksValue').textContent = total.toLocaleString();
       document.getElementById('borrowedBooksValue').textContent = borrowed.toLocaleString();
       document.getElementById('availableBooksValue').textContent = (total - borrowed).toLocaleString();
+      const held = books.reduce((sum, book) => sum + Number(book.held_copies || 0), 0);
+      document.getElementById('availableBooksHint').textContent = `${total - borrowed - held} available to request · ${held} held for pickup`;
     })
     .catch(() => {
       document.getElementById('totalBooksValue').textContent = '—';
@@ -72,7 +74,7 @@
           <td>${escapeHtml(r.book_title)}</td>
           <td>${r.queue_position ? `#${r.queue_position}` : '—'}</td>
           <td>${formatDate(r.reserved_at)}</td>
-          <td><span class="status-pill ${r.status}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span></td>
+          <td><span class="status-pill ${r.status}">${borrowing.label(r.status)}</span></td>
         </tr>
       `).join('');
       })
@@ -85,7 +87,7 @@
   // ---- Real data: 6 most recent Borrow Requests ----
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
@@ -109,7 +111,7 @@
           <td>${escapeHtml(r.student_name)}</td>
           <td>${escapeHtml(r.book_title)}</td>
           <td>${formatDate(r.requested_at)}</td>
-          <td><span class="status-pill ${r.status}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span></td>
+          <td><span class="status-pill ${r.status}">${borrowing.label(r.status)}</span></td>
         </tr>
       `).join('');
     })
@@ -126,7 +128,7 @@
   }
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }

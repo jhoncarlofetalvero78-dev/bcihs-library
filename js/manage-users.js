@@ -22,6 +22,7 @@
   });
 
   let allUsers = [];
+  let csrfToken = '';
 
   function findUser(id) {
     return allUsers.find(user => String(user.id) === String(id));
@@ -157,7 +158,7 @@
 
     fetch('backend/user-delete.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
       body: JSON.stringify({ id })
     })
@@ -286,6 +287,7 @@
       })
       .then(data => {
         allUsers = data.users || [];
+        csrfToken = data.csrfToken || '';
 
         const group = { student: 0, teacher: 0, librarian: 0, visitor: 0 };
         let active = 0;

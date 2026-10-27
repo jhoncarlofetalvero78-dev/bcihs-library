@@ -23,6 +23,10 @@
 
   let allRequests = [];
   let allBooks = [];
+  let csrfToken = '';
+  let checkoutToken = '';
+  let savingManual = false;
+  const activeActions = new Set();
 
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -32,14 +36,14 @@
 
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   function formatDateTime(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
     return d.toLocaleString(undefined, {
       year: 'numeric',
@@ -52,40 +56,27 @@
 
   function renderRows(requests) {
     const body = document.getElementById('requestsBody');
-    if (requests.length === 0) {
-      body.innerHTML = '<tr><td colspan="6" class="empty-msg">No requests match.</td></tr>';
-      return;
-    }
-    body.innerHTML = requests.map(r => `
-      <tr>
-        <td>${escapeHtml(r.student_name)}</td>
-        <td>${escapeHtml(r.book_title)}</td>
-        <td>${formatDate(r.requested_at)}</td>
-        <td>${formatDate(r.due_date)}</td>
-        <td><span class="status-pill ${r.status}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span></td>
-        <td>
-          <button class="action-btn view" type="button" title="View details" aria-label="View details" onclick="viewRequest(${Number(r.id)})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-          <button class="action-btn approve" title="Approve" ${r.status !== 'pending' ? 'disabled' : ''} onclick="act(${r.id}, 'approve')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
-          </button>
-          <button class="action-btn reject" title="Reject" ${r.status !== 'pending' ? 'disabled' : ''} onclick="act(${r.id}, 'reject')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </button>
-          <button class="action-btn return" title="Mark Returned" ${r.status !== 'approved' ? 'disabled' : ''} onclick="act(${r.id}, 'return')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 0 1 5 5v1"/></svg>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    body.innerHTML = requests.length ? requests.map(r => {
+      const buttons = [`<button class="action-btn view" type="button" onclick="viewRequest(${Number(r.id)})">Details</button>`];
+      if (r.status === 'pending') buttons.push(`<button class="action-btn approve" type="button" onclick="act(${Number(r.id)}, 'approve')">Approve</button>`);
+      if (['pending','awaiting_pickup'].includes(r.status)) buttons.push(`<button class="action-btn reject" type="button" onclick="act(${Number(r.id)}, 'reject')">Reject</button>`);
+      if (r.status === 'awaiting_pickup') buttons.push(`<button class="action-btn checkout" type="button" onclick="act(${Number(r.id)}, 'checkout')">Confirm Checkout</button>`);
+      if (borrowing.isCheckedOut(r.status)) buttons.push(`<button class="action-btn return" type="button" onclick="act(${Number(r.id)}, 'return')">Confirm Return</button>`);
+      return `<tr>
+        <td>${escapeHtml(r.student_name)}</td><td>${escapeHtml(r.book_title)}</td>
+        <td>${formatDate(r.requested_at)}</td><td>${formatDate(borrowing.loanStart(r))}</td><td>${formatDate(r.due_date)}</td>
+        <td><span class="status-pill ${r.status}">${borrowing.label(r.status)}</span></td>
+        <td><div class="borrow-actions">${buttons.join('')}</div></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" class="empty-msg">No requests match.</td></tr>';
   }
 
   function applyFilters() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     const status = document.getElementById('statusFilter').value;
     const filtered = allRequests.filter(r => {
-      if (status && r.status !== status) return false;
+      if (status === 'checked_out' && !borrowing.isCheckedOut(r.status)) return false;
+      if (status && status !== 'checked_out' && r.status !== status) return false;
       if (!q) return true;
       return [r.student_name, r.book_title].join(' ').toLowerCase().includes(q);
     });
@@ -95,6 +86,11 @@
   }
 
   function loadRequests() {
+    csrfToken = '';
+    checkoutToken = '';
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('loadingMsg').textContent = 'Loading requests…';
+    document.getElementById('requestsTable').style.display = 'none';
     return fetch('backend/borrow-requests-data.php', { credentials: 'same-origin' })
       .then(res => {
         if (res.status === 401) throw new Error('not_logged_in');
@@ -103,6 +99,9 @@
       })
       .then(data => {
         allRequests = data.requests || [];
+        csrfToken = data.csrfToken || '';
+        checkoutToken = data.manualCheckoutToken || '';
+        document.getElementById('dueDate').min = data.serverDate || '';
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('requestsTable').style.display = 'table';
         document.getElementById('countBadge').style.display = 'block';
@@ -119,11 +118,11 @@
     bookOptions.replaceChildren();
 
     allBooks
-      .filter(book => book.total_copies > book.borrowed_copies)
+      .filter(book => borrowing.requestable(book) > 0)
       .sort((a, b) => a.title.localeCompare(b.title))
       .forEach(book => {
         const option = document.createElement('option');
-        option.value = `${book.title} — ${book.author} (${book.total_copies - book.borrowed_copies} available)`;
+        option.value = `${book.title} — ${book.author} (${borrowing.requestable(book)} available)`;
         bookOptions.appendChild(option);
       });
   }
@@ -156,7 +155,8 @@
     bookInput.placeholder = 'Loading books…';
     studentInput.focus();
 
-    fetch('backend/books-data.php', { credentials: 'same-origin' })
+    document.getElementById('manualCheckoutBtn').disabled = true;
+    loadRequests().then(() => fetch('backend/books-data.php', { credentials: 'same-origin', cache: 'no-store' }))
       .then(async response => {
         if (!response.ok) {
           if (response.status === 401) {
@@ -168,10 +168,12 @@
         const bookData = await response.json();
         allBooks = bookData.books || [];
         populateBorrowFormOptions();
-        if (!allBooks.some(book => book.total_copies > book.borrowed_copies)) {
+        if (!allBooks.some(book => borrowing.requestable(book) > 0)) {
           showToast('No books are currently available to borrow.');
           return;
         }
+        if (!csrfToken || !checkoutToken) throw new Error('Reload Borrow Requests to refresh your checkout form.');
+        document.getElementById('manualCheckoutBtn').disabled = false;
         bookInput.placeholder = 'Type or select a book title';
       })
       .catch(err => {
@@ -181,6 +183,7 @@
   }
 
   function closeBorrowModal() {
+    if (savingManual) return;
     document.getElementById('borrowModal').classList.add('hidden');
     document.getElementById('borrowModal').setAttribute('aria-hidden', 'true');
     document.getElementById('borrowForm').reset();
@@ -211,12 +214,14 @@
       ['Book Title', request.book_title || '—'],
       ['Author', request.author || '—'],
       ['Accession Number', request.accession_number || '—'],
-      ['Status', request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : '—'],
-      ['Date & Time', formatDateTime(request.requested_at)],
-      ['Due Date', formatDate(request.due_date)],
-      ['Approved At', formatDate(request.approved_at)],
-      ['Rejected At', formatDate(request.rejected_at)],
-      ['Returned At', formatDate(request.returned_at)]
+      ['Status', borrowing.label(request.status)],
+      ['Requested At', formatDateTime(request.requested_at)],
+      ['Due Date', formatDateTime(request.due_date)],
+      ['Approved At', formatDateTime(request.approved_at)],
+      ['Checked Out At', formatDateTime(borrowing.loanStart(request))],
+      ['Legacy Record', !request.checked_out_at && borrowing.loanStart(request) ? 'Earlier system recorded handover in Approved At; original dates retained.' : 'No'],
+      ['Rejected At', formatDateTime(request.rejected_at)],
+      ['Returned At', formatDateTime(request.returned_at)]
     ];
     document.getElementById('requestDetailsBody').innerHTML = rows.map(([label, value]) => `
       <div class="request-detail-row"><span class="label">${label}</span><span class="value">${escapeHtml(value)}</span></div>
@@ -237,11 +242,11 @@
     const studentInput = document.getElementById('studentInput');
     const bookInput = document.getElementById('bookInput');
     const borrowerName = studentInput.value.trim();
-    const availableBooks = allBooks.filter(book => book.total_copies > book.borrowed_copies);
+    const availableBooks = allBooks.filter(book => borrowing.requestable(book) > 0);
     const book = matchTypedOption(
       bookInput.value,
       availableBooks,
-      item => `${item.title} — ${item.author} (${item.total_copies - item.borrowed_copies} available)`,
+      item => `${item.title} — ${item.author} (${borrowing.requestable(item)} available)`,
       item => item.title
     );
     const dueDate = document.getElementById('dueDate').value;
@@ -257,11 +262,16 @@
       return;
     }
 
+    const save = document.getElementById('manualCheckoutBtn');
+    if (save.disabled) return;
+    if (!confirm(`Confirm that ${borrowerName} is receiving the physical copy of ${book.title} now? This starts the loan and updates inventory.`)) return;
+    save.disabled = true;
+    savingManual = true;
     fetch('backend/borrow-request-add.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
-      body: JSON.stringify({ borrower_name: borrowerName, book_id: Number(book.id), due_date: dueDate || null })
+      body: JSON.stringify({ borrower_name: borrowerName, book_id: Number(book.id), due_date: dueDate || null, confirm_checkout: true, checkout_token: checkoutToken })
     })
       .then(async res => {
         const data = await res.json();
@@ -269,31 +279,38 @@
         return data;
       })
       .then(() => {
-        showToast('Borrow record added.');
+        savingManual = false;
+        showToast('Physical checkout recorded.');
         closeBorrowModal();
         loadRequests();
       })
-      .catch(err => showToast(err.message));
+      .catch(err => showToast(err.message))
+      .finally(() => { save.disabled = false; savingManual = false; });
   });
 
-  window.act = function(id, action) {
-    const labels = { approve: 'approved', reject: 'rejected', return: 'marked as returned' };
-    fetch('backend/borrow-request-action.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ id, action })
-    })
-      .then(async res => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not update that request.');
-        return data;
-      })
-      .then(() => {
-        showToast(`Request ${labels[action]}.`);
-        loadRequests();
-      })
-      .catch(err => showToast(err.message));
+  window.act = async function(id, action) {
+    const request = allRequests.find(item => Number(item.id) === Number(id));
+    if (!request || activeActions.has(id)) return;
+    const prompts = {
+      approve: 'Approve this request and hold one copy for pickup? This does not check out the book.',
+      reject: 'Reject this request and release any pickup hold?',
+      checkout: 'Confirm that the physical book is being handed to this borrower now? The 14-day loan starts now.',
+      return: 'Confirm that the physical book has been returned to the library?'
+    };
+    if (!prompts[action] || !confirm(`${request.student_name} — ${request.book_title}\n\n${prompts[action]}`)) return;
+    activeActions.add(id);
+    try {
+      const response = await fetch('backend/borrow-request-action.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({id, action})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not update that request.');
+      showToast(({approve:'Approved; a copy is held for pickup.', reject:'Request rejected.', checkout:'Checkout confirmed; the loan has started.', return:'Return confirmed; inventory restored.'})[action]);
+      await loadRequests();
+    } catch (error) { showToast(error.message); }
+    finally { activeActions.delete(id); }
   };
 
   document.getElementById('searchInput').addEventListener('input', applyFilters);

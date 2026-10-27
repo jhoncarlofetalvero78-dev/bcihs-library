@@ -105,7 +105,7 @@
         <td>${escapeHtml(book.ddc) || '—'}</td>
         <td class="call-number-cell">${escapeHtml(callNumberFor(book)) || '—'}</td>
         <td>${escapeHtml(categoryFor(book)) || 'Uncategorized'}</td>
-        <td class="inventory-cell"><span>Total: ${Number(book.total_copies)}</span><span>Borrowed: ${Number(book.borrowed_copies)}</span><span class="copies-pill ${available <= 0 ? 'zero' : ''}">Available: ${available}</span></td>
+        <td class="inventory-cell"><span>Total: ${Number(book.total_copies)}</span><span>Borrowed: ${Number(book.borrowed_copies)}</span><span class="copies-pill ${available <= 0 ? 'zero' : ''}">Available: ${available}</span><small>Held for pickup: ${Number(book.held_copies) || 0}</small></td>
         <td class="actions-column"><div class="book-actions">
           <button type="button" class="action-btn qr" title="Show catalog QR" aria-label="Show QR for ${escapeHtml(book.title)}" onclick="openQrModal(${book.id})">QR</button>
           <button type="button" class="action-btn edit" aria-label="Edit ${escapeHtml(book.title)}" onclick="openEditModal(${book.id})">Edit</button>

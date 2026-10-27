@@ -1,6 +1,7 @@
 
   let allBooks = [];
-  let myRequestByBook = {};  // book_id -> status ('pending' | 'approved' | 'rejected' | 'returned')
+  let csrfToken = '';
+  let myRequestByBook = {};  // Active request/loan status by book ID.
   let myReservationsByBook = {};  // book_id -> active reservation
   const urlParams = new URLSearchParams(window.location.search);
   const hasScannedBook = urlParams.has('book');
@@ -28,19 +29,25 @@
   }
 
   function buttonFor(book) {
-    const available = book.total_copies - book.borrowed_copies;
+    const available = borrowing.requestable(book);
     const myStatus = myRequestByBook[book.id];
     const myReservation = myReservationsByBook[book.id];
 
     if (myStatus === 'pending') {
       return `<button class="borrow-btn pending" disabled>Request Pending</button>`;
     }
-    if (myStatus === 'approved') {
+    if (myStatus === 'awaiting_pickup') {
+      return '<button class="borrow-btn approved" disabled>Approved — Awaiting Pickup</button><p class="pickup-info">A copy is held. The loan starts when staff confirms handover.</p>';
+    }
+    if (borrowing.isCheckedOut(myStatus)) {
       return `<button class="borrow-btn approved" disabled>Already Borrowed</button>`;
     }
     if (myReservation && myReservation.status === 'waiting') {
       const actionLabel = myReservation.pickup_at ? 'Change Preferred Pickup' : 'Choose Pickup Time';
       return `<button class="borrow-btn available" onclick="openPickupDialog(${book.id}, 'schedule')">${actionLabel}</button><p class="pickup-info">Schedule can be changed while waiting. It is final once ready.</p>${pickupInfo(myReservation)}`;
+    }
+    if (myReservation && myReservation.status === 'fulfilled') {
+      return '<button class="borrow-btn approved" disabled>Checked Out</button>';
     }
     if (myReservation && myReservation.status === 'ready') {
       return `<button class="borrow-btn approved" disabled>Ready to Pick Up</button><p class="pickup-info">Pickup time is confirmed and cannot be changed.</p>${pickupInfo(myReservation)}`;
@@ -81,7 +88,7 @@
       return;
     }
     grid.innerHTML = books.map(b => {
-      const available = b.total_copies - b.borrowed_copies;
+      const available = borrowing.requestable(b);
       const availClass = available <= 0 ? 'zero' : (available <= 2 ? 'low' : 'ok');
       const isScannedBook = Number(b.id) === scannedBookId;
       return `
@@ -106,7 +113,8 @@
             </div>
           ` : ''}
           <div class="avail-row">
-            <span class="avail-count ${availClass}">${available} of ${b.total_copies} available</span>
+            <span class="avail-count ${availClass}">${available} available to request</span>
+            <small class="availability-detail">${Number(b.total_copies) - Number(b.borrowed_copies)} physically in library · ${Number(b.held_copies) || 0} held for pickup</small>
           </div>
           ${buttonFor(b)}
         </div>
@@ -134,7 +142,7 @@
   window.requestBook = function(bookId) {
     fetch('backend/borrow-request-process.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
       body: JSON.stringify({ book_id: bookId })
     })
@@ -294,7 +302,7 @@
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
         credentials: 'same-origin',
         body: JSON.stringify(payload)
       });
@@ -327,15 +335,16 @@
     ])
       .then(([booksData, requestsData, reservationsData]) => {
         allBooks = booksData.books || [];
+        csrfToken = booksData.csrfToken || '';
         myRequestByBook = {};
         (requestsData.requests || []).forEach(r => {
-          if (r.status === 'pending' || r.status === 'approved') {
+          if (['pending','awaiting_pickup','checked_out','approved'].includes(r.status)) {
             myRequestByBook[r.book_id] = r.status;
           }
         });
         myReservationsByBook = {};
         (reservationsData.reservations || []).forEach(r => {
-          if (r.status === 'waiting' || r.status === 'ready') {
+          if (['waiting','ready','fulfilled'].includes(r.status)) {
             myReservationsByBook[r.book_id] = r;
           }
         });

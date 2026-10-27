@@ -197,16 +197,17 @@
   }
 
   function renderActivitySummary(requests) {
-    const approved = requests.filter(r => r.status === 'approved').length;
+    const checkedOut = requests.filter(r => borrowing.isCheckedOut(r.status)).length;
+    const awaiting = requests.filter(r => r.status === 'awaiting_pickup').length;
     const returned = requests.filter(r => r.status === 'returned').length;
     const rejected = requests.filter(r => r.status === 'rejected').length;
     const pending = requests.filter(r => r.status === 'pending').length;
-    const decided = approved + returned + rejected;
-    const approvalRate = decided > 0 ? Math.round(((approved + returned) / decided) * 100) : 0;
+    const decided = checkedOut + awaiting + returned + rejected;
+    const approvalRate = decided > 0 ? Math.round(((checkedOut + awaiting + returned) / decided) * 100) : 0;
 
     const durations = requests
-      .filter(r => r.status === 'returned' && r.approved_at && r.returned_at)
-      .map(r => Math.max(0, Math.round((new Date(r.returned_at) - new Date(r.approved_at)) / 86400000)));
+      .filter(r => r.status === 'returned' && borrowing.loanStart(r) && r.returned_at)
+      .map(r => Math.max(0, Math.round((borrowing.date(r.returned_at) - borrowing.date(borrowing.loanStart(r))) / 86400000)));
     const avgDuration = durations.length > 0
       ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
       : null;
@@ -214,7 +215,8 @@
     const rows = [
       ['Pending Requests', pending],
       ['Approval Rate', decided > 0 ? approvalRate + '%' : '-'],
-      ['Currently Borrowed', approved],
+      ['Currently Checked Out', checkedOut],
+      ['Approved / Awaiting Pickup', awaiting],
       ['Total Returned', returned],
       ['Total Rejected', rejected],
       ['Avg. Borrow Duration', avgDuration !== null ? avgDuration + ' day' + (avgDuration === 1 ? '' : 's') : '-'],

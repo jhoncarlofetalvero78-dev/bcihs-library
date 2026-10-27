@@ -6,13 +6,13 @@ function bookError(int $code, string $message): void
     exit;
 }
 
-function requireBookAccess(PDO $pdo, bool $staffOnly = false): void
+function requireBookAccess(PDO $pdo, bool $staffOnly = false): string
 {
     if (isset($_SESSION['admin_id'])) {
         $stmt = $pdo->prepare('SELECT id FROM admins WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $_SESSION['admin_id']]);
         if ($stmt->fetch()) {
-            return;
+            return 'admin';
         }
     }
     if (!isset($_SESSION['user_id'])) {
@@ -25,8 +25,9 @@ function requireBookAccess(PDO $pdo, bool $staffOnly = false): void
         bookError(401, 'account_not_accepted');
     }
     if ($staffOnly && $user['role'] !== 'librarian') {
-        bookError(403, 'Only library staff can change books.');
+        bookError(403, 'Only library staff can perform this action.');
     }
+    return $user['role'];
 }
 
 function requireBookCsrf(): void
@@ -34,7 +35,7 @@ function requireBookCsrf(): void
     $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
     if ($token === '' || !isset($_SESSION['book_csrf_token'])
         || !hash_equals($_SESSION['book_csrf_token'], $token)) {
-        bookError(403, 'Your form session has expired. Reload Manage Books and try again.');
+        bookError(403, 'Your form session has expired. Reload this page and try again.');
     }
 }
 
@@ -63,4 +64,12 @@ function removeBookPhoto(?string $path): void
     if (is_file($file) && !unlink($file)) {
         error_log('Could not remove a book photo.');
     }
+}
+
+function bookCsrfToken(): string
+{
+    if (empty($_SESSION['book_csrf_token'])) {
+        $_SESSION['book_csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['book_csrf_token'];
 }

@@ -22,6 +22,8 @@
   });
 
   let allReservations = [];
+  let csrfToken = '';
+  const activeActions = new Set();
   let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   let selectedDate = '';
 
@@ -88,7 +90,7 @@
 
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
     return d.toLocaleString(undefined, {
       year: 'numeric',
@@ -112,15 +114,15 @@
         <td>${r.queue_position ? `<span class="queue-pos">#${r.queue_position}</span>` : '—'}</td>
         <td>${formatDate(r.reserved_at)}</td>
         <td>${r.pickup_at ? formatDate(r.pickup_at) : 'Not scheduled'}</td>
-        <td><span class="status-pill ${r.status}">${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span></td>
+        <td><span class="status-pill ${r.status}">${borrowing.label(r.status)}</span></td>
         <td>
           <button class="action-btn ready" title="${!r.pickup_at && r.status === 'waiting' ? 'User must choose a pickup time first' : 'Mark Ready'}" ${r.status !== 'waiting' || !r.pickup_at ? 'disabled' : ''} onclick="act(${r.id}, 'ready')">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
           </button>
-          <button class="action-btn fulfill" title="Fulfill (check out)" ${!['waiting','ready'].includes(r.status) ? 'disabled' : ''} onclick="act(${r.id}, 'fulfill')">
+          <button class="action-btn fulfill" title="Confirm physical checkout" aria-label="Confirm Checkout" ${!['waiting','ready'].includes(r.status) ? 'disabled' : ''} onclick="act(${r.id}, 'fulfill')">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
           </button>
-          <button class="action-btn fulfill" title="Mark Returned" ${r.status !== 'fulfilled' ? 'disabled' : ''} onclick="act(${r.id}, 'return')">
+          <button class="action-btn fulfill" title="Confirm physical return" aria-label="Confirm Return" ${r.status !== 'fulfilled' ? 'disabled' : ''} onclick="act(${r.id}, 'return')">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 0 1 5 5v1"/></svg>
           </button>
           <button class="action-btn cancel" title="Cancel" ${!['waiting','ready'].includes(r.status) ? 'disabled' : ''} onclick="act(${r.id}, 'cancel')">
@@ -157,6 +159,7 @@
           throw new Error('invalid_response');
         }
         allReservations = data.reservations;
+        csrfToken = data.csrfToken || '';
         renderCalendar();
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('retryReservations').hidden = true;
@@ -177,10 +180,14 @@
   }
 
   window.act = function(id, action) {
+    if (activeActions.has(id)) return;
+    const prompts = {ready:'Hold an available copy for this reservation? This does not check it out.', fulfill:'Confirm physical handover and start this loan now?', return:'Confirm the physical book has been returned?', cancel:'Cancel this reservation and release any hold?'};
+    if (!prompts[action] || !confirm(prompts[action])) return;
+    activeActions.add(id);
     const labels = { ready: 'marked ready', fulfill: 'fulfilled', cancel: 'cancelled', return: 'marked returned' };
     fetch('backend/reservation-action.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
       body: JSON.stringify({ id, action })
     })
@@ -193,7 +200,8 @@
         showToast(`Reservation ${labels[action]}.`);
         loadReservations();
       })
-      .catch(err => showToast(err.message));
+      .catch(err => showToast(err.message))
+      .finally(() => activeActions.delete(id));
   };
 
   document.getElementById('searchInput').addEventListener('input', applyFilters);

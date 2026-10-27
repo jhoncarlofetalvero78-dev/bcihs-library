@@ -90,7 +90,7 @@ function storedBook(int $id): array
 
 function requestDuringStockEdit(string $endpoint, array $data, int $bookId, string $cookies): ?array
 {
-    global $pdo, $baseUrl, $dsn, $options;
+    global $pdo, $baseUrl, $dsn, $options, $token;
     $observer = new PDO($dsn, DB_USER, DB_PASS, $options);
     try {
         $observer->query('SELECT 1 FROM performance_schema.data_locks LIMIT 1');
@@ -103,7 +103,7 @@ function requestDuringStockEdit(string $endpoint, array $data, int $bookId, stri
     $lock->execute(['id' => $bookId]);
     $curl = curl_init($baseUrl . $endpoint);
     curl_setopt_array($curl, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($data),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'], CURLOPT_COOKIEFILE => $cookies,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'X-CSRF-Token: ' . $token], CURLOPT_COOKIEFILE => $cookies,
         CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10]);
     $multi = curl_multi_init();
     curl_multi_add_handle($multi, $curl);
@@ -245,13 +245,15 @@ try {
     $requestId = (int) $pdo->lastInsertId();
     $race = requestDuringStockEdit('backend/borrow-request-action.php', ['id' => $requestId, 'action' => 'approve'], $stockBook, $adminCookies);
     if ($race !== null) {
-        check($race[0] === 422 && (int) storedBook($stockBook)['borrowed_copies'] === 0, 'approval cannot use stock removed by a concurrent catalog edit');
+        check($race[0] === 409 && (int) storedBook($stockBook)['borrowed_copies'] === 0, 'approval cannot use stock removed by a concurrent catalog edit');
     }
     $pdo->prepare('UPDATE books SET total_copies = 1 WHERE id = :id')->execute(['id' => $stockBook]);
-    [$status] = request('backend/borrow-request-action.php', 'POST', json_encode(['id' => $requestId, 'action' => 'approve']), $adminCookies);
-    check($status === 200 && (int) storedBook($stockBook)['borrowed_copies'] === 1, 'normal approval still increments stock once without sending SMS');
-    [$status] = request('backend/borrow-request-action.php', 'POST', json_encode(['id' => $requestId, 'action' => 'approve']), $adminCookies);
-    check($status === 422 && (int) storedBook($stockBook)['borrowed_copies'] === 1, 'repeat approval does not increment stock twice');
+    [$status] = request('backend/borrow-request-action.php', 'POST', json_encode(['id' => $requestId, 'action' => 'approve']), $adminCookies, $token);
+    check($status === 200 && (int) storedBook($stockBook)['borrowed_copies'] === 0, 'approval holds stock without checking it out');
+    [$status] = request('backend/borrow-request-action.php', 'POST', json_encode(['id' => $requestId, 'action' => 'checkout']), $adminCookies, $token);
+    check($status === 200 && (int) storedBook($stockBook)['borrowed_copies'] === 1, 'explicit physical checkout increments stock once');
+    [$status] = request('backend/borrow-request-action.php', 'POST', json_encode(['id' => $requestId, 'action' => 'approve']), $adminCookies, $token);
+    check($status === 409 && (int) storedBook($stockBook)['borrowed_copies'] === 1, 'repeat approval does not increment stock twice');
 
     $reservedBook = createBook(['title' => $prefix . ' Reservation stock race', 'author' => 'Test', 'total_copies' => 1], $adminCookies, $token);
     $pdo->prepare('INSERT INTO reservations (user_id, book_id, status) VALUES (:user, :book, "waiting")')
@@ -259,13 +261,13 @@ try {
     $reservationId = (int) $pdo->lastInsertId();
     $race = requestDuringStockEdit('backend/reservation-action.php', ['id' => $reservationId, 'action' => 'fulfill'], $reservedBook, $adminCookies);
     if ($race !== null) {
-        check($race[0] === 422 && (int) storedBook($reservedBook)['borrowed_copies'] === 0, 'fulfillment cannot use stock removed by a concurrent catalog edit');
+        check($race[0] === 409 && (int) storedBook($reservedBook)['borrowed_copies'] === 0, 'fulfillment cannot use stock removed by a concurrent catalog edit');
     }
     $pdo->prepare('UPDATE books SET total_copies = 1 WHERE id = :id')->execute(['id' => $reservedBook]);
-    [$status] = request('backend/reservation-action.php', 'POST', json_encode(['id' => $reservationId, 'action' => 'fulfill']), $adminCookies);
+    [$status] = request('backend/reservation-action.php', 'POST', json_encode(['id' => $reservationId, 'action' => 'fulfill']), $adminCookies, $token);
     check($status === 200 && (int) storedBook($reservedBook)['borrowed_copies'] === 1, 'normal reservation fulfillment still increments once');
-    [$status] = request('backend/reservation-action.php', 'POST', json_encode(['id' => $reservationId, 'action' => 'fulfill']), $adminCookies);
-    check($status === 422 && (int) storedBook($reservedBook)['borrowed_copies'] === 1, 'repeat fulfillment does not increment stock twice');
+    [$status] = request('backend/reservation-action.php', 'POST', json_encode(['id' => $reservationId, 'action' => 'fulfill']), $adminCookies, $token);
+    check($status === 409 && (int) storedBook($reservedBook)['borrowed_copies'] === 1, 'repeat fulfillment does not increment stock twice');
 
     $picture = tempnam(sys_get_temp_dir(), 'bcihs-test-picture-');
     $temporaryFiles[] = $picture;

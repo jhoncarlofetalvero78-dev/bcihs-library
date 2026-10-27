@@ -6,6 +6,7 @@
 <title>Transaction | BCIHS Library</title>
 <link rel="stylesheet" href="css/transactions.css?v=20261026-visible-tables">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 </head>
 <body>
 
@@ -87,7 +88,7 @@
       </div>
       <div>
         <h1>Transaction</h1>
-        <p>Complete history of every borrow request — requested, approved, returned, and rejected.</p>
+        <p>Borrow requests and reservations — approval, physical checkout, return, and other recorded decisions.</p>
       </div>
     </div>
 
@@ -115,7 +116,11 @@
       <select id="statusFilter">
         <option value="">All statuses</option>
         <option value="pending">Pending</option>
-        <option value="approved">Currently Borrowed</option>
+        <option value="awaiting_pickup">Approved / Awaiting Pickup</option>
+        <option value="checked_out">Currently Checked Out</option>
+        <option value="waiting">Waiting Reservation</option>
+        <option value="ready">Ready Reservation</option>
+        <option value="cancelled">Cancelled Reservation</option>
         <option value="returned">Returned</option>
         <option value="rejected">Rejected</option>
       </select>
@@ -135,7 +140,7 @@
       <p class="loading-msg" id="loadingMsg">Loading transactions…</p>
       <table id="txTable">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Requested</th><th>Approved</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
+          <tr><th>Student Name</th><th>Book Title</th><th>Requested</th><th>Approved / Ready</th><th>Checked Out</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
         </thead>
         <tbody id="txBody"></tbody>
       </table>
@@ -143,7 +148,8 @@
   </main>
 </div>
 
-<script src="js/transactions.js"></script>
+<script src="js/borrowing-status.js?v=20261027-phase2b"></script>
+<script src="js/transactions.js?v=20261027-phase2b"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>
 </body>
 </html>

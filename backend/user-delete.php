@@ -1,44 +1,24 @@
 <?php
 session_start();
-require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/../includes/approved-user-session.php';
 header('Content-Type: application/json');
+header('Cache-Control: no-store');
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/borrowing.php';
 
-if (!requireApprovedUserSession($pdo)) {
-    http_response_code(401);
-    echo json_encode(['error' => 'account_not_accepted']);
-    exit;
-}
-
-$isLibrarian = isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'librarian';
-$isAdmin = isset($_SESSION['admin_id']);
-
-if (!$isLibrarian && !$isAdmin) {
-    if (!isset($_SESSION['user_id']) && !isset($_SESSION['admin_id'])) {
-        http_response_code(401);
-        echo json_encode(['error' => 'not_logged_in']);
-    } else {
-        http_response_code(403);
-        echo json_encode(['error' => 'forbidden']);
-    }
-    exit;
-}
-
-$input = json_decode(file_get_contents('php://input'), true);
-$userId = isset($input['id']) ? (int)$input['id'] : 0;
-
-if ($userId <= 0) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid user ID.']);
-    exit;
-}
-
-$stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
-$deleted = $stmt->execute([$userId]);
-
-if ($deleted && $stmt->rowCount() > 0) {
+try {
+    $input = borrowingPost($pdo, true);
+    $id = borrowingId($input['id'] ?? null);
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE id = :id FOR UPDATE');
+    $stmt->execute(['id' => $id]);
+    if (!$stmt->fetch()) throw new DomainException('User not found.', 404);
+    $history = $pdo->prepare('SELECT EXISTS(SELECT 1 FROM borrow_requests WHERE user_id = :borrow_user)
+                                 OR EXISTS(SELECT 1 FROM reservations WHERE user_id = :reserved_user)');
+    $history->execute(['borrow_user' => $id, 'reserved_user' => $id]);
+    if ($history->fetchColumn()) throw new DomainException('This user has library transaction history and cannot be deleted. Preserve the account and its records.', 409);
+    $pdo->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $id]);
+    $pdo->commit();
     echo json_encode(['success' => true]);
-} else {
-    http_response_code(404);
-    echo json_encode(['error' => 'User not found.']);
+} catch (Throwable $exception) {
+    borrowingFailure($pdo, $exception);
 }

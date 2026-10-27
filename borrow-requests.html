@@ -6,6 +6,7 @@
 <title>Borrow Requests | BCIHS Library</title>
 <link rel="stylesheet" href="css/borrow-requests.css?v=20261026-view-eye">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+<link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 </head>
 <body>
 
@@ -84,7 +85,7 @@
     <div class="page-head">
       <div>
         <h1>Borrow Requests</h1>
-        <p>Review and act on book requests submitted by patrons.</p>
+        <p>Approve for pickup, confirm physical checkout, and record returns. Approval alone does not start a loan.</p>
       </div>
       <button id="addBorrowBtn" class="primary-btn" type="button">+ Add Borrowed Student</button>
     </div>
@@ -94,7 +95,8 @@
       <select id="statusFilter">
         <option value="">All statuses</option>
         <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
+        <option value="awaiting_pickup">Approved / Awaiting Pickup</option>
+        <option value="checked_out">Checked Out (including legacy loans)</option>
         <option value="returned">Returned</option>
         <option value="rejected">Rejected</option>
       </select>
@@ -102,11 +104,11 @@
 
     <p class="count-badge extracted-style-1" id="countBadge"></p>
 
-    <div class="panel">
+    <div class="panel" id="requestsPanel">
       <p class="loading-msg" id="loadingMsg">Loading requests…</p>
       <table id="requestsTable" class="extracted-style-1">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Date Requested</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Student Name</th><th>Book Title</th><th>Date Requested</th><th>Checked Out</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody id="requestsBody"></tbody>
       </table>
@@ -117,10 +119,11 @@
 <div id="borrowModal" class="modal hidden" aria-hidden="true">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="borrowModalTitle">
     <div class="modal-header">
-      <h2 id="borrowModalTitle">Add Borrow Record</h2>
+      <h2 id="borrowModalTitle">Add Borrowed Student — Confirm Checkout</h2>
       <button id="closeBorrowModal" class="icon-btn" type="button" aria-label="Close">×</button>
     </div>
 
+    <p class="loan-note">Use this form only when handing over a physical book. A blank due date uses 14 days from checkout. An optional staff override must be today or later. Typed names are kept for students without an account.</p>
     <form id="borrowForm">
       <div class="form-grid">
         <label>
@@ -136,13 +139,13 @@
 
         <label>
           Due Date
-          <input id="dueDate" type="date">
+          <input id="dueDate" type="date" max="2038-01-18">
         </label>
       </div>
 
       <div class="form-actions">
         <button type="button" id="cancelBorrowBtn" class="secondary-btn">Cancel</button>
-        <button type="submit" class="primary-btn">Save Borrow</button>
+        <button type="submit" class="primary-btn" id="manualCheckoutBtn">Confirm Physical Checkout</button>
       </div>
     </form>
   </div>
@@ -158,7 +161,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/borrow-requests.js?v=20261026-request-book-details"></script>
+<script src="js/borrowing-status.js?v=20261027-phase2b"></script>
+<script src="js/borrow-requests.js?v=20261027-phase2b"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>
