@@ -62,6 +62,8 @@
   }
 
   function callNumberFor(book) {
+    if (String(book.call_number || '').trim()) return book.call_number;
+    if (!String(book.cutter_number || '').trim()) return '';
     const classification = String(book.ddc || '').trim();
     const cutter = String(book.cutter_number || '').trim();
     const year = String(book.year_of_publication || '').trim();
@@ -93,7 +95,7 @@
           <div class="author">${escapeHtml(b.author)}</div>
           ${callNumberFor(b) ? `<div class="call-number">Call No.: ${escapeHtml(callNumberFor(b))}</div>` : ''}
           ${b.isbn ? `<div class="isbn">${escapeHtml(b.isbn)}</div>` : ''}
-          <div class="genre">${escapeHtml(b.genre) || 'Uncategorized'}</div>
+          <div class="genre">${escapeHtml(b.category || b.genre) || 'Uncategorized'}</div>
           ${isScannedBook ? `
             <div class="book-details">
               ${b.edition ? `<p><strong>Edition:</strong> ${escapeHtml(b.edition)}</p>` : ''}
@@ -123,7 +125,7 @@
       ? allBooks.filter(book => Number(book.id) === scannedBookId)
       : allBooks;
     const filtered = !q ? books : books.filter(b =>
-      [b.title, b.author, b.isbn, b.genre, b.ddc, b.cutter_number, b.year_of_publication, b.call_number]
+      [b.title, b.author, b.isbn, b.category, b.genre, b.ddc, b.cutter_number, b.year_of_publication, b.call_number]
         .filter(Boolean).join(' ').toLowerCase().includes(q)
     );
     render(filtered);

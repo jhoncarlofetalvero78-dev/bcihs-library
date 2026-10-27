@@ -98,10 +98,17 @@ try {
         if ($available <= 0) {
             throw new RuntimeException('No copies of this book are currently available to fulfill.');
         }
-        $pdo->prepare('UPDATE books SET borrowed_copies = borrowed_copies + 1 WHERE id = :book_id')
-            ->execute(['book_id' => $reservation['book_id']]);
-        $pdo->prepare('UPDATE reservations SET status = "fulfilled", fulfilled_at = NOW() WHERE id = :id')
-            ->execute(['id' => $id]);
+        // Check current stock in the update itself, including concurrent catalog edits.
+        $stock = $pdo->prepare('UPDATE books SET borrowed_copies = borrowed_copies + 1 WHERE id = :book_id AND borrowed_copies < total_copies');
+        $stock->execute(['book_id' => $reservation['book_id']]);
+        if ($stock->rowCount() !== 1) {
+            throw new RuntimeException('No copies are currently available. Reload the catalog and try again.');
+        }
+        $fulfilled = $pdo->prepare('UPDATE reservations SET status = "fulfilled", fulfilled_at = NOW() WHERE id = :id AND status IN ("waiting", "ready")');
+        $fulfilled->execute(['id' => $id]);
+        if ($fulfilled->rowCount() !== 1) {
+            throw new RuntimeException('This reservation has already been processed.');
+        }
 
     } elseif ($action === 'cancel') {
         if (!in_array($reservation['status'], ['waiting', 'ready'], true)) {
@@ -156,6 +163,12 @@ try {
 
     echo json_encode(['success' => true]);
 
+} catch (PDOException $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log('Book transaction could not be completed.');
+    fail(500, 'Could not complete this action. Reload and try again.');
 } catch (RuntimeException $e) {
     $pdo->rollBack();
     fail(422, $e->getMessage());

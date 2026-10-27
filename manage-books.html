@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manage Book | BCIHS Library</title>
-<link rel="stylesheet" href="css/manage-books.css?v=20261026-fil-classification">
+<link rel="stylesheet" href="css/manage-books.css?v=20261027-phase2a">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 </head>
 <body>
@@ -89,12 +89,23 @@
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by title, author, or category…">
+      <input type="search" id="searchInput" aria-label="Search books" placeholder="Search title, author, ISBN, call number…">
+      <label class="filter-label">Category
+        <select id="categoryFilter"><option value="">All categories</option></select>
+      </label>
+      <label class="filter-label">Availability
+        <select id="availabilityFilter">
+          <option value="">All availability</option>
+          <option value="available">Available</option>
+          <option value="unavailable">No available copies</option>
+        </select>
+      </label>
+      <button class="clear-btn" id="clearFiltersBtn" type="button">Clear filters</button>
       <button class="add-btn export-btn" id="exportBtn" type="button" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
         Export CSV
       </button>
-      <button class="add-btn" id="addBookBtn">
+      <button class="add-btn" id="addBookBtn" type="button" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
         Add Book
       </button>
@@ -103,19 +114,30 @@
     <p class="count-badge extracted-style-1" id="countBadge"></p>
 
     <div class="panel">
-      <p class="loading-msg" id="loadingMsg">Loading books…</p>
+      <p class="loading-msg" id="loadingMsg" role="status">Loading books…</p>
+      <button class="clear-btn" id="retryBtn" type="button" hidden>Retry loading books</button>
+      <div class="table-scroll">
       <table id="booksTable" class="extracted-style-1">
         <thead>
-          <tr><th>ISBN</th><th>Classification No.</th><th>Cutter No.</th><th>Call No.</th><th>Title</th><th>Author</th><th>Edition</th><th>Category</th><th>Accession Number</th><th>Total</th><th>Available</th><th>Actions</th></tr>
+          <tr><th>Book</th><th>Identifiers</th><th>Classification<br>(DDC)</th><th>Call Number</th><th>Category</th><th>Copies</th><th class="actions-column">Actions</th></tr>
         </thead>
         <tbody id="booksBody"></tbody>
       </table>
+      </div>
+    </div>
+    <div class="pagination" id="pagination" hidden>
+      <label>Per page <select id="pageSize"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select></label>
+      <div class="page-buttons">
+        <button class="clear-btn" id="prevPageBtn" type="button">Previous</button>
+        <span id="pageInfo" aria-live="polite"></span>
+        <button class="clear-btn" id="nextPageBtn" type="button">Next</button>
+      </div>
     </div>
   </main>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <h2 id="modalTitle">Add Book</h2>
     <form id="bookForm">
       <input type="hidden" id="bookId">
@@ -123,53 +145,59 @@
         <div class="book-form-main">
           <div class="field">
             <label for="titleInput">Title</label>
-            <input type="text" id="titleInput" placeholder="e.g. To Kill a Mockingbird" required>
+            <input type="text" id="titleInput" maxlength="200" placeholder="e.g. To Kill a Mockingbird" required>
           </div>
           <div class="field">
             <label for="authorInput">Author</label>
-            <input type="text" id="authorInput" placeholder="e.g. Harper Lee" required>
+            <input type="text" id="authorInput" maxlength="150" placeholder="e.g. Harper Lee" required>
           </div>
           <div class="field-row">
             <div class="field">
               <label for="editionInput">Edition</label>
-              <input type="text" id="editionInput" placeholder="e.g. 1st Edition">
+              <input type="text" id="editionInput" maxlength="50" placeholder="e.g. 1st Edition">
             </div>
             <div class="field">
               <label for="placeInput">Place of Publication</label>
-              <input type="text" id="placeInput" placeholder="e.g. New York">
+              <input type="text" id="placeInput" maxlength="150" placeholder="e.g. New York">
             </div>
           </div>
           <div class="field">
             <label for="publisherInput">Publisher</label>
-            <input type="text" id="publisherInput" placeholder="e.g. Harper Perennial">
+            <input type="text" id="publisherInput" maxlength="150" placeholder="e.g. Harper Perennial">
           </div>
           <div class="field-row">
             <div class="field">
               <label for="yearInput">Year of Publication</label>
-              <input type="text" id="yearInput" placeholder="e.g. 1960">
+              <input type="text" id="yearInput" maxlength="10" placeholder="e.g. 1960">
             </div>
             <div class="field">
               <label for="isbnInput">ISBN</label>
-              <input type="text" id="isbnInput" placeholder="e.g. 978-0-06-112008-4">
+              <input type="text" id="isbnInput" maxlength="17" placeholder="e.g. 978-0-06-112008-4">
             </div>
           </div>
           <div class="field-row">
             <div class="field">
               <label for="categoryInput">Category</label>
-              <input type="text" id="categoryInput" placeholder="e.g. Classic Literature">
+              <select id="categoryInput"><option value="">Uncategorized</option></select>
+              <div id="newCategoryField" hidden>
+                <label for="newCategoryInput">New category name</label>
+                <input type="text" id="newCategoryInput" maxlength="80" placeholder="Enter a category">
+              </div>
             </div>
             <div class="field">
-              <label for="classificationNumberInput">Classification No.</label>
-              <input type="text" id="classificationNumberInput" placeholder="e.g. Fil. 001.3">
-            </div>
-            <div class="field">
-              <label for="cutterNumberInput">Cutter No.</label>
-              <input type="text" id="cutterNumberInput" placeholder="e.g. Z948">
+              <label for="classificationNumberInput">Classification Number (DDC)</label>
+              <input type="text" id="classificationNumberInput" maxlength="30" placeholder="e.g. 001.3" aria-describedby="ddcHelp">
             </div>
           </div>
           <div class="field">
+            <label for="callNumberInput">Call Number</label>
+            <input type="text" id="callNumberInput" maxlength="120" placeholder="e.g. Fil. 001.3 Z948 2024">
+          </div>
+          <p class="field-help" id="ddcHelp">Enter the librarian-assigned Dewey Decimal Classification only. Call Number holds the complete shelving identifier, including Cutter information and any prefix or year. Leave unclassified books blank; no classification is guessed.</p>
+          <p class="field-help" id="legacyMetadataNote" hidden>Historical shelving or publication values are retained. Review the complete Call Number; unchanged legacy values can still be saved.</p>
+          <div class="field">
             <label for="accessionNumberInput">Accession Number</label>
-            <input type="text" id="accessionNumberInput" placeholder="e.g. 2024-0017">
+            <input type="text" id="accessionNumberInput" maxlength="50" placeholder="e.g. 2024-0017">
           </div>
         </div>
         <div class="book-form-side">
@@ -180,12 +208,13 @@
             <img id="photoPreview" class="photo-preview" alt="Book cover preview" hidden>
           </div>
           <div class="field">
-            <label for="totalInput">Total</label>
-            <input type="number" id="totalInput" min="0" value="1" required>
+            <label for="totalInput">Total copies</label>
+            <input type="number" id="totalInput" min="0" max="4294967295" step="1" value="1" required>
+            <small class="field-help" id="inventoryHelp" aria-live="polite">Borrowed: 0 · Available: 1</small>
           </div>
         </div>
       </div>
-      <p class="modal-error" id="modalError"></p>
+      <p class="modal-error" id="modalError" role="alert"></p>
       <div class="modal-btn-row">
         <button type="button" class="modal-btn cancel" id="cancelBtn">Cancel</button>
         <button type="submit" class="modal-btn save" id="saveBtn">Save</button>
@@ -195,11 +224,13 @@
 </div>
 
 <div class="modal-overlay" id="qrOverlay">
-  <div class="modal extracted-style-2">
+  <div class="modal qr-modal extracted-style-2" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
     <h2 id="qrModalTitle">Book QR Code</h2>
-    <p class="extracted-style-3">Scan this to see the book's details and request to borrow it. You'll be asked to sign in before borrowing. Print it and attach it to the physical copy.</p>
+    <p class="extracted-style-3">This QR opens the catalog entry for this title. It does not approve a request or check out a copy. Borrowing still requires sign-in and library staff approval.</p>
     <img id="qrImage" src="" alt="QR code" class="extracted-style-4">
     <p class="extracted-style-5" id="qrUrlText"></p>
+    <p class="field-help" id="qrLocalNote" hidden>This localhost link opens on this computer. For another device, open the site using a reachable local network address before generating its QR.</p>
+    <p class="modal-error" id="qrError" role="status"></p>
     <div class="modal-btn-row">
       <button type="button" class="modal-btn cancel" id="qrCloseBtn">Close</button>
       <a class="modal-btn save extracted-style-6" id="qrDownloadBtn" download>Download</a>
@@ -209,7 +240,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/manage-books.js?v=20261026-fil-classification"></script>
+<script src="js/manage-books.js?v=20261027-phase2a"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

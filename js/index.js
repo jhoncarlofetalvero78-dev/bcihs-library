@@ -111,6 +111,8 @@
   });
 
   function callNumberFor(book) {
+    if (String(book.call_number || '').trim()) return book.call_number;
+    if (!String(book.cutter_number || '').trim()) return '';
     const classification = String(book.ddc || '').trim();
     const cutter = String(book.cutter_number || '').trim();
     const year = String(book.year_of_publication || '').trim();
@@ -129,7 +131,7 @@
           <h4>${escapeHtml(book.title)}</h4>
           <div class="author">${escapeHtml(book.author)}</div>
           ${callNumberFor(book) ? `<div class="call-number">Call No.: ${escapeHtml(callNumberFor(book))}</div>` : ''}
-          <div class="genre">${escapeHtml(book.genre || 'General')}</div>
+          <div class="genre">${escapeHtml(book.category || book.genre || 'General')}</div>
           <span class="status-pill Available">Available</span>
         </div>
       </div>
