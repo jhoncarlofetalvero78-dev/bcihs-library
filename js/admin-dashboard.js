@@ -15,43 +15,26 @@
     })
     .catch(() => { /* backend unreachable — leave the generic Admin User label */ });
 
-  // ---- Real data: Total Users, pulled from the same source All Users uses ----
-  fetch('backend/all-users-data.php', { credentials: 'same-origin' })
-    .then(res => res.ok ? res.json() : Promise.reject())
+  // One snapshot supplies cards and the chart from the same reporting definitions.
+  fetch('backend/dashboard-data.php', { credentials:'same-origin', cache:'no-store' })
+    .then(response => response.ok ? response.json() : Promise.reject())
     .then(data => {
-      document.getElementById('totalUsersValue').textContent = (data.users || []).length.toLocaleString();
-    })
-    .catch(() => {
-      document.getElementById('totalUsersValue').textContent = '—';
-    });
-
-  // ---- Real data: Total/Borrowed/Available Books, pulled from the books table ----
-  fetch('backend/books-data.php', { credentials: 'same-origin' })
-    .then(res => res.ok ? res.json() : Promise.reject())
-    .then(data => {
-      const books = data.books || [];
-      const total = books.reduce((sum, b) => sum + Number(b.total_copies), 0);
-      const borrowed = books.reduce((sum, b) => sum + Number(b.borrowed_copies), 0);
-      document.getElementById('totalBooksValue').textContent = total.toLocaleString();
-      document.getElementById('borrowedBooksValue').textContent = borrowed.toLocaleString();
-      document.getElementById('availableBooksValue').textContent = (total - borrowed).toLocaleString();
-      const held = books.reduce((sum, book) => sum + Number(book.held_copies || 0), 0);
-      document.getElementById('availableBooksHint').textContent = `${total - borrowed - held} available to request · ${held} held for pickup`;
-    })
-    .catch(() => {
-      document.getElementById('totalBooksValue').textContent = '—';
-      document.getElementById('borrowedBooksValue').textContent = '—';
-      document.getElementById('availableBooksValue').textContent = '—';
-    });
-
-  // ---- Real data: Monthly book stats for chart ----
-  fetch('backend/book-monthly-stats.php', { credentials: 'same-origin' })
-    .then(res => res.ok ? res.json() : Promise.reject())
-    .then(data => {
-      renderBookInventoryChart(data);
-    })
-    .catch(() => {
-      document.getElementById('bookInventoryChart').parentElement.innerHTML = '<p class="empty-msg">Could not load chart data.</p>';
+      const current=data.current;
+      document.getElementById('totalUsersValue').textContent=current.users.toLocaleString();
+      document.getElementById('totalBooksValue').textContent=current.copies.toLocaleString();
+      document.getElementById('borrowedBooksValue').textContent=current.borrowed_copies.toLocaleString();
+      document.getElementById('availableBooksValue').textContent=current.available_copies.toLocaleString();
+      document.getElementById('activeReservationsValue').textContent=(current.waiting+current.ready).toLocaleString();
+      document.getElementById('availableBooksHint').textContent=`${current.requestable_copies} available for requests · ${current.held_copies} held for pickup`;
+      document.getElementById('dashboardScope').textContent=`Current snapshot · ${data.generatedAt} PHT · ${current.titles} catalog titles · ${current.accepted_students} accepted students`;
+      document.getElementById('circulationSummary').textContent=`${current.pending} pending requests · ${current.awaiting_pickup} approved / awaiting pickup · ${current.overdue} overdue loans · Reservations: ${current.waiting} waiting, ${current.ready} ready · Today: ${current.attendance_today.visits} attendance visits, ${current.attendance_today.registered_students} unique registered students · Occupancy: ${current.occupancy === null ? 'not tracked' : current.occupancy}`;
+      document.getElementById('dashboardWarning').hidden=current.inventory_matches_loans && !current.undated_loan_records;
+      renderBookInventoryChart(current);
+    }).catch(() => {
+      ['totalUsersValue','totalBooksValue','borrowedBooksValue','availableBooksValue','activeReservationsValue'].forEach(id=>{document.getElementById(id).textContent='—';});
+      document.getElementById('dashboardScope').textContent='Could not load current statistics. Reload to retry.';
+      document.getElementById('circulationSummary').textContent='';
+      document.getElementById('availableBooksHint').textContent='Current capacity unavailable.';
     });
 
   // ---- Real data: Active and recent Reservations ----
@@ -59,10 +42,8 @@
     .then(res => res.ok ? res.json() : Promise.reject())
     .then(data => {
       const reservations = data.reservations || [];
-      const active = reservations.filter(r => ['waiting', 'ready'].includes(r.status));
-      document.getElementById('activeReservationsValue').textContent = active.length.toLocaleString();
 
-      const recent = reservations.slice(0, 6);
+      const recent = reservations.sort((a,b) => String(b.reserved_at).localeCompare(String(a.reserved_at)) || Number(b.id)-Number(a.id)).slice(0, 6);
       const body = document.getElementById('reservationBody');
       if (recent.length === 0) {
         body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:#888;">No reservations yet.</td></tr>';
@@ -79,7 +60,6 @@
       `).join('');
       })
     .catch(() => {
-      document.getElementById('activeReservationsValue').textContent = '—';
       document.getElementById('reservationBody').innerHTML =
         '<tr><td colspan="5" style="text-align:center; padding:24px; color:#888;">Could not load reservations.</td></tr>';
     });
@@ -89,7 +69,7 @@
     if (!mysqlDatetime) return '—';
     const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Manila' });
   }
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -121,18 +101,6 @@
     });
 
   // ---- Real data: Announcements ----
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str == null ? '' : str;
-    return div.innerHTML;
-  }
-  function formatDate(mysqlDatetime) {
-    if (!mysqlDatetime) return '—';
-    const d = borrowing.date(mysqlDatetime);
-    if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
   fetch('backend/announcements-data.php', { credentials: 'same-origin' })
     .then(res => res.ok ? res.json() : Promise.reject())
     .then(data => {
@@ -171,86 +139,16 @@
 
   // Book chart rendering
   let bookInventoryChart = null;
-  function renderBookInventoryChart(stats) {
-    const months = stats.months || [];
-    const totalData = stats.total || [];
-    const borrowedData = stats.borrowed || [];
-    const availableData = stats.available || [];
-    const ctx = document.getElementById('bookInventoryChart');
+  function renderBookInventoryChart(current) {
+    const ctx=document.getElementById('bookInventoryChart');
     if (!ctx) return;
+    if (typeof Chart==='undefined') {
+      ctx.parentElement.innerHTML='<p class="empty-msg">The chart library is unavailable. Current totals remain available above and in Reports.</p>';return;
+    }
     if (bookInventoryChart) bookInventoryChart.destroy();
-    bookInventoryChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: months,
-        datasets: [
-          {
-            label: 'Total',
-            data: totalData,
-            backgroundColor: 'rgba(47, 143, 224, 0.75)',
-            borderColor: 'rgb(47, 143, 224)',
-            borderWidth: 2,
-            borderRadius: 6,
-            borderSkipped: false,
-          },
-          {
-            label: 'Borrowed',
-            data: borrowedData,
-            backgroundColor: 'rgba(224, 48, 58, 0.75)',
-            borderColor: 'rgb(224, 48, 58)',
-            borderWidth: 2,
-            borderRadius: 6,
-            borderSkipped: false,
-          },
-          {
-            label: 'Available',
-            data: availableData,
-            backgroundColor: 'rgba(47, 184, 74, 0.75)',
-            borderColor: 'rgb(47, 184, 74)',
-            borderWidth: 2,
-            borderRadius: 6,
-            borderSkipped: false,
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 900,
-          easing: 'easeOutQuart',
-        },
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: { font: { size: 11 }, color: '#333' }
-          },
-          tooltip: {
-            backgroundColor: '#3d0a0a',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            padding: 12,
-            cornerRadius: 8,
-            callbacks: {
-              label: context => `${context.dataset.label}: ${context.formattedValue} ${Number(context.raw) === 1 ? 'book' : 'books'}`,
-            },
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: { color: '#f0eeec' },
-            ticks: { color: '#666', font: { size: 11 } }
-          },
-          x: {
-            grid: { display: false },
-            ticks: { color: '#333', font: { size: 11 } }
-          }
-        }
-      }
+    bookInventoryChart=new Chart(ctx,{
+      type:'bar',data:{labels:['Borrowed','Held for pickup','Available for requests'],datasets:[{label:'Current copies',
+        data:[current.borrowed_copies,current.held_copies,current.requestable_copies],backgroundColor:['#8b2525','#bd7d31','#637d58'],borderRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}
     });
   }

@@ -3,32 +3,23 @@ session_start();
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/../includes/borrowing.php';
-
+require_once __DIR__ . '/../includes/reporting.php';
 try {
-    requireBookAccess($pdo, true);
-    if ($_SERVER['REQUEST_METHOD'] !== 'GET') bookError(405, 'method_not_allowed');
-    $months = $totals = $borrowed = [];
-    $now = new DateTimeImmutable('first day of this month');
-    $totalQuery = $pdo->prepare('SELECT COALESCE(SUM(total_copies), 0) FROM books WHERE created_at < :end');
-    $loanQuery = $pdo->prepare(
-        'SELECT (SELECT COUNT(*) FROM borrow_requests WHERE status IN ("approved","checked_out","returned")
-                  AND COALESCE(checked_out_at, approved_at) < :borrow_end
-                  AND (returned_at IS NULL OR returned_at >= :borrow_return))
-              + (SELECT COUNT(*) FROM reservations WHERE status IN ("fulfilled","returned")
-                  AND fulfilled_at < :reserved_end AND (returned_at IS NULL OR returned_at >= :reserved_return))'
-    );
-    for ($i = 5; $i >= 0; $i--) {
-        $month = $now->modify('-' . $i . ' months');
-        $end = $month->modify('+1 month')->format('Y-m-01 00:00:00');
-        $totalQuery->execute(['end' => $end]);
-        $loanQuery->execute(['borrow_end' => $end, 'borrow_return' => $end, 'reserved_end' => $end, 'reserved_return' => $end]);
-        $months[] = $month->format('M');
-        $totals[] = (int) $totalQuery->fetchColumn();
-        $borrowed[] = (int) $loanQuery->fetchColumn();
+    requireBookAccess($pdo,true);
+    if ($_SERVER['REQUEST_METHOD']!=='GET') bookError(405,'method_not_allowed');
+    $rows=reportTransactions($pdo);$months=$borrowed=$checkouts=$returns=[];
+    $now=new DateTimeImmutable();$month=$now->modify('first day of this month')->setTime(0,0);
+    for ($i=5;$i>=0;$i--) {
+        $start=$month->modify('-'.$i.' months');$end=$start->modify('+1 month');
+        $cutoff=min($end->format('Y-m-d H:i:s'),$now->format('Y-m-d H:i:s'));
+        $out=$checked=$returned=0;
+        foreach ($rows as $row) {
+            if ($row['is_loan'] && $row['borrowed_at']<$end->format('Y-m-d H:i:s') && $row['borrowed_at']<=$cutoff && ($row['returned_at']===null || $row['returned_at']>=$end->format('Y-m-d H:i:s') || $row['returned_at']>$cutoff)) $out++;
+            if ($row['is_loan'] && $row['borrowed_at']>=$start->format('Y-m-d H:i:s') && $row['borrowed_at']<$end->format('Y-m-d H:i:s') && $row['borrowed_at']<=$cutoff) $checked++;
+            if ($row['status']==='returned' && $row['returned_at']!==null && $row['returned_at']>=$start->format('Y-m-d H:i:s') && $row['returned_at']<$end->format('Y-m-d H:i:s') && $row['returned_at']<=$cutoff) $returned++;
+        }
+        $months[]=$start->format('M Y');$borrowed[]=$out;$checkouts[]=$checked;$returns[]=$returned;
     }
-    echo json_encode(['months' => $months, 'total' => $totals, 'borrowed' => $borrowed,
-        'available' => array_map(static fn(int $total, int $out) => max(0, $total - $out), $totals, $borrowed)]);
-} catch (Throwable $exception) {
-    borrowingFailure($pdo, $exception);
-}
+    echo json_encode(['months'=>$months,'borrowed'=>$borrowed,'checkouts'=>$checkouts,'returns'=>$returns,
+        'scope'=>'Circulation events and outstanding loans at period end (current month: now). Historical physical inventory is unavailable.', 'timezone'=>'Asia/Manila']);
+} catch (Throwable $exception) { borrowingFailure($pdo,$exception); }
