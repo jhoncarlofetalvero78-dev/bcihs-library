@@ -1,3 +1,4 @@
 /includes/semaphore-api-key.php
 /includes/db-local.php
+/includes/pickup-local.php
 .DS_Store

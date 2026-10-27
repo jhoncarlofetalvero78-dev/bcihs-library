@@ -107,7 +107,6 @@
         <td>${escapeHtml(categoryFor(book)) || 'Uncategorized'}</td>
         <td class="inventory-cell"><span>Total: ${Number(book.total_copies)}</span><span>Borrowed: ${Number(book.borrowed_copies)}</span><span class="copies-pill ${available <= 0 ? 'zero' : ''}">Available: ${available}</span><small>Held for pickup: ${Number(book.held_copies) || 0}</small></td>
         <td class="actions-column"><div class="book-actions">
-          <button type="button" class="action-btn qr" title="Show catalog QR" aria-label="Show QR for ${escapeHtml(book.title)}" onclick="openQrModal(${book.id})">QR</button>
           <button type="button" class="action-btn edit" aria-label="Edit ${escapeHtml(book.title)}" onclick="openEditModal(${book.id})">Edit</button>
           <button type="button" class="action-btn delete" aria-label="Delete ${escapeHtml(book.title)}" onclick="deleteBook(${book.id})">Delete</button>
         </div></td>
@@ -329,50 +328,6 @@
     }
   });
 
-  const qrOverlay = document.getElementById('qrOverlay');
-  let qrBlobUrl = null;
-  let currentQrId = null;
-  function closeQrModal() {
-    qrOverlay.classList.remove('show');
-    currentQrId = null;
-    if (qrBlobUrl) URL.revokeObjectURL(qrBlobUrl);
-    qrBlobUrl = null;
-    document.getElementById('qrImage').removeAttribute('src');
-    if (previousFocus) previousFocus.focus();
-  }
-
-  window.openQrModal = function(id) {
-    const book = allBooks.find(book => book.id === id);
-    if (!book) return;
-    if (qrBlobUrl) URL.revokeObjectURL(qrBlobUrl);
-    qrBlobUrl = null;
-    previousFocus = document.activeElement;
-    currentQrId = id;
-    const target = new URL('browse-books.html', window.location.href);
-    target.searchParams.set('book', id);
-    const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(target.href)}`;
-    document.getElementById('qrModalTitle').textContent = `QR Code — ${book.title}`;
-    document.getElementById('qrUrlText').textContent = target.href;
-    document.getElementById('qrLocalNote').hidden = !['localhost', '127.0.0.1', '[::1]'].includes(target.hostname);
-    document.getElementById('qrError').textContent = '';
-    const image = document.getElementById('qrImage');
-    image.onerror = () => { document.getElementById('qrError').textContent = 'QR image unavailable. Check your internet connection; the catalog link above is still valid.'; };
-    image.src = imageUrl;
-    const download = document.getElementById('qrDownloadBtn');
-    download.href = imageUrl;
-    download.download = `qr-${book.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || id}.png`;
-    fetch(imageUrl).then(response => {
-      if (!response.ok) throw new Error('QR unavailable');
-      return response.blob();
-    }).then(blob => {
-      if (currentQrId !== id || !qrOverlay.classList.contains('show')) return;
-      qrBlobUrl = URL.createObjectURL(blob);
-      download.href = qrBlobUrl;
-    }).catch(() => {});
-    qrOverlay.classList.add('show');
-    document.getElementById('qrCloseBtn').focus();
-  };
-
   searchInput.addEventListener('input', () => applyFilter());
   categoryFilter.addEventListener('change', () => applyFilter());
   availabilityFilter.addEventListener('change', () => applyFilter());
@@ -389,17 +344,13 @@
   document.getElementById('addBookBtn').addEventListener('click', openAddModal);
   document.getElementById('cancelBtn').addEventListener('click', closeBookModal);
   overlay.addEventListener('click', event => { if (event.target === overlay) closeBookModal(); });
-  document.getElementById('qrCloseBtn').addEventListener('click', closeQrModal);
-  qrOverlay.addEventListener('click', event => { if (event.target === qrOverlay) closeQrModal(); });
   document.addEventListener('keydown', event => {
-    const activeOverlay = overlay.classList.contains('show') ? overlay : qrOverlay.classList.contains('show') ? qrOverlay : null;
-    if (!activeOverlay) return;
+    if (!overlay.classList.contains('show')) return;
     if (event.key === 'Escape') {
-      if (activeOverlay === overlay) closeBookModal();
-      else closeQrModal();
+      closeBookModal();
     }
     if (event.key === 'Tab') {
-      const controls = [...activeOverlay.querySelectorAll('input, select, button, a[href]')].filter(element => !element.disabled && element.offsetParent !== null);
+      const controls = [...overlay.querySelectorAll('input, select, button, a[href]')].filter(element => !element.disabled && element.offsetParent !== null);
       const first = controls[0], last = controls[controls.length - 1];
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }

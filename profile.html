@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Profile | BCIHS Library</title>
 <link rel="stylesheet" href="css/profile.css">
+<link rel="stylesheet" href="css/pickup-qr.css?v=20261027-phase3b">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 <link rel="stylesheet" href="css/reservation-scheduling.css?v=20261027-phase4">
@@ -152,6 +153,8 @@
       <section class="tab-panel" id="panelBorrowingHistory" role="tabpanel" aria-labelledby="tabBorrowingHistory">
         <div class="history-card">
           <h2>Borrowing History</h2>
+          <h3>Approved requests ready for pickup</h3>
+          <div id="pickupCodes"><p role="status">Loading pickup requests…</p></div>
           <div id="historyContent">
             <p class="loading-msg">Loading borrowing history…</p>
           </div>
@@ -180,7 +183,9 @@
 <script src="js/philippine-phone.js"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
 <script src="js/reservation-scheduling.js?v=20261027-phase4"></script>
-<script src="js/profile.js?v=20261027-phase7a"></script>
+<script src="js/profile.js?v=20261027-phase3b-refresh"></script>
+<script src="js/vendor/qrcodegen.js"></script>
+<script src="js/pickup-qr.js?v=20261027-phase3b-refresh"></script>
 
 </body>
 </html>

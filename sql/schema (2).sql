@@ -126,6 +126,8 @@ CREATE TABLE IF NOT EXISTS borrow_requests (
   due_date       TIMESTAMP     NULL,
   rejected_at    TIMESTAMP     NULL,
   returned_at    TIMESTAMP     NULL,
+  pickup_token   CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  UNIQUE KEY uq_borrow_pickup_token (pickup_token),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

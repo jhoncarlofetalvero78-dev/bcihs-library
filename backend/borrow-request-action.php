@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
 require_once __DIR__ . '/../includes/borrowing.php';
+require_once __DIR__ . '/../includes/pickup-qr.php';
 
 try {
     $input = borrowingPost($pdo, true);
@@ -25,6 +26,12 @@ try {
     $request = $stmt->fetch();
     if (!$request || (int) $request['book_id'] !== (int) $bookId) throw new DomainException('That request changed. Reload the page.', 409);
     $status = $request['status'];
+    if (array_key_exists('pickup_token', $input)) {
+        $token = pickupToken($input['pickup_token']);
+        if ($action !== 'checkout' || !$request['pickup_token'] || !hash_equals($request['pickup_token'], $token)) {
+            throw new DomainException('This pickup QR does not match the borrowing request.', 409);
+        }
+    }
     if (in_array($action, ['approve', 'checkout'], true) && $request['user_id']) {
         borrowingUser($pdo, (int) $request['user_id']);
         if (hasActiveBorrowing($pdo, (int) $request['user_id'], (int) $bookId, $id)) {
@@ -35,7 +42,7 @@ try {
     if ($action === 'approve') {
         if ($status !== 'pending') throw new DomainException('Only pending requests can be approved.', 409);
         if (borrowingStock($pdo, $book)['requestable_copies'] < 1) throw new DomainException('No unallocated copy is available to hold for pickup.', 409);
-        $sql = 'UPDATE borrow_requests SET status = "awaiting_pickup", approved_at = NOW() WHERE id = :id';
+        $sql = 'UPDATE borrow_requests SET status = "awaiting_pickup", approved_at = NOW(), pickup_token = COALESCE(pickup_token,:pickup_token) WHERE id = :id';
     } elseif ($action === 'reject') {
         if (!in_array($status, ['pending', 'awaiting_pickup'], true)) throw new DomainException('Only pending or awaiting-pickup requests can be rejected.', 409);
         $sql = 'UPDATE borrow_requests SET status = "rejected", rejected_at = NOW() WHERE id = :id';
@@ -53,7 +60,9 @@ try {
         changeBorrowedCopies($pdo, (int) $bookId, -1);
         $sql = 'UPDATE borrow_requests SET status = "returned", returned_at = NOW() WHERE id = :id';
     }
-    $pdo->prepare($sql)->execute(['id' => $id]);
+    $parameters = ['id' => $id];
+    if ($action === 'approve') $parameters['pickup_token'] = bin2hex(random_bytes(32));
+    $pdo->prepare($sql)->execute($parameters);
     $pdo->commit();
     if ($action === 'approve' || $action === 'reject') {
         $message = $action === 'approve'

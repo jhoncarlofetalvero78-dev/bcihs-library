@@ -2,8 +2,18 @@
 session_start();
 require_once __DIR__ . '/../includes/db_connect.php';
 
+function loginPickupToken(): ?string
+{
+    $token = $_POST['pickup'] ?? null;
+    return is_string($token) && preg_match('/^[a-f0-9]{64}$/D', $token) ? $token : null;
+}
+
 function backToSignin(string $error): void
 {
+    if ($token = loginPickupToken()) {
+        header('Location: ../admin-login.html?' . http_build_query(['pickup' => $token, 'error' => $error]));
+        exit;
+    }
     $role = $_POST['role'] ?? '';
     $allowedRoles = ['student', 'teacher', 'librarian', 'visitor'];
     $params = ['error' => $error];
@@ -89,6 +99,10 @@ if ($accountType === 'admin') {
     $destination = is_string($bookId) && ctype_digit($bookId) && (int) $bookId > 0
         ? '../browse-books.html?book=' . (int) $bookId
         : '../index.html';
+}
+
+if (loginPickupToken() && ($accountType === 'admin' || $account['role'] === 'librarian')) {
+    $destination = '../pickup-verification.html?token=' . loginPickupToken();
 }
 
 if ($remember) {

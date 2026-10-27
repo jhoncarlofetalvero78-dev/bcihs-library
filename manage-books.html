@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manage Book | BCIHS Library</title>
-<link rel="stylesheet" href="css/manage-books.css?v=20261027-phase2b">
+<link rel="stylesheet" href="css/manage-books.css?v=20261027-catalog-qr-removed">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
@@ -225,24 +225,9 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="qrOverlay">
-  <div class="modal qr-modal extracted-style-2" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
-    <h2 id="qrModalTitle">Book QR Code</h2>
-    <p class="extracted-style-3">This QR opens the catalog entry for this title. It does not approve a request or check out a copy. Borrowing still requires sign-in and library staff approval.</p>
-    <img id="qrImage" src="" alt="QR code" class="extracted-style-4">
-    <p class="extracted-style-5" id="qrUrlText"></p>
-    <p class="field-help" id="qrLocalNote" hidden>This localhost link opens on this computer. For another device, open the site using a reachable local network address before generating its QR.</p>
-    <p class="modal-error" id="qrError" role="status"></p>
-    <div class="modal-btn-row">
-      <button type="button" class="modal-btn cancel" id="qrCloseBtn">Close</button>
-      <a class="modal-btn save extracted-style-6" id="qrDownloadBtn" download>Download</a>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
-<script src="js/manage-books.js?v=20261027-phase2b"></script>
+<script src="js/manage-books.js?v=20261027-catalog-qr-removed"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

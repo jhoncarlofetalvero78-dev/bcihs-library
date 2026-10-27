@@ -145,6 +145,7 @@ tabBtns.forEach(btn => {
     btn.classList.add('active');
     btn.setAttribute('aria-selected','true');
     document.getElementById('panel' + target.charAt(0).toUpperCase() + target.slice(1)).classList.add('active');
+    if (target === 'borrowingHistory') loadBorrowingHistory();
   });
 });
 
@@ -347,6 +348,8 @@ function updateStats(data){
 }
 
 function loadBorrowingHistory(){
+  // Keep the pickup section current whenever this history is refreshed.
+  if (typeof loadPickupCodes === 'function') loadPickupCodes();
   fetch('backend/borrowing-history-data.php', { credentials: 'same-origin' })
     .then(res => {
       if (res.status === 401) throw new Error('not_logged_in');

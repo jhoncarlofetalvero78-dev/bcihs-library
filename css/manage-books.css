@@ -121,7 +121,6 @@
   }
   .action-btn:hover{ filter:brightness(1.1); }
   .action-btn svg{ width:14px; height:14px; }
-  .action-btn.qr{ background:#2fb84a; }
   .action-btn.edit{ background:#2f8fe0; }
   .action-btn.delete{ background:#e0303a; }
   .action-btn.ready{ background:#2f8fe0; }
@@ -184,11 +183,6 @@
   }
 
 .extracted-style-1 { display:none; }
-.extracted-style-2 { text-align:center; }
-.extracted-style-3 { font-size:0.85rem; color:#666; margin-bottom:18px; }
-.extracted-style-4 { width:220px; height:220px; margin:0 auto 18px; display:block; border-radius:12px; border:1px solid #eee; }
-.extracted-style-5 { font-size:0.8rem; color:#999; margin-bottom:18px; word-break:break-all; }
-.extracted-style-6 { text-decoration:none; display:flex; align-items:center; justify-content:center; }
 
   .controls .filter-label{ display:flex; flex-direction:column; gap:4px; color:#665454; font-size:0.75rem; font-weight:700; }
   .controls select, .pagination select{ background:#fff; border:1.5px solid #ddd3d1; border-radius:9px; padding:10px; font:inherit; color:var(--ink); max-width:230px; }
@@ -218,8 +212,6 @@
   .modal .field select{ width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid #ddd3d1; background:#fff; font:inherit; font-size:0.9rem; }
   #newCategoryField{ margin-top:10px; }
   #legacyMetadataNote{ padding:10px; background:#fff7e8; border-radius:8px; }
-  .qr-modal{ max-width:560px; }
-  #qrLocalNote{ margin-bottom:14px; }
   .photo-preview{ object-fit:contain; }
   .toast{ max-width:calc(100vw - 32px); width:max-content; text-align:center; }
 

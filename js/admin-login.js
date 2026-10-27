@@ -15,6 +15,13 @@
   const form = document.getElementById('adminLoginForm');
   const errorMsg = document.getElementById('errorMsg');
   const submitBtn = document.getElementById('submitBtn');
+  const pickup = new URLSearchParams(window.location.search).get('pickup');
+  const pickupToken = pickup && pickup.length === 64 && /^[a-f0-9]{64}$/.test(pickup) ? pickup : '';
+  if (pickupToken) {
+    const input = document.createElement('input');
+    input.type = 'hidden'; input.name = 'pickup'; input.value = pickupToken;
+    form.appendChild(input);
+  }
 
   form.addEventListener('submit', (e) => {
     errorMsg.textContent = '';
@@ -52,7 +59,7 @@
       .then(res => res.json())
       .then(data => {
         if (data.loggedIn) {
-          window.location.href = 'admin-dashboard.html';
+          window.location.href = pickupToken ? 'pickup-verification.html?token=' + pickupToken : 'admin-dashboard.html';
         }
       })
       .catch(() => { /* backend unreachable — stay on the page */ });

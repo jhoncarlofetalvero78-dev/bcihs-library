@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const elements = new Map();
 let lastBlob;
 const requestedUrls = [];
+const documentEvents = {};
 function element(id) {
   if (!elements.has(id)) {
     const classes = new Set();
@@ -21,7 +22,7 @@ class TestURL extends URL {}
 TestURL.createObjectURL = blob => { lastBlob = blob; return 'blob:test'; };
 TestURL.revokeObjectURL = () => {};
 const context = vm.createContext({
-  document: { getElementById: element, addEventListener() {}, createElement: () => element('download'), activeElement: null },
+  document: { getElementById: element, addEventListener(event, handler) { documentEvents[event] = handler; }, createElement: () => element('download'), activeElement: null },
   window: { location: { href: 'http://localhost:8888/bcihs-library/manage-books.html' } },
   fetch: url => { requestedUrls.push(url); return new Promise(() => {}); },
   URL: TestURL, Blob, setTimeout: () => 1, clearTimeout() {}, console,
@@ -72,13 +73,31 @@ assert.equal(element('download').download.startsWith('books-'), true);
   assert.equal(csv.includes('Cutter No.'), false);
   assert.ok(csv.includes('Classification Number (DDC)'));
   assert.ok(csv.includes('"\'=FORMULA,""quoted"""'));
-  run('window.openQrModal(1)');
-  assert.equal(element('qrUrlText').textContent, 'http://localhost:8888/bcihs-library/browse-books.html?book=1');
-  assert.equal(element('qrLocalNote').hidden, false);
+  assert.equal(typeof context.window.openQrModal, 'undefined', 'catalog QR action is removed');
+  assert.doesNotMatch(element('booksBody').innerHTML, /openQrModal|Show catalog QR|action-btn qr/);
+  assert.match(element('booksBody').innerHTML, /Edit/);
+  assert.match(element('booksBody').innerHTML, /Delete/);
+  const markup = fs.readFileSync(path.join(__dirname, '../manage-books.html'), 'utf8');
+  assert.doesNotMatch(markup, /qrOverlay|qrModalTitle|qrDownloadBtn|qrImage/);
+  assert.equal(requestedUrls.some(url => /qrserver|create-qr-code/.test(url)), false);
+  const controls = [{disabled:false,offsetParent:{},focus(){context.document.activeElement=this;}},
+    {disabled:false,offsetParent:{},focus(){context.document.activeElement=this;}}];
+  const modal = element('modalOverlay');
+  modal.querySelectorAll = () => controls;
+  modal.classList.add('show');
+  context.document.activeElement = controls[1];
+  let prevented = false;
+  documentEvents.keydown({key:'Tab',shiftKey:false,preventDefault(){prevented=true;}});
+  assert.ok(prevented && context.document.activeElement === controls[0], 'book modal retains forward focus trap');
+  documentEvents.keydown({key:'Tab',shiftKey:true,preventDefault(){}});
+  assert.equal(context.document.activeElement, controls[1], 'book modal retains backward focus trap');
+  element('saveBtn').disabled = false;
+  documentEvents.keydown({key:'Escape'});
+  assert.equal(modal.classList.contains('show'), false, 'Escape still closes book editor');
   assert.equal(requestedUrls.some(url => /borrow-request|reservation-action/.test(url)), false);
   assert.equal(run('allBooks[0].borrowed_copies'), 0);
   console.log('PASS: exact and legacy Call Number handling; no guessed classification or incomplete automatic Call Number.');
   console.log('PASS: search, combined filters, empty state, clearing filters, and pagination.');
   console.log('PASS: CSV fields, escaping, formula protection, and export across all pages.');
-  console.log('PASS: local book-specific QR URL without inventory mutation.');
+  console.log('PASS: catalog QR controls and modal removed; Edit/Delete retained; no QR service calls or inventory mutation.');
 })().catch(error => { console.error(error.message); process.exitCode = 1; });
