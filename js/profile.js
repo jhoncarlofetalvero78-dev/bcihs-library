@@ -1,3 +1,4 @@
+let profileCsrfToken="";
 
   /* ===== DATA MODEL ===== */
   // Default profile data per role; replaced when backend responds
@@ -12,7 +13,7 @@
     department: '',
     email: '',
     phone: '',
-    address: 'Batangas City, Philippines'
+    address: ''
   };
 
   // Field definitions per role (matching register forms)
@@ -25,7 +26,6 @@
         { key: 'section', label: 'Section', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
@@ -33,7 +33,6 @@
         { key: 'section', label: 'Section', type: 'text' },
         { key: 'email', label: 'Email Address', type: 'email' },
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Grade Level',
       sectionLabel: 'Section'
@@ -45,14 +44,12 @@
         { key: 'department', label: 'Department / Faculty', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
         { key: 'email', label: 'Email Address', type: 'email' },
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Department',
       sectionLabel: 'Section'
@@ -64,14 +61,12 @@
         { key: 'department', label: 'Department / Faculty', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
         { key: 'email', label: 'Email Address', type: 'email' },
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Department',
       sectionLabel: 'Section'
@@ -83,14 +78,12 @@
         { key: 'department', label: 'Department / Faculty', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
         { key: 'email', label: 'Email Address', type: 'email' },
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Department',
       sectionLabel: 'Section'
@@ -100,13 +93,11 @@
         { key: 'full_name', label: 'Full Name', icon: 'user' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'email', label: 'Email Address', type: 'email', required: true },
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Email',
       sectionLabel: 'Address'
@@ -256,6 +247,7 @@ function handleSave(e){
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
 
+  const originalProfile={...profileData};
   const fields = getRoleFields(profileData.role).editFields;
   fields.forEach(f => {
     profileData[f.key] = document.getElementById('edit_' + f.key).value.trim();
@@ -264,16 +256,13 @@ function handleSave(e){
     profileData.phone = window.philippineMobilePhone.format(normalizedPhone);
   }
 
-  renderDetails();
-  editModal.classList.remove('show');
-  showToast('Profile updated successfully.');
+  // Render saved values only after the server confirms success.
 
   // Persist to PHP backend if available
   const payload = new URLSearchParams();
   payload.append('full_name', profileData.full_name);
   payload.append('phone', normalizedPhone || profileData.phone);
   payload.append('email', profileData.email);
-  payload.append('address', profileData.address);
   if (profileData.role === 'student') {
     payload.append('year_section', (profileData.grade_level || '') + ' — ' + (profileData.section || ''));
    } else if (profileData.role === 'teacher' || profileData.role === 'librarian' || profileData.role === 'admin') {
@@ -283,17 +272,15 @@ function handleSave(e){
   fetch('backend/profile-update.php', {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token':profileCsrfToken },
     body: payload.toString()
   })
   .then(res => res.json())
   .then(data => {
-    if (data.success) showToast(data.message);
-    else showToast(data.message || 'Profile updated locally.');
+    if (!data.success) throw new Error(data.message || 'Could not save your profile.');
+    renderDetails();editModal.classList.remove('show');showToast(data.message);
   })
-  .catch(() => {
-    /* Backend unavailable — data persisted locally */
-  })
+  .catch(error => {Object.assign(profileData,originalProfile);showToast(error.message || 'Could not reach the server. Your profile was not saved.');})
   .finally(() => {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save';
@@ -409,6 +396,7 @@ function loadBorrowingHistory(){
     .then(data => {
       if (data.loggedIn === false) throw new Error('not logged in');
       // Update profileData with backend values
+      profileCsrfToken=data.csrfToken || '';
       profileData.role = data.role || 'student';
       if (data.full_name) profileData.full_name = data.full_name;
       if (data.student_id) profileData.student_id = data.student_id;
@@ -427,7 +415,8 @@ function loadBorrowingHistory(){
           : data.phone;
       }
       renderDetails();
-      document.getElementById('editProfileBtn').disabled = false;
+      document.getElementById('editProfileBtn').disabled = !!data.readOnly;
+      if(data.readOnly)document.getElementById('editProfileBtn').title='Administrator credentials are managed separately.';
     })
     .catch(() => {
       document.getElementById('profileName').textContent = 'Profile unavailable';

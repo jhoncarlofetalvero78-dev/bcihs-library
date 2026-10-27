@@ -163,37 +163,17 @@
   loadFeaturedBooks();
 
   // Announcements: load real data from server with a safe fallback for local file preview.
-  const fallbackAnnouncements = [
-    {
-      title: 'Library Hours Update',
-      category: 'Notice',
-      body: 'The library will remain open during the extended study period from 7:00 AM to 5:00 PM from Monday to Friday.',
-      created_at: '2026-10-01 09:00:00'
-    },
-    {
-      title: 'New Book Arrival',
-      category: 'General',
-      body: 'Fresh titles on science, literature, and leadership are now available for student borrowing.',
-      created_at: '2026-10-03 13:30:00'
-    },
-    {
-      title: 'Reading Challenge Week',
-      category: 'Event',
-      body: 'Join the schoolwide reading challenge and win exciting prizes for the most pages logged this month.',
-      created_at: '2026-10-06 11:15:00'
-    }
-  ];
-
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    // These values are used in both text and quoted HTML attributes.
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = new Date(mysqlDatetime.replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
   function renderAnnouncements(list = []) {
     const holder = document.getElementById('announceList');
@@ -225,11 +205,11 @@
     fetch('backend/announcements-data.php', { credentials: 'same-origin' })
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
-        const list = Array.isArray(data.announcements) ? data.announcements : fallbackAnnouncements;
+        const list = Array.isArray(data.announcements) ? data.announcements : [];
         renderAnnouncements(list);
       })
       .catch(() => {
-        renderAnnouncements(fallbackAnnouncements);
+        document.getElementById('announceList').innerHTML='<p role="alert">Could not load announcements. Reload to retry.</p>';
       });
   }
   loadAnnouncements();

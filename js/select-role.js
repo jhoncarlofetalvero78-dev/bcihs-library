@@ -52,3 +52,16 @@
     .then((response) => response.json())
     .then((data) => { if (data.loggedIn) window.location.href = 'index.html'; })
     .catch(() => { /* Keep registration available if the session check fails. */ });
+
+  let registrationReady=false;
+  registrationForms.forEach(form=>form.addEventListener('submit',event=>{
+    if (!registrationReady) {event.preventDefault();form.querySelector('.error-msg').textContent='The secure form is still loading. Reload if this continues.';return;}
+    if (form.querySelector('[name="password"]').value!==form.querySelector('[name="confirm_password"]').value) return;
+    form.querySelector('button[type="submit"]').disabled=true;
+  }));
+  fetch('backend/registration-token.php',{credentials:'same-origin',cache:'no-store'})
+    .then(response=>{if(!response.ok)throw new Error();return response.json();})
+    .then(data=>{
+      registrationForms.forEach(form=>{const token=document.createElement('input');token.type='hidden';token.name='csrf_token';token.value=data.csrfToken;form.appendChild(token);});
+      registrationReady=true;
+    }).catch(()=>registrationForms.forEach(form=>{form.querySelector('.error-msg').textContent='Could not initialize the secure form. Reload to retry.';}));

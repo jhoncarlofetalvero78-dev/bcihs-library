@@ -71,13 +71,14 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    // These values are used in both text and quoted HTML attributes.
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDate(mysqlDatetime) {
-    const d = new Date((mysqlDatetime || '').replace(' ', 'T'));
+    const d = new Date((mysqlDatetime || '').replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime || '';
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone:'Asia/Manila' });
   }
 
   function render(items) {
@@ -111,7 +112,7 @@
   }
 
   fetch('backend/announcements-data.php')
-    .then(res => res.ok ? res.json() : { announcements: [] })
+    .then(res => res.ok ? res.json() : Promise.reject(new Error('Could not load announcements.')))
     .then(data => {
       allAnnouncements = data.announcements || [];
       document.getElementById('loadingMsg').style.display = 'none';

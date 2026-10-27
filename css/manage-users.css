@@ -193,3 +193,7 @@
 .extracted-style-3 { background:#e8792f; }
 .extracted-style-4 { background:#6b2fd0; }
 .extracted-style-5 { background:#a52fe0; }
+.manage-users-page [hidden]{display:none!important}
+.history-note{display:block;max-width:220px;line-height:1.5;margin-top:8px;color:#615858}
+#accountConfirmation{margin:18px 0;padding:18px;line-height:1.6}
+#accountConfirmation button{margin-top:12px}

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Users | BCIHS Library</title>
-<link rel="stylesheet" href="css/manage-users.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/manage-users.css?v=20261027-phase7a">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
@@ -130,8 +130,8 @@
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" aria-label="Search users" placeholder="Search by name or user ID…">
-      <select id="roleFilter">
+      <input type="text" id="searchInput" aria-label="Search users" placeholder="Search name, student ID, staff ID or email…">
+      <select id="roleFilter" aria-label="Account role">
         <option value="">All</option>
         <option value="student">Students</option>
         <option value="teacher">Teachers</option>
@@ -140,6 +140,9 @@
       </select>
     </div>
 
+    <div class="controls"><label for="statusFilter">Approval status</label><select id="statusFilter"><option value="">All statuses</option><option value="pending">Pending</option><option value="accepted">Approved</option><option value="rejected">Rejected</option></select></div>
+    <p>Approval permits access; it does not mean the user is currently online. Approved accounts cannot be rejected through pending-account review. Rejected accounts may be reconsidered for approval.</p>
+    <section id="accountConfirmation" class="panel" hidden><p id="accountActionPrompt"></p><button type="button" class="modal-close-btn" id="confirmAccountAction">Confirm account action</button> <button type="button" class="modal-close-btn" id="cancelAccountAction">Cancel</button></section>
     <p class="count-badge" id="countBadge"></p>
 
     <div class="panel">
@@ -164,7 +167,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/manage-users.js?v=20261027-phase3a"></script>
+<script src="js/manage-users.js?v=20261027-phase7a"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>
 </body>
 </html>

@@ -1,134 +1,35 @@
 <?php
 session_start();
-require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/../includes/approved-user-session.php';
 header('Content-Type: application/json');
-
-if (!requireApprovedUserSession($pdo)) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Your account is not accepted.']);
-    exit;
-}
-
-$accountId = $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? null;
-if (!$accountId || !is_numeric($accountId)) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Please log in first.']);
-    exit;
-}
-
-$userId = (int) $accountId;
-$userStmt = $pdo->prepare('SELECT role FROM users WHERE id = :id LIMIT 1');
-$userStmt->execute(['id' => $userId]);
-$user = $userStmt->fetch();
-
-if (!$user) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Please log in first.']);
-    exit;
-}
-
-$role = $user['role'];
-
-function normalizePhilippineMobileNumber(string $phone): ?string
-{
-    $phone = preg_replace('/[\s().-]/', '', trim($phone));
-
-    if (preg_match('/^09\d{9}$/', $phone)) {
-        return $phone;
+header('Cache-Control: no-store');
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/account-management.php';
+try {
+    $input=borrowingPost($pdo);
+    if (isset($_SESSION['admin_id'])) throw new DomainException('Administrator credentials are managed separately; this form cannot edit a patron account.',403);
+    $id=(int)$_SESSION['user_id'];
+    $pdo->beginTransaction();
+    $stmt=$pdo->prepare('SELECT role,account_status FROM users WHERE id=:id FOR UPDATE');$stmt->execute(['id'=>$id]);$user=$stmt->fetch();
+    if (!$user || $user['account_status']!=='accepted') throw new DomainException('Your account is not approved.',401);
+    $name=accountText($input['full_name']??null,150);$phone=accountPhone($input['phone']??null);
+    if ($phone===null) throw new DomainException('Enter a valid Philippine mobile number.',422);
+    $values=['full_name'=>$name,'phone'=>$phone];
+    if ($user['role']==='student') $values['year_section']=accountText($input['year_section']??null,50);
+    elseif (in_array($user['role'],['teacher','librarian','staff','employee'],true)) $values['department']=accountText($input['department']??'',150,false)?:null;
+    else {
+        $email=accountText($input['email']??null,190);
+        if (!filter_var($email,FILTER_VALIDATE_EMAIL)) throw new DomainException('Enter a valid email address.',422);
+        $q=$pdo->prepare('SELECT id FROM users WHERE id<>:id AND (email=:email OR student_id=:student OR id_number=:employee) LIMIT 1');
+        $q->execute(['id'=>$id,'email'=>$email,'student'=>$email,'employee'=>$email]);
+        if ($q->fetch()) throw new DomainException('An account already uses this email identifier.',409);
+        $values['email']=$email;
     }
-    if (preg_match('/^\+639\d{9}$/', $phone)) {
-        return '0' . substr($phone, 3);
-    }
-
-    return null;
+    $clauses=[];foreach($values as $field=>$value)$clauses[]=$field.'=:'.$field;
+    $pdo->prepare('UPDATE users SET '.implode(',',$clauses).' WHERE id=:id')->execute($values+['id'=>$id]);
+    $pdo->commit();$_SESSION['full_name']=$name;
+    echo json_encode(['success'=>true,'message'=>'Profile updated successfully.']);
+} catch(Throwable $exception){
+    if ($pdo->inTransaction())$pdo->rollBack();
+    $code=$exception instanceof DomainException?$exception->getCode():500;
+    http_response_code($code);echo json_encode(['success'=>false,'message'=>$exception instanceof DomainException?$exception->getMessage():'Could not save your profile. Please try again.']);
 }
-
-$data = json_decode(file_get_contents('php://input'), true);
-if (!is_array($data)) {
-    $data = $_POST;
-}
-if (!is_array($data)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid data.']);
-    exit;
-}
-
-$fullName = trim((string) ($data['full_name'] ?? ''));
-if ($fullName === '') {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Full name is required.']);
-    exit;
-}
-
-// ID fields (student_id, id_number) are immutable and cannot be changed after creation
-$updates = ['full_name' => $fullName];
-
-if ($role === 'student') {
-    $yearSection = trim((string) ($data['year_section'] ?? ''));
-    $phone = normalizePhilippineMobileNumber((string) ($data['phone'] ?? ''));
-
-    if ($yearSection === '' || $phone === null) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => $phone === null
-            ? 'Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.'
-            : 'Grade level and phone number are required.']);
-        exit;
-    }
-
-    $updates['year_section'] = $yearSection;
-    $updates['phone'] = $phone;
-} elseif ($role === 'teacher' || $role === 'librarian' || $role === 'admin') {
-    $phone = normalizePhilippineMobileNumber((string) ($data['phone'] ?? ''));
-
-    if ($phone === null) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.']);
-        exit;
-    }
-
-    $updates['phone'] = $phone;
-
-    if (array_key_exists('department', $data)) {
-        $department = trim((string) ($data['department'] ?? ''));
-        $updates['department'] = $department;
-    }
-} elseif ($role === 'visitor') {
-    $email = trim((string) ($data['email'] ?? ''));
-    $phone = normalizePhilippineMobileNumber((string) ($data['phone'] ?? ''));
-
-    if ($email === '' || $phone === null) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => $phone === null
-            ? 'Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.'
-            : 'Email and phone number are required.']);
-        exit;
-    }
-
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.']);
-        exit;
-    }
-
-    $updates['email'] = $email;
-    $updates['phone'] = $phone;
-}
-
-$setClauses = [];
-$params = ['id' => $userId];
-foreach ($updates as $field => $value) {
-    $setClauses[] = "$field = :$field";
-    $params[$field] = $value;
-}
-
-$sql = 'UPDATE users SET ' . implode(', ', $setClauses) . ' WHERE id = :id';
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-
-$_SESSION['full_name'] = $fullName;
-
-echo json_encode([
-    'success' => true,
-    'message' => 'Profile updated successfully.'
-]);

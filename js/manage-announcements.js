@@ -6,6 +6,7 @@
       const name = data.username || 'Admin';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
+      document.querySelector('.account-role').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
     })
     .catch(() => {});
 
@@ -22,19 +23,20 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
   }
 
-  let allAnnouncements = [];
+  let allAnnouncements = [], csrfToken='', submissionToken='', formToken='', pendingDelete=null, deleting=false;
 
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    // These values are used in both text and quoted HTML attributes.
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = new Date(mysqlDatetime.replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
 
   function renderCards(list) {
@@ -48,7 +50,7 @@
         <div class="card-top">
           <div class="card-title-row">
             <h3>${escapeHtml(a.title)}</h3>
-            <span class="category-pill ${a.category}">${escapeHtml(a.category)}</span>
+            <span class="category-pill ${escapeHtml(a.category)}">${escapeHtml(a.category)}</span>
           </div>
           <div class="card-actions">
             <button class="action-btn edit" title="Edit" onclick="openEditModal(${a.id})">
@@ -80,20 +82,25 @@
   }
 
   function loadAnnouncements() {
-    return fetch('backend/announcements-data.php', { credentials: 'same-origin' })
+    return fetch('backend/announcement-management-data.php', { credentials: 'same-origin' })
       .then(async res => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Could not load announcements.');
         return data;
       })
       .then(data => {
-        allAnnouncements = data.announcements || [];
+        allAnnouncements = data.announcements || [];csrfToken=data.csrfToken;submissionToken=data.submissionToken;
+        document.getElementById('addBtn').disabled=false;
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('cardList').style.display = 'flex';
         document.getElementById('countBadge').style.display = 'block';
         applyFilters();
       })
       .catch(err => {
+        allAnnouncements = [];
+        document.getElementById('addBtn').disabled = true;
+        document.getElementById('countBadge').style.display = 'none';
+        document.getElementById('cardList').innerHTML='';document.getElementById('loadingMsg').style.display='block';
         document.getElementById('loadingMsg').textContent = err.message || 'Something went wrong loading announcements.';
       });
   }
@@ -115,21 +122,22 @@
   function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Post New Announcement';
     document.getElementById('announcementId').value = '';
-    form.reset();
+    form.reset();formToken=submissionToken;
     setPhotoPreview('');
     document.getElementById('modalError').textContent = '';
     overlay.classList.add('show');
   }
 
   window.openEditModal = function(id) {
-    const a = allAnnouncements.find(x => x.id === id);
+    const a = allAnnouncements.find(x => Number(x.id) === Number(id));
     if (!a) return;
-    photoInput.value = '';
+    photoInput.value = '';formToken=submissionToken;
     document.getElementById('modalTitle').textContent = 'Edit Announcement';
     document.getElementById('announcementId').value = a.id;
     document.getElementById('titleInput').value = a.title;
     document.getElementById('categoryInput').value = a.category;
     document.getElementById('bodyInput').value = a.body;
+    document.getElementById('cancelBtn').disabled=false;
     setPhotoPreview(a.image_path || '');
     document.getElementById('modalError').textContent = '';
     overlay.classList.add('show');
@@ -142,35 +150,34 @@
       : ''));
   });
 
-  window.deleteAnnouncement = function(id) {
-    const a = allAnnouncements.find(x => x.id === id);
-    if (!a) return;
-    if (!confirm(`Delete "${a.title}"? This can't be undone.`)) return;
-
-    fetch('backend/announcement-delete.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ id })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) { showToast('Announcement deleted.'); loadAnnouncements(); }
-        else { showToast(data.error || 'Could not delete that announcement.'); }
-      })
-      .catch(() => showToast('Could not reach the server.'));
+  window.deleteAnnouncement=function(id){
+    const announcement=allAnnouncements.find(row=>Number(row.id)===Number(id));if(!announcement || deleting)return;
+    pendingDelete=id;document.getElementById('deletePrompt').textContent=`Remove published announcement “${announcement.title}”? It will disappear from public pages. This cannot be undone.`;
+    document.getElementById('deleteConfirmation').hidden=false;document.getElementById('confirmDelete').focus();
   };
+  document.getElementById('cancelDelete').addEventListener('click',()=>{pendingDelete=null;document.getElementById('deleteConfirmation').hidden=true;});
+  document.getElementById('confirmDelete').addEventListener('click',async()=>{
+    if(!pendingDelete || deleting)return;deleting=true;document.getElementById('confirmDelete').disabled=true;
+    try {
+      const response=await fetch('backend/announcement-delete.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:JSON.stringify({id:pendingDelete})});
+      const data=await response.json();if(!response.ok)throw new Error(data.error || 'Could not remove announcement.');
+      document.getElementById('deleteConfirmation').hidden=true;pendingDelete=null;showToast('Announcement removed.');await loadAnnouncements();
+    }catch(error){showToast(error.message || 'Could not reach the server.');}
+    finally{deleting=false;document.getElementById('confirmDelete').disabled=false;}
+  });
 
   document.getElementById('addBtn').addEventListener('click', openAddModal);
   document.getElementById('cancelBtn').addEventListener('click', () => overlay.classList.remove('show'));
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay && !document.getElementById('saveBtn').disabled) overlay.classList.remove('show'); });
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
+    if(document.getElementById('saveBtn').disabled)return;
     const errorEl = document.getElementById('modalError');
     errorEl.textContent = '';
 
     const payload = new FormData();
+    payload.append('submission_key',formToken);
     payload.append('id', document.getElementById('announcementId').value);
     payload.append('title', document.getElementById('titleInput').value.trim());
     payload.append('category', document.getElementById('categoryInput').value);
@@ -178,12 +185,13 @@
     if (photoInput.files[0]) payload.append('photo', photoInput.files[0]);
 
     const saveBtn = document.getElementById('saveBtn');
-    saveBtn.disabled = true;
+    saveBtn.disabled = true;document.getElementById('cancelBtn').disabled=true;
     saveBtn.textContent = 'Saving…';
 
     fetch('backend/announcement-save.php', {
       method: 'POST',
       credentials: 'same-origin',
+      headers:{'X-CSRF-Token':csrfToken},
       body: payload
     })
       .then(async res => {
@@ -191,15 +199,16 @@
         if (!res.ok) throw new Error(data.error || 'Could not save that announcement.');
         return data;
       })
-      .then(() => {
+      .then(data => {
+        submissionToken=data.submissionToken;
         overlay.classList.remove('show');
         showToast(payload.get('id') ? 'Announcement updated.' : 'Announcement posted.');
         loadAnnouncements();
       })
       .catch(err => { errorEl.textContent = err.message; })
       .finally(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save';
+        saveBtn.disabled = false;document.getElementById('cancelBtn').disabled=false;
+        saveBtn.textContent = 'Save and Publish';
       });
   });
 
