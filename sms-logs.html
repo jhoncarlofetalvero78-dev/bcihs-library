@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SMS Logs | BCIHS Library</title>
-  <link rel="stylesheet" href="css/sms-logs.css?v=20261028-phase7b">
+  <link rel="stylesheet" href="css/sms-logs.css?v=20261028-phase7b3">
   <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 </head>
@@ -49,6 +49,7 @@
     </div>
     <div class="panel">
       <p id="smsMode" role="status">Checking notification mode…</p>
+      <p class="status-note" id="smsStatusNote">Refresh reloads saved BCIHS records only. It does not poll UniSMS or Semaphore. Status may lag behind the provider dashboard; a sent status does not confirm handset receipt.</p>
       <div class="controls">
         <input type="search" id="searchInput" placeholder="Search recipient, last phone digits, message, or event" aria-label="Search SMS logs">
         <select id="statusFilter" aria-label="Filter by notification status">
@@ -57,12 +58,14 @@
           <option value="queued">Provider queued</option>
           <option value="pending">Pending</option>
           <option value="accepted">Provider accepted</option>
+          <option value="sent">Provider reports sent (handset unconfirmed)</option>
+          <option value="retrying">Provider retrying</option>
           <option value="failed">Failed</option>
           <option value="skipped">Skipped</option>
           <option value="unknown">Unknown / review</option>
           <option value="legacy_sent">Legacy sent (unverified)</option>
         </select>
-        <button class="refresh-btn" id="refreshBtn" type="button">Refresh</button>
+        <button class="refresh-btn" id="refreshBtn" type="button">Refresh local logs</button>
       </div>
       <p class="count-badge" id="countBadge" hidden></p>
       <p class="loading-msg" id="loadingMsg" role="status">Loading SMS logs…</p>
@@ -73,7 +76,7 @@
     </div>
   </main>
 </div>
-<script src="js/sms-logs.js?v=20261028-phase7b"></script>
+<script src="js/sms-logs.js?v=20261028-phase7b3"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

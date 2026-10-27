@@ -234,3 +234,11 @@ Credentials, private configuration, backups, generated test outputs, and screens
 The 17-file scope and complete source diff were reviewed again. The final safe run passed 83 simulated/mock PHP checks with cURL entry functions disabled, 30 SMS Logs JavaScript checks, and all listed database-free regression suites. All 11 PHP and 2 JavaScript syntax checks and working-tree/staged whitespace checks passed. A read-only transaction confirmed all 10 table fingerprints, SMS logs, and policy settings remain identical to the Phase 7B baseline. All eight unrelated photo/upload hashes are unchanged. No database-writing regression, migration, live send, credit/balance lookup, or provider delivery test was run.
 
 Browser access was attempted again during checkpoint review and remained disabled in Work settings. Responsive visual verification is explicitly pending, not passed. This known verification limitation and the existing best-effort post-commit/no-auto-retry limitations were retained; no unresolved implementation defect was identified by the review. Semaphore, simulation, event workflows, duplicate protection, and SMS Logs remain the implementation being checkpointed.
+
+## Subsequent UniSMS provider implementation (uncommitted)
+
+See [PHASE7B-UNISMS.md](PHASE7B-UNISMS.md) for the separate follow-up based on commit `2bd8351`: configuration choices `simulation`, `unisms`, and `semaphore`, shared notification workflows and duplicate protection, student-sender restrictions, safe response metadata, isolated mock verification, private setup, controlled-test instructions and Semaphore turnover. The original Phase 7B verification above is historical. This follow-up does not authorize live sending or a new Git commit.
+
+## Phase 7B.3 final readiness review
+
+The subsequent uncommitted provider/guard scope is now summarized by [PHASE7B-HARDENING.md](PHASE7B-HARDENING.md), with its exact 17-file final manifest, documented live-acceptance evidence boundaries, zero-credit hardening tests, synchronous reset before UniSMS transport, local-only SMS Logs refresh, retention/cleanup recommendations and production limits. Earlier checkpoint/test counts in this original Phase 7B document remain historical. No further live traffic or Git commit is authorized by this note.

@@ -25,12 +25,32 @@ get('searchInput').value='';
 async function main(){
  context.fetch=async()=>({ok:true,json:async()=>({logs:entries,mode:'simulate'})});await api.loadLogs();
  verify(!get('logsTable').hidden && get('loadingMsg').hidden && !get('refreshBtn').disabled,'successful reload reveals table and restores refresh');
- verify(get('smsMode').textContent.includes('no Semaphore requests'),'mode banner explains no real send');
+ verify(get('smsMode').textContent.includes('no provider requests'),'mode banner explains no real send');
+ const uniLogs=[{...entries[0],provider:'unisms',reference:'msg_mock-123',status:'retrying',reason:'provider_retrying',request_attempted:true,http_status:201},
+ {...entries[1],provider:'unisms',reference:'<img src=x onerror=x>',status:'sent',reason:'provider_sent_not_handset_delivery',request_attempted:false}];
+ context.fetch=async()=>({ok:true,json:async()=>({logs:uniLogs,mode:'simulate',provider:'unisms'})});await api.loadLogs();
+ verify(get('smsMode').textContent.includes('Selected provider: UniSMS'),'mode banner identifies selected provider safely');
+ verify(get('logsBody').innerHTML.includes('Provider retrying (no app resend)'),'provider retry is distinct from application resend');
+ verify(get('logsBody').innerHTML.includes('Provider reports sent (handset unconfirmed)'),'UniSMS sent never claims handset delivery');
+ verify(get('logsBody').innerHTML.includes('API request attempted (HTTP 201)') && get('logsBody').innerHTML.includes('No API request'),'request metadata is clear');
+ verify(get('logsBody').innerHTML.includes('&lt;img src=x onerror=x&gt;') && !get('logsBody').innerHTML.includes('<img'),'provider reference remains inert text');
+ get('statusFilter').value='retrying';api.renderLogs();verify(get('countBadge').textContent.includes('1 of 2'),'UniSMS retrying filter');
+ get('statusFilter').value='sent';api.renderLogs();verify(get('countBadge').textContent.includes('1 of 2'),'UniSMS sent filter');
+ get('statusFilter').value='';get('searchInput').value='msg_mock-123';api.renderLogs();verify(get('countBadge').textContent.includes('1 of 2'),'reference ID search');
+ get('searchInput').value='UniSMS';api.renderLogs();verify(get('countBadge').textContent.includes('2 of 2'),'provider search');get('searchInput').value='';
+ const blockedLog={...entries[0],provider:'unisms',status:'skipped',reason:'live_test_consumed',request_attempted:false};
+ context.fetch=async()=>({ok:true,json:async()=>({logs:[blockedLog],mode:'simulate',provider:'unisms'})});await api.loadLogs();
+ verify(get('logsBody').innerHTML.includes('one live-test attempt is already consumed') && get('logsBody').innerHTML.includes('No API request'),'consumed guard is a safe skipped result with no request');
+ context.fetch=async()=>({ok:true,json:async()=>({logs:[{...blockedLog,reason:'live_test_restore_failed'}],mode:'simulate',provider:'unisms'})});await api.loadLogs();
+ verify(get('logsBody').innerHTML.includes('Safe configuration reset failed. No API request was made'),'reset failure is explained without claiming a submission');
  context.fetch=async()=>({ok:false,status:403,json:async()=>({error:'denied'})});await api.loadLogs();
  verify(get('logsTable').hidden && get('loadingMsg').textContent.includes('administrator or librarian'),'unauthorized reload hides data');
  verify(get('logsBody').innerHTML==='','failed reload clears stale logs');
  context.fetch=async()=>{throw new Error('offline');};await api.loadLogs();verify(!get('refreshBtn').disabled && get('loadingMsg').textContent==='offline','network failure allows retry');
- const ids=new Set([...fs.readFileSync('sms-logs.html','utf8').matchAll(/id="([^"]+)"/g)].map(match=>match[1]));
+ const pageHtml=fs.readFileSync('sms-logs.html','utf8');
+ verify(pageHtml.includes('does not poll UniSMS or Semaphore') && pageHtml.includes('Refresh local logs'),'UI explicitly distinguishes local refresh from provider synchronization');
+ verify(pageHtml.includes('Status may lag behind the provider dashboard') && !vm.runInContext("Object.hasOwn(statusLabels,'delivered')",context),'UI warns about stale status and has no invented Delivered state');
+ const ids=new Set([...pageHtml.matchAll(/id="([^"]+)"/g)].map(match=>match[1]));
  for(const match of fs.readFileSync('js/sms-logs.js','utf8').matchAll(/getElementById\('([^']+)'\)/g))verify(ids.has(match[1]),'HTML control exists: '+match[1]);
  console.log(`Completed ${checks} Phase 7B JavaScript checks.`);
 }

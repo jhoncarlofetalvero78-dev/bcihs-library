@@ -43,6 +43,7 @@ class SmsMemoryStatement extends PDOStatement {
     public function fetch(int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed {return $this->result;}
 }
 $originalMode=getenv('BCIHS_SMS_MODE');$originalLive=getenv('BCIHS_SMS_LIVE_ENABLED');
+$originalProvider=getenv('BCIHS_SMS_PROVIDER');putenv('BCIHS_SMS_PROVIDER=simulation');
 putenv('BCIHS_SMS_MODE=simulate');putenv('BCIHS_SMS_LIVE_ENABLED=0');
 try {
     foreach(['09123456789','+639123456789','639123456789','(0912) 345-6789'] as $phone) verify(smsPhone($phone)==='09123456789','Philippine mobile format normalized');
@@ -121,4 +122,5 @@ try {
 } finally {
     putenv($originalMode===false?'BCIHS_SMS_MODE':'BCIHS_SMS_MODE='.$originalMode);
     putenv($originalLive===false?'BCIHS_SMS_LIVE_ENABLED':'BCIHS_SMS_LIVE_ENABLED='.$originalLive);
+    putenv($originalProvider===false?'BCIHS_SMS_PROVIDER':'BCIHS_SMS_PROVIDER='.$originalProvider);
 }

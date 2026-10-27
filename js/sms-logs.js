@@ -32,11 +32,25 @@
   }
 
   const statusLabels = {simulated:'Simulated (no credits)',queued:'Provider queued',pending:'Pending (delivery unconfirmed)',
-    accepted:'Provider accepted (delivery unconfirmed)',failed:'Failed / rejected',skipped:'Skipped',unknown:'Unknown — review before retry',legacy_sent:'Legacy sent (unverified)'};
+    accepted:'Provider accepted (delivery unconfirmed)',sent:'Provider reports sent (handset unconfirmed)',retrying:'Provider retrying (no app resend)',
+    failed:'Failed / rejected',skipped:'Skipped',unknown:'Unknown — review before retry',legacy_sent:'Legacy sent (unverified)'};
+  const providerLabels = {simulation:'Simulation',semaphore:'Semaphore',unisms:'UniSMS',legacy:'Historical provider'};
   const eventLabels = {account_approved:'Account approval',borrow_ready:'Borrowing ready for pickup',borrow_rejected:'Borrowing rejection',
     checkout:'Checkout with due date',reservation_ready:'Reservation ready',password_reset:'Password reset',legacy:'Historical / other'};
   const reasonLabels = {
-    simulation_no_network_no_credits:'Simulation only. Semaphore was not contacted.',missing_or_invalid_phone:'No valid Philippine mobile number.',
+    live_test_wrong_provider:'Live-test authorization cannot be used with another provider.',
+    live_test_authorization_invalid:'Live-test authorization is missing, invalid or expired.',
+    live_test_event_or_recipient_mismatch:'This notification is outside the authorized test scope.',
+    live_test_message_rejected:'Live-test message differs from the approved single-segment text.',
+    live_test_storage_unavailable:'Private persistent live-test storage is unavailable; sending blocked.',
+    live_test_consumed:'The one live-test attempt is already consumed. No retry is allowed.',
+    live_test_restore_failed:'Safe configuration reset failed. No API request was made; the test slot remains consumed.',
+    simulation_no_network_no_credits:'Simulation only. No provider was contacted.',missing_or_invalid_phone:'No valid Philippine mobile number.',
+    unsupported_provider:'Unknown provider; sending blocked.',unisms_network_not_verified:'UniSMS requires an owner-verified Globe or DITO recipient.',
+    unisms_links_not_allowed:'Links are blocked for the UniSMS default sender.',unisms_message_too_long:'UniSMS messages are limited to 160 characters locally.',
+    provider_validation_rejected:'Provider rejected recipient, content, sender, or account validation.',provider_credit_rejected:'Provider rejected the credit balance.',
+    provider_network_rejected:'Provider rejected the recipient network.',provider_retrying:'Provider reports retrying. The application has not resent.',
+    provider_sent_not_handset_delivery:'UniSMS reports sent. Handset receipt is not confirmed.',
     invalid_message:'Missing or oversized message.',live_sending_not_enabled:'Live sending is disabled.',missing_provider_credentials:'Provider credentials are not configured.',
     provider_authentication_rejected:'Provider rejected authentication.',provider_rate_limited:'Provider rate limit reached. No automatic retry.',
     provider_unavailable:'Provider unavailable. No automatic retry.',provider_http_rejected:'Provider rejected this HTTP request.',
@@ -51,7 +65,7 @@
     const status = document.getElementById('statusFilter').value;
     const filtered = allLogs.filter(log => {
       if (status && log.status !== status) return false;
-      return !query || [log.full_name, log.phone, log.message, eventLabels[log.event], reasonLabels[log.reason]]
+      return !query || [log.full_name, log.phone, log.message, eventLabels[log.event], reasonLabels[log.reason], providerLabels[log.provider], log.reference]
         .filter(Boolean).join(' ').toLowerCase().includes(query);
     });
     const body = document.getElementById('logsBody');
@@ -67,7 +81,7 @@
           <td>${escapeHtml(eventLabels[log.event] || 'Historical / other')}</td>
           <td class="message-cell">${escapeHtml(log.message)}</td>
           <td><span class="status-pill ${state}">${escapeHtml(statusLabels[state])}</span></td>
-          <td class="response-cell">${escapeHtml(reasonLabels[log.reason] || 'Status requires staff review.')}</td>
+          <td class="response-cell">${escapeHtml(reasonLabels[log.reason] || 'Status requires staff review.')}<br>${escapeHtml(providerLabels[log.provider] || 'Historical provider')}${log.reference ? '<br>' + escapeHtml(log.reference) : ''}<br>${log.request_attempted === true ? 'API request attempted' : log.request_attempted === false ? 'No API request' : 'Request history unverified'}${Number.isInteger(log.http_status) && log.http_status >= 100 && log.http_status <= 599 ? ' (HTTP ' + log.http_status + ')' : ''}</td>
         </tr>`;
       }).join('');
     }
@@ -101,7 +115,7 @@
       }
       allLogs = data.logs;
       document.getElementById('smsMode').textContent = data.mode === 'simulate'
-        ? 'Simulation mode: no Semaphore requests or SMS credits. Recipient numbers are masked.'
+        ? 'Simulation mode: no provider requests or SMS credits. Recipient numbers are masked. Selected provider: ' + (providerLabels[data.provider] || 'Semaphore') + '.'
         : 'Live/disabled configuration: review staff configuration. No delivery confirmation is implied.';
       loading.hidden = true;
       table.hidden = false;

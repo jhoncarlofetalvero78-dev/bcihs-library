@@ -12,5 +12,6 @@ try {
     $logs = [];
     foreach ($rows as $row) $logs[] = smsPublicLog($row);
     $settings = smsSettings();
-    echo json_encode(['logs' => $logs, 'mode' => $settings['mode'] === 'simulate' ? 'simulate' : 'live_or_disabled', 'timezone' => 'Asia/Manila']);
+    echo json_encode(['logs' => $logs, 'provider' => in_array($settings['provider'], ['simulation','semaphore','unisms'], true) ? $settings['provider'] : 'disabled',
+        'mode' => $settings['provider'] === 'simulation' || $settings['mode'] === 'simulate' ? 'simulate' : 'live_or_disabled', 'timezone' => 'Asia/Manila']);
 } catch (Throwable $exception) {borrowingFailure($pdo, $exception);}

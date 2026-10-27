@@ -2,4 +2,5 @@
 /includes/db-local.php
 /includes/pickup-local.php
 /includes/sms-local.php
+/includes/.sms-local-safe-*.php
 .DS_Store

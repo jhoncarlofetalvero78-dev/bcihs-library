@@ -9,9 +9,13 @@ function smsSettings(): array
     $mode = getenv('BCIHS_SMS_MODE');
     $enabled = getenv('BCIHS_SMS_LIVE_ENABLED');
     $sender = getenv('SEMAPHORE_SENDER_NAME');
+    $provider = getenv('BCIHS_SMS_PROVIDER');
     return ['mode' => $mode !== false ? $mode : ($local['mode'] ?? 'simulate'),
+        'provider' => $provider !== false ? $provider : ($local['provider'] ?? 'simulation'),
         'live_enabled' => $enabled !== false ? $enabled === '1' : ($local['live_enabled'] ?? false) === true,
-        'sender' => $sender !== false ? $sender : ($local['sender'] ?? '')];
+        'sender' => $sender !== false ? $sender : ($local['sender'] ?? ''),
+        'live_test' => $local['live_test'] ?? null,
+        'unisms_verified_networks' => is_array($local['unisms_verified_networks'] ?? null) ? $local['unisms_verified_networks'] : []];
 }
 
 function smsConfig(): array
@@ -19,18 +23,34 @@ function smsConfig(): array
     // Fail closed: merely installing a private API key can never enable sends.
     $settings = smsSettings();
     $key = '';
-    if ($settings['mode'] === 'live' && $settings['live_enabled']) {
+    if ($settings['mode'] === 'live' && $settings['live_enabled'] && $settings['provider'] === 'unisms') {
+        $local = is_file(__DIR__ . '/sms-local.php') ? require __DIR__ . '/sms-local.php' : [];
+        $key = $local['unisms_secret'] ?? '';
+    } elseif ($settings['mode'] === 'live' && $settings['live_enabled'] && $settings['provider'] === 'semaphore') {
         $key = getenv('SEMAPHORE_API_KEY') ?: ($_SERVER['SEMAPHORE_API_KEY'] ?? '');
         if ($key === '' && is_file(__DIR__ . '/semaphore-api-key.php')) {
             $value = require __DIR__ . '/semaphore-api-key.php';
             $key = is_string($value) ? trim($value) : '';
         }
     }
-    return $settings + ['key' => is_string($key) ? trim($key) : ''];
+    return $settings + ['key' => is_string($key) ? trim($key) : '', 'configuration_file' => __DIR__ . '/sms-local.php'];
 }
 
 function smsTransport(array $payload): array
 {
+    if (($payload['provider'] ?? '') === 'unisms') {
+        $curl = curl_init('https://unismsapi.com/api/sms');
+        curl_setopt_array($curl, [CURLOPT_POST => true,
+            CURLOPT_HTTPAUTH => CURLAUTH_BASIC, CURLOPT_USERPWD => $payload['secret'] . ':',
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
+            CURLOPT_POSTFIELDS => json_encode($payload['body'], JSON_THROW_ON_ERROR),
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 10,
+            CURLOPT_FOLLOWLOCATION => false]);
+        $body = curl_exec($curl); $http = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        $error = $body === false;
+        curl_close($curl);
+        return ['http' => $http, 'body' => $body, 'error' => $error];
+    }
     $curl = curl_init('https://api.semaphore.co/api/v4/messages');
     curl_setopt_array($curl, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => http_build_query($payload),
         CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 10,
@@ -44,7 +64,7 @@ function smsTransport(array $payload): array
 function smsStorageState(string $state): string
 {
     // Preserve the existing enum. The versioned response JSON is authoritative.
-    return match ($state) {'accepted','queued','pending' => 'sent', 'failed','unknown' => 'failed', default => 'skipped'};
+    return match ($state) {'accepted','queued','pending','sent','retrying' => 'sent', 'failed','unknown' => 'failed', default => 'skipped'};
 }
 
 function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, string $event = 'legacy', ?string $eventKey = null): bool
@@ -62,7 +82,9 @@ function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, strin
             THEN JSON_UNQUOTE(JSON_EXTRACT(response,"$.event_key")) ELSE NULL END=:key LIMIT 1');
         $query->execute(['key' => $key]);
         if ($query->fetch()) return false;
+        $config = smsConfig();
         $metadata = ['sms_version' => 1, 'event_key' => $key, 'event' => $event,
+            'provider' => $config['provider'], 'request_attempted' => null,
             'state' => 'pending', 'reason' => 'attempt_reserved_not_delivery', 'provider_id' => null];
         // Codes never belong in staff-visible logs, even in simulation.
         $loggedMessage = $event === 'password_reset' ? 'BCIHS Library: Password reset code [redacted].' : $message;
@@ -71,12 +93,16 @@ function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, strin
         $query->execute(['user' => $userId, 'phone' => smsPhone($phone) ?? '(missing/invalid)',
             'message' => $loggedMessage, 'response' => json_encode($metadata, JSON_THROW_ON_ERROR)]);
         $id = (int)$pdo->lastInsertId();
-        $result = smsDispatch(smsConfig(), $phone, $message, 'smsTransport');
-        $metadata = array_merge($metadata, $result);
+        $attempted = false;
+        $result = smsDispatch($config, $phone, $message, static function (array $payload) use (&$attempted): array {
+            $attempted = true;
+            return smsTransport($payload);
+        }, ['event' => $event, 'event_id' => $eventKey, 'user_id' => $userId]);
+        $metadata = array_merge($metadata, $result, ['request_attempted' => $attempted]);
         $query = $pdo->prepare('UPDATE sms_logs SET status=:status,response=:response WHERE id=:id');
         $query->execute(['status' => smsStorageState($result['state']),
             'response' => json_encode($metadata, JSON_THROW_ON_ERROR), 'id' => $id]);
-        return in_array($result['state'], ['queued','pending','accepted','simulated'], true);
+        return in_array($result['state'], ['queued','pending','accepted','sent','retrying','simulated'], true);
     } catch (Throwable $exception) {
         error_log('Library notification could not be completed; review SMS logs.');
         return false;
