@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In | BCIHS Library</title>
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html">
+    <div class="logo">
+      <img src="images/logo.jpeg" alt="Batangas National High School Seal" class="extracted-style-1">
+    </div>
+    <div class="school-name">Batangas City Integrated High School</div>
+  </a>
+</header>
+
+<section class="login-hero">
+  <form class="login-card" id="loginForm" method="POST" action="backend/login-process.php" novalidate>
+    <h1 id="loginTitle">Welcome Back!</h1>
+    <p class="subtitle" id="loginSubtitle">Sign in with your Library Account</p>
+    <input type="hidden" id="bookReturn" name="book" value="">
+
+    <div class="field">
+      <label for="identifier">Username</label>
+      <input type="text" id="identifier" name="identifier" placeholder="Enter your username" autocomplete="username" required>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <div class="password-wrap">
+        <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+        <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="eyeIcon">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="error-msg" id="errorMsg"></p>
+
+    <div class="row-between">
+      <label class="remember">
+        <input type="checkbox" id="remember" name="remember">
+        Remember me
+      </label>
+      <a href="forgot-password.html" class="forgot-link" id="forgotLink">Forgot Password?</a>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Log In</button>
+
+    <hr class="divider">
+
+    <p class="signup-line">Don't have an account? <a href="select-role.html">Sign up</a></p>
+    <a href="index.html" class="back-home">&larr; Back to Homepage</a>
+  </form>
+</section>
+
+<dialog class="registration-dialog" id="registrationDialog" aria-labelledby="registrationDialogTitle" aria-describedby="registrationDialogMessage">
+    <h2 id="registrationDialogTitle">Account created successfully</h2>
+    <p id="registrationDialogMessage">Your account is awaiting library approval. You can sign in once it has been approved.</p>
+    <button type="button" id="registrationDialogClose">Got it</button>
+</dialog>
+
+<script src="js/login.js"></script>
+
+</body>
+</html>

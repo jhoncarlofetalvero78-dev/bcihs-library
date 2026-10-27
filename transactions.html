@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transaction | BCIHS Library</title>
+<link rel="stylesheet" href="css/transactions.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+</head>
+<body>
+
+<aside class="sidebar">
+  <ul class="nav-list">
+    <li><a href="admin-dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      Dashboard
+    </a></li>
+    <li><a href="manage-books.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>
+      Manage Book
+    </a></li>
+    <li><a href="borrow-requests.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg>
+      Borrow Request
+    </a></li>
+    <li><a href="reservations.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3M8 17h6"/></svg>
+      Reservations
+    </a></li>
+    <li class="active"><a href="transactions.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
+      Transaction
+    </a></li>
+    <li><a href="manage-users.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg>
+      Users
+    </a></li>
+    <li><a href="attendance.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Attendance
+    </a></li>
+    <li><a href="manage-announcements.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      Announcements
+    </a></li>
+    <li><a href="reports.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>
+      Reports
+    </a></li>
+    <li><a href="sms-logs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
+      SMS Logs
+    </a></li>
+  </ul>
+
+  <hr class="nav-divider">
+  <ul class="nav-list logout-item">
+    <li><a href="backend/admin-logout.php">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </a></li>
+  </ul>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="images/logo.jpeg" alt="Batangas National High School Seal"></div>
+      <div>
+        <div class="topbar-title">BATANGAS CITY INTEGRATED HIGH SCHOOL</div>
+        <div class="topbar-subtitle">Library Management System</div>
+      </div>
+    </div>
+    <div class="topbar-account">
+      <div>
+        <div class="account-name" id="adminName">Admin User</div>
+        <div class="account-role">ADMINISTRATOR</div>
+      </div>
+      <div class="account-avatar" id="adminInitial">A</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <div class="page-head-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
+      </div>
+      <div>
+        <h1>Transaction</h1>
+        <p>Complete history of every borrow request — requested, approved, returned, and rejected.</p>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card">
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg></div>
+        <div><div class="stat-label">Total Transactions</div><div class="stat-value" id="countTotal">…</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg></div>
+        <div><div class="stat-label">Currently Borrowed</div><div class="stat-value" id="countBorrowed">…</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></div>
+        <div><div class="stat-label">Returned</div><div class="stat-value" id="countReturned">…</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+        <div><div class="stat-label">Rejected</div><div class="stat-value" id="countRejected">…</div></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search by student or book title…">
+      <select id="statusFilter">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Currently Borrowed</option>
+        <option value="returned">Returned</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <span class="date-label">From</span>
+      <input type="date" id="dateFrom">
+      <span class="date-label">To</span>
+      <input type="date" id="dateTo">
+      <button class="export-btn" id="exportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Export CSV
+      </button>
+    </div>
+
+    <p class="count-badge" id="countBadge"></p>
+
+    <div class="panel">
+      <p class="loading-msg" id="loadingMsg">Loading transactions…</p>
+      <table id="txTable">
+        <thead>
+          <tr><th>Student Name</th><th>Book Title</th><th>Requested</th><th>Approved</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
+        </thead>
+        <tbody id="txBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="js/transactions.js"></script>
+<script src="js/admin-shell.js?v=20261026-visible-tables"></script>
+</body>
+</html>

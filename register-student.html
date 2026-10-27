@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Student Account | BCIHS Library</title>
+<link rel="stylesheet" href="css/register-student.css">
+</head>
+<body>
+
+<div class="bg-blur"></div>
+
+<div class="register-wrap">
+  <form class="student-card" id="studentRegisterForm" method="POST" action="backend/register-process.php">
+    <a href="login.html" class="back-link" aria-label="Back to Login">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back 
+    </a>
+
+    <div class="cap-icon">
+      <svg viewBox="0 0 24 24" fill="var(--indigo)">
+        <path d="M12 2 1 7l11 5 9-4.09V17h2V7L12 2z"/>
+        <path d="M5 10.18v4.4C5 17.5 8.13 19.5 12 19.5s7-2 7-4.92v-4.4l-7 3.18-7-3.18z"/>
+      </svg>
+    </div>
+
+    <h1>Create Student Account</h1>
+    <p class="subtitle">Fill in the details below to create account</p>
+
+    <input type="hidden" name="role" value="student">
+
+    <div class="field">
+      <label for="student_id">Student ID Number</label>
+      <input type="text" id="student_id" name="student_id" placeholder="Generated automatically" readonly>
+    </div>
+
+    <div class="field">
+      <label for="full_name">Full Name<span class="req">*</span></label>
+      <input type="text" id="full_name" name="full_name" placeholder="Enter your full name" autocomplete="name" required>
+    </div>
+
+    <div class="field">
+      <label for="grade_level">Grade Level<span class="req">*</span></label>
+      <input type="text" id="grade_level" name="grade_level" placeholder="e.g., Grade 7 or Grade 11" maxlength="20" required>
+    </div>
+
+    <div class="field">
+      <label for="section">Section<span class="req">*</span></label>
+      <input type="text" id="section" name="section" placeholder="Enter your section" maxlength="25" required>
+    </div>
+
+    <div class="field">
+      <label for="phone">Phone Number<span class="req">*</span></label>
+      <input type="tel" id="phone" name="phone" placeholder="+63 912 345 6789" autocomplete="tel" inputmode="tel" minlength="11" maxlength="16" title="Use 09XXXXXXXXX or +639XXXXXXXXX" data-ph-mobile required>
+    </div>
+
+    <div class="field">
+      <label for="password">Password<span class="req">*</span></label>
+      <div class="password-wrap">
+        <input type="password" id="password" name="password" placeholder="Enter Password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="toggle-password" data-target="password" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 4.2A11 11 0 0 1 12 4c7 0 11 7 11 7a17.7 17.7 0 0 1-3.2 4.2M6.5 6.7A17.6 17.6 0 0 0 1 11s4 7 11 7a10.8 10.8 0 0 0 4.2-.85"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="confirm_password">Confirm Password<span class="req">*</span></label>
+      <div class="password-wrap">
+        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="toggle-password" data-target="confirm_password" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 4.2A11 11 0 0 1 12 4c7 0 11 7 11 7a17.7 17.7 0 0 1-3.2 4.2M6.5 6.7A17.6 17.6 0 0 0 1 11s4 7 11 7a10.8 10.8 0 0 0 4.2-.85"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="error-msg" id="errorMsg" role="alert" aria-live="polite"></p>
+
+    <button type="submit" class="submit-btn">Create Account</button>
+
+    <p class="signup-line">Already have an account? <a href="login.html">Log in</a></p>
+  </form>
+</div>
+
+<script src="js/register-student.js"></script>
+<script src="js/philippine-phone.js"></script>
+
+</body>
+</html>

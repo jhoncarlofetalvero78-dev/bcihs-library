@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Announcements | BCIHS Library</title>
+<link rel="stylesheet" href="css/announcements.css?v=20261022-photo">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">
+      <img src="images/logo.jpeg" alt="Batangas National High School Seal" class="extracted-style-1">
+    </div>
+    <div class="school-name">Batangas City Integrated High School</div>
+  </div>
+
+  <button class="hamburger" id="hamburger" aria-label="Toggle navigation">&#9776;</button>
+
+  <nav id="mainNav">
+    <ul>
+      <li><a href="index.html#home">Home</a></li>
+      <li><a href="about.html">About Us</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li class="active"><a href="announcements.html">Announcement</a></li>
+      <li><a href="browse-books.html" id="bookListLink">Book List</a></li>
+    </ul>
+  </nav>
+
+  <div class="login-menu" id="loginMenu">
+    <button class="login-btn" id="loginBtn" title="Log in" aria-label="Log in">
+      <span class="login-label" id="loginLabel">LOGIN</span>
+      <span class="avatar-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="3.2"/>
+          <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+        </svg>
+      </span>
+    </button>
+  </div>
+
+  <div class="profile-pill" id="profilePill">
+    <span class="avatar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="3.2"/>
+        <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+      </svg>
+    </span>
+    <div class="profile-info">
+      <span class="profile-name" id="profileName">User</span>
+      <span class="profile-role" id="profileRole">Role</span>
+    </div>
+    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
+    <div class="profile-dropdown" id="profileDropdown">
+      <a href="profile.html" class="dropdown-item">My Profile</a>
+      <button class="dropdown-item" id="logoutBtn">Log Out</button>
+    </div>
+  </div>
+</header>
+
+<main class="announce-wrap">
+  <div class="page-head">
+    <h1>Announcements</h1>
+    <p>Library hours, new arrivals, and upcoming events — no login required to browse.</p>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Search announcements…">
+    <select id="categoryFilter">
+      <option value="">All categories</option>
+      <option value="General">General</option>
+      <option value="Event">Event</option>
+      <option value="Notice">Notice</option>
+    </select>
+  </div>
+
+  <p class="loading-msg" id="loadingMsg">Loading announcements…</p>
+  <div class="announce-list extracted-style-2" id="announceList"></div>
+</main>
+
+<script src="js/announcements.js?v=20261022-photo"></script>
+
+</body>
+</html>

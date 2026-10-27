@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Borrow Requests | BCIHS Library</title>
+<link rel="stylesheet" href="css/borrow-requests.css?v=20261026-view-eye">
+<link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+</head>
+<body>
+
+<aside class="sidebar">
+  <ul class="nav-list">
+    <li><a href="admin-dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      Dashboard
+    </a></li>
+    <li><a href="manage-books.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>
+      Manage Book
+    </a></li>
+    <li class="active"><a href="borrow-requests.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg>
+      Borrow Requests
+    </a></li>
+    <li><a href="reservations.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3M8 17h6"/></svg>
+      Reservations
+    </a></li>
+    <li><a href="transactions.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
+      Transaction
+    </a></li>
+    <li><a href="manage-users.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg>
+      Users
+    </a></li>
+    <li><a href="attendance.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Attendance
+    </a></li>
+    <li><a href="manage-announcements.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      Announcements
+    </a></li>
+    <li><a href="reports.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>
+      Reports
+    </a></li>
+    <li><a href="sms-logs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
+      SMS Logs
+    </a></li>
+  </ul>
+
+  <hr class="nav-divider">
+  <ul class="nav-list logout-item">
+    <li><a href="backend/admin-logout.php">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </a></li>
+  </ul>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="images/logo.jpeg" alt="Batangas National High School Seal"></div>
+      <div>
+        <div class="topbar-title">BATANGAS CITY INTEGRATED HIGH SCHOOL</div>
+        <div class="topbar-subtitle">Library Management System</div>
+      </div>
+    </div>
+    <div class="topbar-account">
+      <div>
+        <div class="account-name" id="adminName">Admin User</div>
+        <div class="account-role">ADMINISTRATOR</div>
+      </div>
+      <div class="account-avatar" id="adminInitial">A</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Borrow Requests</h1>
+        <p>Review and act on book requests submitted by patrons.</p>
+      </div>
+      <button id="addBorrowBtn" class="primary-btn" type="button">+ Add Borrowed Student</button>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search by student or book title…">
+      <select id="statusFilter">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="returned">Returned</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+
+    <p class="count-badge extracted-style-1" id="countBadge"></p>
+
+    <div class="panel">
+      <p class="loading-msg" id="loadingMsg">Loading requests…</p>
+      <table id="requestsTable" class="extracted-style-1">
+        <thead>
+          <tr><th>Student Name</th><th>Book Title</th><th>Date Requested</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="requestsBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="borrowModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="borrowModalTitle">
+    <div class="modal-header">
+      <h2 id="borrowModalTitle">Add Borrow Record</h2>
+      <button id="closeBorrowModal" class="icon-btn" type="button" aria-label="Close">×</button>
+    </div>
+
+    <form id="borrowForm">
+      <div class="form-grid">
+        <label>
+          Student Name
+          <input id="studentInput" type="text" placeholder="Type the student name" autocomplete="off" maxlength="150" required>
+        </label>
+
+        <label>
+          Book
+          <input id="bookInput" type="text" list="bookOptions" placeholder="Type or select a book title" autocomplete="off" required>
+          <datalist id="bookOptions"></datalist>
+        </label>
+
+        <label>
+          Due Date
+          <input id="dueDate" type="date">
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" id="cancelBorrowBtn" class="secondary-btn">Cancel</button>
+        <button type="submit" class="primary-btn">Save Borrow</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="requestDetailsModal" class="request-details-overlay" aria-hidden="true">
+  <div class="request-details-card" role="dialog" aria-modal="true" aria-labelledby="requestDetailsTitle">
+    <h2 id="requestDetailsTitle">Borrow Request Details</h2>
+    <div id="requestDetailsBody"></div>
+    <button id="closeRequestDetails" class="request-details-close" type="button">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/borrow-requests.js?v=20261026-request-book-details"></script>
+<script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
+</body>
+</html>

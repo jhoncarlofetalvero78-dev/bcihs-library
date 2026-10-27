@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Teacher Account | BCIHS Library</title>
+<link rel="stylesheet" href="css/register-teacher.css">
+</head>
+<body>
+
+<div class="bg-blur"></div>
+
+<div class="register-wrap">
+  <form class="teacher-card" id="teacherRegisterForm" method="POST" action="backend/register-process.php">
+    <a href="login.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back
+    </a>
+
+    <div class="people-icon">
+      <svg viewBox="0 0 24 24" fill="var(--green)">
+        <circle cx="8.5" cy="6.5" r="2.5"/>
+        <circle cx="15" cy="7.5" r="3.2"/>
+        <path d="M2 19.5c0-3.6 2.9-6 6.5-6 1.1 0 2.1.24 3 .68C10.6 15.3 10 16.7 10 18.3v1.2H2v-.9z"/>
+        <path d="M9.8 14.9c1.1-1.1 2.9-1.8 5.2-1.8 4 0 7 2.6 7 6.4v1H10v-1c0-1.9-.7-3.5-.2-4.6z"/>
+      </svg>
+    </div>
+
+    <h1>Create Teacher Account</h1>
+    <p class="subtitle">Fill in the details below to create account</p>
+
+    <input type="hidden" name="role" value="teacher">
+
+    <div class="field">
+      <label for="id_number">ID Number<span class="req">*</span></label>
+      <input type="text" id="id_number" name="id_number" placeholder="Generated automatically" readonly>
+    </div>
+
+    <div class="field">
+      <label for="full_name">Full Name<span class="req">*</span></label>
+      <input type="text" id="full_name" name="full_name" placeholder="Enter your full name" autocomplete="name" required>
+    </div>
+
+    <div class="field">
+      <label for="department">Department/Faculty<span class="req">*</span></label>
+      <input type="text" id="department" name="department" placeholder="Enter your department/position" required>
+    </div>
+
+    <div class="field">
+      <label for="phone">Phone Number<span class="req">*</span></label>
+      <input type="tel" id="phone" name="phone" placeholder="+63 912 345 6789" autocomplete="tel" inputmode="tel" minlength="11" maxlength="16" title="Use 09XXXXXXXXX or +639XXXXXXXXX" data-ph-mobile required>
+    </div>
+
+    <div class="field">
+      <label for="password">Password<span class="req">*</span></label>
+      <div class="password-wrap">
+        <input type="password" id="password" name="password" placeholder="Enter Password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="toggle-password" data-target="password" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 4.2A11 11 0 0 1 12 4c7 0 11 7 11 7a17.7 17.7 0 0 1-3.2 4.2M6.5 6.7A17.6 17.6 0 0 0 1 11s4 7 11 7a10.8 10.8 0 0 0 4.2-.85"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="confirm_password">Confirm Password<span class="req">*</span></label>
+      <div class="password-wrap">
+        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="toggle-password" data-target="confirm_password" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.9 4.2A11 11 0 0 1 12 4c7 0 11 7 11 7a17.7 17.7 0 0 1-3.2 4.2M6.5 6.7A17.6 17.6 0 0 0 1 11s4 7 11 7a10.8 10.8 0 0 0 4.2-.85"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="error-msg" id="errorMsg" role="alert" aria-live="polite"></p>
+
+    <button type="submit" class="submit-btn">Create Account</button>
+
+    <p class="signup-line">Already have an account? <a href="login.html">Log in</a></p>
+  </form>
+</div>
+
+<script src="js/register-teacher.js"></script>
+<script src="js/philippine-phone.js"></script>
+
+</body>
+</html>

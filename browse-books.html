@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse Books | BCIHS Library</title>
+<link rel="stylesheet" href="css/browse-books.css?v=20261026-qr-login-required">
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="services.html" class="icon-btn" aria-label="Services">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2.2-1 4.6-1 7 0v13.5c-2.4-1-4.8-1-7 0V5z"/><path d="M22 5c-2.2-1-4.6-1-7 0v13.5c2.4-1 4.8-1 7 0V5z"/></svg>
+  </a>
+  <a href="index.html" class="icon-btn" aria-label="Back to homepage">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </a>
+  <h1>Browse Books</h1>
+  <button class="profile-btn" id="profileBtn" title="My Profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="3.2"/>
+      <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+    </svg>
+  </button>
+</div>
+
+<main>
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Search by title, author, or genre…">
+  </div>
+
+  <p class="status-banner" id="statusBanner"></p>
+
+  <p class="loading-msg" id="loadingMsg">Loading books…</p>
+  <div class="book-grid extracted-style-1" id="bookGrid"></div>
+</main>
+
+<dialog class="pickup-dialog" id="pickupDialog" aria-labelledby="pickupDialogTitle">
+  <form id="pickupForm">
+    <h2 id="pickupDialogTitle">Choose a pickup time</h2>
+    <p class="pickup-help">Available pickup dates are Monday to Friday, 7:00 AM–4:00 PM, in 30-minute intervals. Choose a future date and time.</p>
+    <div class="pickup-calendar-heading">
+      <button type="button" id="pickupPreviousMonth" aria-label="Previous month">&lsaquo;</button>
+      <span class="pickup-month" id="pickupMonth" aria-live="polite"></span>
+      <button type="button" id="pickupNextMonth" aria-label="Next month">&rsaquo;</button>
+    </div>
+    <div class="pickup-calendar" id="pickupCalendar" role="group" aria-label="Available pickup dates"></div>
+    <label class="pickup-time-label" for="pickupTime">Pickup time</label>
+    <select class="pickup-time" id="pickupTime" required>
+      <option value="">Select a time</option>
+    </select>
+    <p class="pickup-error" id="pickupError" role="alert"></p>
+    <div class="pickup-dialog-actions">
+      <button type="button" class="pickup-cancel" id="pickupCancel">Cancel</button>
+      <button type="submit" class="pickup-save" id="pickupSave">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/browse-books.js?v=20261026-qr-login-required"></script>
+
+</body>
+</html>

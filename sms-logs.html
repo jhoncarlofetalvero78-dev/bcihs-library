@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Logs | BCIHS Library</title>
+  <link rel="stylesheet" href="css/sms-logs.css">
+  <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+</head>
+<body>
+<aside class="sidebar">
+  <ul class="nav-list">
+    <li><a href="admin-dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Dashboard</a></li>
+    <li><a href="manage-books.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>Manage Books</a></li>
+    <li><a href="borrow-requests.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg>Borrow Requests</a></li>
+    <li><a href="reservations.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Reservations</a></li>
+    <li><a href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>Transactions</a></li>
+    <li><a href="manage-users.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>Users</a></li>
+    <li><a href="attendance.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Attendance</a></li>
+    <li><a href="manage-announcements.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg>Announcements</a></li>
+    <li><a href="reports.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6"/></svg>Reports</a></li>
+    <li class="active"><a href="sms-logs.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>SMS Logs</a></li>
+  </ul>
+  <hr class="nav-divider">
+  <ul class="nav-list logout-item">
+    <li><a href="backend/admin-logout.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Log Out</a></li>
+  </ul>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="images/logo.jpeg" alt="Batangas City Integrated High School seal"></div>
+      <div><div class="topbar-title">BATANGAS CITY INTEGRATED HIGH SCHOOL</div><div class="topbar-subtitle">Library Management System</div></div>
+    </div>
+    <a class="topbar-account" href="profile.html" title="Open profile">
+      <div>
+        <div class="account-name" id="staffName">Library Staff</div>
+        <div class="account-role" id="staffRole">LIBRARY STAFF</div>
+      </div>
+      <div class="account-avatar" id="staffInitial">L</div>
+    </a>
+  </header>
+  <main>
+    <div class="page-head">
+      <div class="page-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg></div>
+      <div><h1>SMS Logs</h1><p>Recent notification attempts and gateway responses.</p></div>
+    </div>
+    <div class="panel">
+      <div class="controls">
+        <input type="search" id="searchInput" placeholder="Search recipient, phone, message, or response" aria-label="Search SMS logs">
+        <select id="statusFilter" aria-label="Filter by delivery status">
+          <option value="">All statuses</option>
+          <option value="sent">Sent</option>
+          <option value="failed">Failed</option>
+          <option value="skipped">Skipped</option>
+        </select>
+        <button class="refresh-btn" id="refreshBtn" type="button">Refresh</button>
+      </div>
+      <p class="count-badge" id="countBadge" hidden></p>
+      <p class="loading-msg" id="loadingMsg" role="status">Loading SMS logs…</p>
+      <table id="logsTable" hidden>
+        <thead><tr><th>Date and time</th><th>Recipient</th><th>Phone</th><th>Message</th><th>Status</th><th>Gateway response</th></tr></thead>
+        <tbody id="logsBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<script src="js/sms-logs.js"></script>
+<script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
+</body>
+</html>

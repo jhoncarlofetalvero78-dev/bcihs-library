@@ -1,0 +1,155 @@
+
+  :root{
+    --teal:#0d7377;
+    --teal-dark:#055d6b;
+    --ink:#1c1c28;
+    --card-shadow:0 25px 55px rgba(13,115,119,0.35);
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{ min-height:100vh; }
+  body{ color:var(--ink); line-height:1.45; }
+  a{ text-decoration:none; color:inherit; }
+
+  .bg-blur{
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    background:url('../images/school.jpeg') center/cover no-repeat;
+    filter:blur(7px) brightness(0.6);
+    transform:scale(1.08);
+  }
+
+  .register-wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 16px;
+  }
+
+  .visitor-card{
+    position:relative;
+    width:100%;
+    max-width:480px;
+    background:#f7f7f9;
+    border-radius:32px;
+    box-shadow:var(--card-shadow);
+    padding:26px 34px 34px;
+  }
+
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-weight:700;
+    font-size:0.95rem;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .back-link svg{ width:20px; height:20px; }
+  .back-link:hover{ opacity:0.75; }
+
+  .visitor-icon{
+    display:flex;
+    justify-content:center;
+    margin:4px 0 6px;
+  }
+  .visitor-icon svg{ width:50px; height:50px; }
+
+  .visitor-card h1{
+    text-align:center;
+    font-size:1.55rem;
+    font-weight:800;
+    color:var(--teal);
+    margin-bottom:4px;
+  }
+  .visitor-card .subtitle{
+    text-align:center;
+    font-size:0.88rem;
+    color:#666;
+    margin-bottom:22px;
+  }
+
+  .field{ margin-bottom:16px; }
+  .field .phone-hint{ display:block; margin-top:6px; color:#666; font-size:0.78rem; }
+  .field label{
+    display:block;
+    font-weight:700;
+    font-size:0.92rem;
+    margin-bottom:7px;
+    color:var(--ink);
+  }
+  .field label .req{ color:#e0303a; }
+
+  .field input{
+    width:100%;
+    padding:13px 16px;
+    border:none;
+    border-radius:12px;
+    font-size:0.92rem;
+    background:#e4e3e8;
+    color:var(--ink);
+    outline:none;
+    appearance:none;
+    -webkit-appearance:none;
+    transition:box-shadow .2s ease;
+  }
+  .field input::placeholder{ color:#8d8c96; }
+  .field input:focus{
+    box-shadow:0 0 0 3px rgba(13,115,119,0.25);
+  }
+
+  .password-wrap{ position:relative; }
+  .password-wrap input{ padding-right:46px; }
+  .toggle-password{
+    position:absolute;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:#555;
+    display:flex;
+    align-items:center;
+    padding:0;
+  }
+  .toggle-password svg{ width:20px; height:20px; }
+
+  .error-msg{
+    color:#e0303a;
+    font-size:0.85rem;
+    margin-bottom:14px;
+    min-height:1em;
+    text-align:center;
+  }
+
+  .submit-btn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:30px;
+    background:var(--teal);
+    color:#fff;
+    font-weight:700;
+    font-size:1.1rem;
+    letter-spacing:0.3px;
+    cursor:pointer;
+    margin-top:8px;
+    transition:background .2s ease, transform .15s ease;
+  }
+  .submit-btn:hover{ background:var(--teal-dark); transform:translateY(-1px); }
+
+  .signup-line{
+    text-align:center;
+    font-size:0.85rem;
+    color:#555;
+    margin-top:16px;
+  }
+  .signup-line a{ color:var(--teal); font-weight:700; text-decoration:underline; }
+
+  @media (max-width:520px){
+    .visitor-card{ padding:22px 22px 28px; border-radius:26px; }
+    .visitor-card h1{ font-size:1.35rem; }
+  }

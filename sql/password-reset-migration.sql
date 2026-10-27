@@ -1,0 +1,13 @@
+USE bcihs_library;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255) NULL AFTER password_hash,
+  ADD COLUMN IF NOT EXISTS reset_expires DATETIME NULL AFTER reset_token,
+  ADD COLUMN IF NOT EXISTS otp_code VARCHAR(255) NULL AFTER reset_expires,
+  ADD COLUMN IF NOT EXISTS otp_expires DATETIME NULL AFTER otp_code;
+
+ALTER TABLE admins
+  ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255) NULL AFTER password_hash,
+  ADD COLUMN IF NOT EXISTS reset_expires DATETIME NULL AFTER reset_token,
+  ADD COLUMN IF NOT EXISTS otp_code VARCHAR(255) NULL AFTER reset_expires,
+  ADD COLUMN IF NOT EXISTS otp_expires DATETIME NULL AFTER otp_code;

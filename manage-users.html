@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Users | BCIHS Library</title>
+<link rel="stylesheet" href="css/manage-users.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+</head>
+<body>
+
+<aside class="sidebar">
+  <ul class="nav-list">
+    <li><a href="admin-dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      Dashboard
+    </a></li>
+    <li><a href="manage-books.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>
+      Manage Book
+    </a></li>
+    <li><a href="borrow-requests.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg>
+      Borrow Request
+    </a></li>
+    <li><a href="reservations.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3M8 17h6"/></svg>
+      Reservations
+    </a></li>
+    <li><a href="transactions.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
+      Transaction
+    </a></li>
+    <li class="active"><a href="manage-users.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg>
+      Users
+    </a></li>
+    <li><a href="attendance.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Attendance
+    </a></li>
+    <li><a href="manage-announcements.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      Announcements
+    </a></li>
+    <li><a href="reports.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>
+      Reports
+    </a></li>
+    <li><a href="sms-logs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
+      SMS Logs
+    </a></li>
+  </ul>
+
+  <hr class="nav-divider">
+  <ul class="nav-list logout-item">
+    <li><a href="backend/admin-logout.php">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </a></li>
+  </ul>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="images/logo.jpeg" alt="Batangas National High School Seal"></div>
+      <div>
+        <div class="topbar-title">BATANGAS CITY INTEGRATED HIGH SCHOOL</div>
+        <div class="topbar-subtitle">Library Management System</div>
+      </div>
+    </div>
+    <div class="topbar-account">
+      <div>
+        <div class="account-name" id="adminName">Admin User</div>
+        <div class="account-role">ADMINISTRATOR</div>
+      </div>
+      <div class="account-avatar" id="adminInitial">A</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <div class="page-head-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg>
+      </div>
+      <div>
+        <h1>Users</h1>
+        <p>Manage students, teachers, librarians, and visitors</p>
+      </div>
+    </div>
+
+    <div class="top-grid">
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card">
+          <div class="stat-top"><span class="stat-label">Students</span><span class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span></div>
+          <div class="stat-value" id="countStudent">…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><span class="stat-label">Teachers</span><span class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span></div>
+          <div class="stat-value" id="countTeacher">…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><span class="stat-label">Librarian</span><span class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span></div>
+          <div class="stat-value" id="countLibrarian">…</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top"><span class="stat-label">Visitors</span><span class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span></div>
+          <div class="stat-value" id="countVisitor">…</div>
+        </div>
+        <div class="stat-card extracted-style-1">
+          <div class="stat-top"><span class="stat-label">Active Users</span><span class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span></div>
+          <div class="stat-value" id="countActive">…</div>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-legend">
+          <span><span class="legend-dot extracted-style-2"></span>Students</span>
+          <span><span class="legend-dot extracted-style-3"></span>Teachers</span>
+          <span><span class="legend-dot extracted-style-4"></span>Librarian</span>
+          <span><span class="legend-dot extracted-style-5"></span>Visitors</span>
+        </div>
+        <div id="chartHolder"></div>
+        <p class="chart-note">New registrations per month, real data from account creation dates.</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search by name or user ID…">
+      <select id="roleFilter">
+        <option value="">All</option>
+        <option value="student">Students</option>
+        <option value="teacher">Teachers</option>
+        <option value="librarian">Librarian</option>
+        <option value="visitor">Visitors</option>
+      </select>
+    </div>
+
+    <p class="count-badge" id="countBadge"></p>
+
+    <div class="panel">
+      <p class="loading-msg" id="loadingMsg">Loading users…</p>
+      <table id="usersTable">
+        <thead>
+          <tr><th>User ID</th><th>Fullname</th><th>User Type</th><th>Details</th><th>Phone</th><th>Account Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>User Details</h2>
+    <div id="modalBody"></div>
+    <button class="modal-close-btn" id="modalCloseBtn">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/manage-users.js"></script>
+<script src="js/admin-shell.js?v=20261026-visible-tables"></script>
+</body>
+</html>

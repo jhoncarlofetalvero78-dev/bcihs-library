@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCIHS Library | Batangas City Integrated High School</title>
+<link rel="stylesheet" href="css/index.css?v=20261026-call-number">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">
+      <img src="images/logo.jpeg" alt="Batangas National High School Seal" class="extracted-style-1">
+    </div>
+    <div class="school-name">Batangas City Integrated High School</div>
+  </div>
+
+  <button class="hamburger" id="hamburger" aria-label="Toggle navigation">&#9776;</button>
+
+  <nav id="mainNav">
+    <ul>
+      <li class="active"><a href="#home" class="nav-link" data-target="home">Home</a></li>
+      <li><a href="about.html">About Us</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="announcements.html">Announcement</a></li>
+      <li><a href="browse-books.html" id="bookListLink">Book List</a></li>
+    </ul>
+  </nav>
+
+  <div class="login-menu" id="loginMenu">
+    <button class="login-btn" id="loginBtn" title="Log in" aria-label="Log in">
+      <span class="login-label" id="loginLabel">LOGIN</span>
+      <span class="avatar-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="3.2"/>
+          <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+        </svg>
+      </span>
+    </button>
+  </div>
+
+  <div class="profile-pill" id="profilePill">
+    <span class="avatar-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="3.2"/>
+        <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+      </svg>
+    </span>
+    <div class="profile-info">
+      <span class="profile-name" id="profileName">User</span>
+      <span class="profile-role" id="profileRole">Role</span>
+    </div>
+    <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9l6 6 6-6"/>
+    </svg>
+    <div class="profile-dropdown" id="profileDropdown">
+      <a href="profile.html" class="dropdown-item">My Profile</a>
+      <button class="dropdown-item" id="logoutBtn">Log Out</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="home">
+  <div class="hero-content">
+    <h1>WELCOME TO THE LIBRARY MANAGEMENT SYSTEM</h1>
+    <h2>of Batangas City Integrated High School</h2>
+    <p>The Web-Based Library Management System provides an efficient and convenient way for students, teachers, and visitors to access library services online. This platform allows you to borrow books, reserve the library, view events, and monitor computer usage anytime and anywhere.</p>
+    <div class="hero-buttons">
+      <a class="btn btn-solid" href="services.html">Learn More</a>
+      <a class="btn btn-ghost" href="browse-books.html">View Book List</a>
+    </div>
+  </div>
+</section>
+
+<section class="section panel-bg" id="services">
+  <div class="two-col">
+    <div>
+      <div class="section-head">
+        <h3>Our Services</h3>
+        <a class="view-all" href="services.html">View All &rarr;</a>
+      </div>
+      <div class="cards-row" id="servicesRow">
+        <a href="services.html" class="service-card">
+          <div class="icon-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 5c2.2-1 4.6-1 7 0v13.5c-2.4-1-4.8-1-7 0V5z"/>
+              <path d="M22 5c-2.2-1-4.6-1-7 0v13.5c2.4-1 4.8-1 7 0V5z"/>
+            </svg>
+          </div>
+          <h4>Book Borrowing</h4>
+          <p>Browse and borrow from our extensive collection of over 5,000 books online.</p>
+        </a>
+        <a href="services.html" class="service-card">
+          <div class="icon-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 7v5l3.5 2"/>
+            </svg>
+          </div>
+          <h4>Book Reservations</h4>
+          <p>Join the waitlist for busy titles and keep your place in line for your next pick.</p>
+        </a>
+        <a href="announcements.html" class="service-card">
+          <div class="icon-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+            </svg>
+          </div>
+          <h4>Announcements</h4>
+          <p>Stay current on library hours, new arrivals, and upcoming events in one place.</p>
+        </a>
+      </div>
+    </div>
+
+    <div id="announcement">
+      <div class="section-head">
+        <h3>Latest Announcement</h3>
+        <a class="view-all" href="announcements.html">View All &rarr;</a>
+      </div>
+      <div class="announcement-list" id="announceList">
+        <p class="loading-msg extracted-style-2">Loading announcements…</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="booklist">
+  <div class="section-head">
+    <h3>Available Books</h3>
+    <a class="view-all" href="browse-books.html">View All &rarr;</a>
+  </div>
+  <div class="book-grid" id="bookGrid"></div>
+</section>
+
+<footer id="about">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="logo">
+        <img src="images/logo.jpeg" alt="Batangas National High School Seal" class="extracted-style-1">
+      </div>
+      <div>
+        <h5>BCIHS Library</h5>
+        <p>Batangas City Integrated High School Library Services System — Empowering students through knowledge and innovation.</p>
+      </div>
+    </div>
+    <div>
+      <h6>Quick Links</h6>
+      <ul>
+        <li><a href="#home" class="nav-link" data-target="home">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="browse-books.html">Book List</a></li>
+        <li><a href="announcements.html">Announcement</a></li>
+      </ul>
+    </div>
+    <div class="hours">
+      <h6>Library Hours</h6>
+      <p>Monday – Friday</p>
+      <p>7:00 AM – 4:00 PM</p>
+    </div>
+    <div class="contact">
+      <h6>Contact</h6>
+      <ul>
+        <li>&#9993; banahislibrary@gmail.com</li>
+        <li>&#9742; (043) 723-4188</li>
+        <li>&#128205; Rizal Avenue, Batangas City, Philippines</li>
+      </ul>
+    </div>
+    <div class="social-links">
+      <h6>Follow Us</h6>
+      <span class="social-link">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13.5 21v-8.2h2.8l.4-3.2h-3.2V7.5c0-.9.3-1.6 1.6-1.6h1.7V3.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.3v3.2h2.8V21h3.4z"/>
+        </svg>
+        <span>Facebook</span>
+      </span>
+    </div>
+  </div>
+  <div class="footer-bottom">&copy; 2026 Batangas City Integrated High School. All rights reserved.</div>
+</footer>
+
+<script src="js/index.js?v=20261026-call-number"></script>
+
+</body>
+</html>

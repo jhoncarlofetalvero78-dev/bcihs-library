@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance | BCIHS Library</title>
+<link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+<link rel="stylesheet" href="css/attendance.css?v=20261022-shell-fix">
+</head>
+<body>
+
+<aside class="sidebar">
+  <ul class="nav-list">
+    <li><a href="admin-dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Dashboard</a></li>
+    <li><a href="manage-books.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>Manage Book</a></li>
+    <li><a href="borrow-requests.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg>Borrow Request</a></li>
+    <li><a href="reservations.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3M8 17h6"/></svg>Reservations</a></li>
+    <li><a href="transactions.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>Transaction</a></li>
+    <li><a href="manage-users.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg>Users</a></li>
+    <li class="active"><a href="attendance.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Attendance</a></li>
+    <li><a href="manage-announcements.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Announcements</a></li>
+    <li><a href="reports.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>Reports</a></li>
+    <li><a href="sms-logs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>SMS Logs</a></li>
+  </ul>
+  <hr class="nav-divider">
+  <ul class="nav-list logout-item">
+    <li><a href="backend/admin-logout.php"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Log Out</a></li>
+  </ul>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="images/logo.jpeg" alt="Batangas National High School Seal"></div>
+      <div><div class="topbar-title">BATANGAS CITY INTEGRATED HIGH SCHOOL</div><div class="topbar-subtitle">Library Management System</div></div>
+    </div>
+    <div class="topbar-account">
+      <div><div class="account-name" id="adminName">Admin User</div><div class="account-role">ADMINISTRATOR</div></div>
+      <div class="account-avatar" id="adminInitial">A</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Student Attendance</h1>
+        <p>Enter a student's name, year level, and section to record a time-in.</p>
+      </div>
+    </div>
+
+    <section class="panel check-in-panel" aria-labelledby="recordHeading">
+      <div class="panel-heading">
+        <div>
+          <h2 id="recordHeading">Record Time In</h2>
+          <p>Enter the student's details to record a new time-in using the server's current time.</p>
+        </div>
+      </div>
+      <form id="attendanceForm">
+        <div class="form-field">
+          <label for="studentName">Name</label>
+          <input id="studentName" name="student_name" type="text" maxlength="150" autocomplete="off" placeholder="Enter name" required>
+        </div>
+        <div class="form-field">
+          <label for="yearLevel">Year Level</label>
+          <input id="yearLevel" name="year_level" type="text" maxlength="20" placeholder="e.g., Grade 7 or Grade 11" required>
+        </div>
+        <div class="form-field">
+          <label for="studentSection">Section</label>
+          <input id="studentSection" name="section" type="text" maxlength="25" placeholder="Enter section" required>
+        </div>
+        <button class="primary-btn" id="recordButton" type="submit">Record Time In</button>
+      </form>
+      <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel attendance-panel" aria-labelledby="recordsHeading">
+      <div class="panel-heading records-heading">
+        <div>
+          <h2 id="recordsHeading">Attendance Records</h2>
+          <p id="recordCount">Loading records…</p>
+        </div>
+        <div class="form-field date-filter">
+          <label for="attendanceDate">Date</label>
+          <input type="date" id="attendanceDate">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Year Level</th><th>Section</th><th>Time In</th></tr>
+          </thead>
+          <tbody id="attendanceBody"><tr><td colspan="4" class="empty-msg">Loading records…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="js/attendance.js?v=20261024-year-section"></script>
+<script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
+</body>
+</html>

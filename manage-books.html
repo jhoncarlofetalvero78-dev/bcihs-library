@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Book | BCIHS Library</title>
+<link rel="stylesheet" href="css/manage-books.css?v=20261026-fil-classification">
+<link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+</head>
+<body>
+
+<aside class="sidebar">
+  <ul class="nav-list">
+    <li><a href="admin-dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      Dashboard
+    </a></li>
+    <li class="active"><a href="manage-books.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>
+      Manage Book
+    </a></li>
+    <li><a href="borrow-requests.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg>
+      Borrow Request
+    </a></li>
+    <li><a href="reservations.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3M8 17h6"/></svg>
+      Reservations
+    </a></li>
+    <li><a href="transactions.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
+      Transaction
+    </a></li>
+    <li><a href="manage-users.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg>
+      Users
+    </a></li>
+    <li><a href="attendance.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Attendance
+    </a></li>
+    <li><a href="manage-announcements.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      Announcements
+    </a></li>
+    <li><a href="reports.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>
+      Reports
+    </a></li>
+    <li><a href="sms-logs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg>
+      SMS Logs
+    </a></li>
+  </ul>
+
+  <hr class="nav-divider">
+  <ul class="nav-list logout-item">
+    <li><a href="backend/admin-logout.php">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+      Log Out
+    </a></li>
+  </ul>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo"><img src="images/logo.jpeg" alt="Batangas National High School Seal"></div>
+      <div>
+        <div class="topbar-title">BATANGAS CITY INTEGRATED HIGH SCHOOL</div>
+        <div class="topbar-subtitle">Library Management System</div>
+      </div>
+    </div>
+    <div class="topbar-account">
+      <div>
+        <div class="account-name" id="adminName">Admin User</div>
+        <div class="account-role">ADMINISTRATOR</div>
+      </div>
+      <div class="account-avatar" id="adminInitial">A</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Manage Book</h1>
+        <p>Add, edit, and remove titles from the library's collection.</p>
+      </div>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search by title, author, or category…">
+      <button class="add-btn export-btn" id="exportBtn" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Export CSV
+      </button>
+      <button class="add-btn" id="addBookBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        Add Book
+      </button>
+    </div>
+
+    <p class="count-badge extracted-style-1" id="countBadge"></p>
+
+    <div class="panel">
+      <p class="loading-msg" id="loadingMsg">Loading books…</p>
+      <table id="booksTable" class="extracted-style-1">
+        <thead>
+          <tr><th>ISBN</th><th>Classification No.</th><th>Cutter No.</th><th>Call No.</th><th>Title</th><th>Author</th><th>Edition</th><th>Category</th><th>Accession Number</th><th>Total</th><th>Available</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="booksBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add Book</h2>
+    <form id="bookForm">
+      <input type="hidden" id="bookId">
+      <div class="book-form-grid">
+        <div class="book-form-main">
+          <div class="field">
+            <label for="titleInput">Title</label>
+            <input type="text" id="titleInput" placeholder="e.g. To Kill a Mockingbird" required>
+          </div>
+          <div class="field">
+            <label for="authorInput">Author</label>
+            <input type="text" id="authorInput" placeholder="e.g. Harper Lee" required>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="editionInput">Edition</label>
+              <input type="text" id="editionInput" placeholder="e.g. 1st Edition">
+            </div>
+            <div class="field">
+              <label for="placeInput">Place of Publication</label>
+              <input type="text" id="placeInput" placeholder="e.g. New York">
+            </div>
+          </div>
+          <div class="field">
+            <label for="publisherInput">Publisher</label>
+            <input type="text" id="publisherInput" placeholder="e.g. Harper Perennial">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="yearInput">Year of Publication</label>
+              <input type="text" id="yearInput" placeholder="e.g. 1960">
+            </div>
+            <div class="field">
+              <label for="isbnInput">ISBN</label>
+              <input type="text" id="isbnInput" placeholder="e.g. 978-0-06-112008-4">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="categoryInput">Category</label>
+              <input type="text" id="categoryInput" placeholder="e.g. Classic Literature">
+            </div>
+            <div class="field">
+              <label for="classificationNumberInput">Classification No.</label>
+              <input type="text" id="classificationNumberInput" placeholder="e.g. Fil. 001.3">
+            </div>
+            <div class="field">
+              <label for="cutterNumberInput">Cutter No.</label>
+              <input type="text" id="cutterNumberInput" placeholder="e.g. Z948">
+            </div>
+          </div>
+          <div class="field">
+            <label for="accessionNumberInput">Accession Number</label>
+            <input type="text" id="accessionNumberInput" placeholder="e.g. 2024-0017">
+          </div>
+        </div>
+        <div class="book-form-side">
+          <div class="field">
+            <label for="photoInput">Book Picture (optional)</label>
+            <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp">
+            <small class="field-help">JPG, PNG, or WebP. Maximum file size: 5 MB.</small>
+            <img id="photoPreview" class="photo-preview" alt="Book cover preview" hidden>
+          </div>
+          <div class="field">
+            <label for="totalInput">Total</label>
+            <input type="number" id="totalInput" min="0" value="1" required>
+          </div>
+        </div>
+      </div>
+      <p class="modal-error" id="modalError"></p>
+      <div class="modal-btn-row">
+        <button type="button" class="modal-btn cancel" id="cancelBtn">Cancel</button>
+        <button type="submit" class="modal-btn save" id="saveBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="qrOverlay">
+  <div class="modal extracted-style-2">
+    <h2 id="qrModalTitle">Book QR Code</h2>
+    <p class="extracted-style-3">Scan this to see the book's details and request to borrow it. You'll be asked to sign in before borrowing. Print it and attach it to the physical copy.</p>
+    <img id="qrImage" src="" alt="QR code" class="extracted-style-4">
+    <p class="extracted-style-5" id="qrUrlText"></p>
+    <div class="modal-btn-row">
+      <button type="button" class="modal-btn cancel" id="qrCloseBtn">Close</button>
+      <a class="modal-btn save extracted-style-6" id="qrDownloadBtn" download>Download</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/manage-books.js?v=20261026-fil-classification"></script>
+<script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
+</body>
+</html>

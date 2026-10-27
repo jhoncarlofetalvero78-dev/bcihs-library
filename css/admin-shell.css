@@ -1,0 +1,219 @@
+.sidebar-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 2px 16px;
+  margin-bottom:10px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+}
+.sidebar{
+  background:linear-gradient(180deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  transition:none;
+}
+.sidebar.sidebar-ready{
+  transition:width .25s ease, flex-basis .25s ease, padding .25s ease;
+}
+.sidebar-header .topbar-brand{
+  flex:1;
+  min-width:0;
+  gap:8px;
+}
+.sidebar-header .topbar-logo{
+  width:36px;
+  height:36px;
+}
+.sidebar-header .topbar-title{
+  font-size:0.75rem;
+  line-height:1.2;
+  letter-spacing:0.2px;
+}
+.sidebar-header .topbar-subtitle{
+  font-size:0.68rem;
+}
+.sidebar:not(.is-collapsed) .sidebar-toggle{
+  position:static;
+  margin-left:8px;
+}
+header.topbar{
+  justify-content:flex-end;
+  min-height:72px;
+}
+.sidebar-toggle{
+  width:30px;
+  height:30px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,0.35);
+  border-radius:8px;
+  background:rgba(255,255,255,0.08);
+  color:#fff;
+  cursor:pointer;
+  transition:background .15s ease, transform .2s ease;
+}
+.sidebar-toggle:hover{
+  background:rgba(255,255,255,0.18);
+}
+.sidebar-toggle svg{
+  width:16px;
+  height:16px;
+  transition:transform .2s ease;
+}
+.sidebar.is-collapsed{
+  width:78px;
+  flex-basis:78px;
+  padding-left:10px;
+  padding-right:10px;
+}
+.sidebar.is-collapsed .sidebar-header{
+  flex-direction:column;
+  align-items:center;
+  padding-left:0;
+  padding-right:0;
+}
+.sidebar.is-collapsed .sidebar-toggle{
+  position:static;
+}
+.sidebar.is-collapsed .sidebar-header .topbar-brand{
+  flex:0;
+  justify-content:center;
+}
+.sidebar.is-collapsed .sidebar-header .topbar-brand > div:not(.topbar-logo){
+  display:none;
+}
+.sidebar.is-collapsed .sidebar-toggle{
+  margin-top:12px;
+}
+.sidebar.is-collapsed .sidebar-toggle svg{
+  transform:rotate(180deg);
+}
+.sidebar.is-collapsed .nav-list li a,
+.sidebar.is-collapsed .nav-list li .nav-btn{
+  justify-content:center;
+  gap:0;
+  padding-left:0;
+  padding-right:0;
+  font-size:0;
+  overflow:hidden;
+}
+.sidebar.is-collapsed .nav-list .soon-badge{
+  display:none;
+}
+.sidebar.is-collapsed .nav-divider{
+  margin-left:0;
+  margin-right:0;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sidebar.sidebar-ready,
+  .sidebar-toggle svg{
+    transition:none;
+  }
+}
+
+@media (max-width:760px){
+  body{
+    display:flex;
+    flex-direction:column;
+    background:var(--maroon-dark);
+  }
+  .sidebar,
+  .main-wrap{
+    display:contents;
+  }
+  header.topbar{
+    order:1;
+    width:100%;
+    min-height:68px;
+    flex-wrap:nowrap;
+    justify-content:space-between;
+    gap:8px;
+    padding:10px 12px;
+    background:linear-gradient(90deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  }
+  header.topbar .topbar-brand{
+    flex:1;
+    min-width:0;
+    gap:8px;
+  }
+  header.topbar .topbar-logo{
+    width:36px;
+    height:36px;
+  }
+  header.topbar .topbar-title{
+    font-size:0.65rem;
+    line-height:1.2;
+    letter-spacing:0;
+  }
+  header.topbar .topbar-subtitle{
+    font-size:0.62rem;
+  }
+  .topbar-account{
+    flex-shrink:0;
+    gap:8px;
+  }
+  header.topbar .account-name{
+    font-size:0.76rem;
+  }
+  header.topbar .account-role{
+    font-size:0.58rem;
+  }
+  header.topbar .account-avatar{
+    width:34px;
+    height:34px;
+  }
+  .sidebar-header{
+    order:2;
+    width:100%;
+    justify-content:flex-end;
+    align-items:center;
+    padding:0 12px 8px;
+    margin:0;
+    border:0;
+    background:linear-gradient(90deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  }
+  .sidebar-toggle{
+    align-self:flex-end;
+  }
+  .sidebar > .nav-list:not(.logout-item){
+    order:3;
+  }
+  .sidebar > .nav-divider{
+    order:4;
+  }
+  .sidebar > .logout-item{
+    order:5;
+  }
+  .sidebar > .nav-list,
+  .sidebar > .nav-divider{
+    width:100%;
+    margin-top:0;
+    padding:4px 14px;
+    background:linear-gradient(90deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  }
+  .sidebar > .nav-divider{
+    padding:0;
+    margin:4px 0;
+    border:0;
+    height:1px;
+    background:rgba(255,255,255,0.15);
+  }
+  main{
+    order:6;
+    width:100%;
+    min-width:0;
+    background:var(--bg);
+  }
+  .sidebar-toggle svg{
+    transform:rotate(90deg);
+  }
+  .sidebar.is-collapsed .sidebar-toggle svg{
+    transform:rotate(270deg);
+  }
+  .sidebar.is-collapsed .nav-list,
+  .sidebar.is-collapsed .nav-divider{
+    display:none;
+  }
+}
