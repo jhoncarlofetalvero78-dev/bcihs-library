@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/profile.css">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/reservation-scheduling.css?v=20261027-phase4">
 </head>
 <body class="profile-page profile-page">
 
@@ -61,7 +62,7 @@
           <div class="stat-item total">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2.2-1 4.6-1 7 0v13.5c-2.4-1-4.8-1-7 0V5z"/><path d="M22 5c-2.2-1-4.6-1-7 0v13.5c2.4-1 4.8-1 7 0V5z"/></svg>
             <strong id="statTotal">5</strong>
-            <span>Total Requests</span>
+            <span>Borrowing Records</span>
           </div>
         </div>
       </div>
@@ -74,6 +75,7 @@
       <nav class="tab-bar" role="tablist" aria-label="Profile sections">
         <button class="tab-btn active" role="tab" aria-selected="true" data-tab="personalInfo" id="tabPersonalInfo">Personal Info</button>
         <button class="tab-btn" role="tab" aria-selected="false" data-tab="borrowingHistory" id="tabBorrowingHistory">Borrowing History</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="reservationHistory" id="tabReservationHistory">Reservations</button>
       </nav>
 
       <!-- Personal Info Panel -->
@@ -156,6 +158,13 @@
         </div>
       </section>
 
+      <section class="tab-panel" id="panelReservationHistory" role="tabpanel" aria-labelledby="tabReservationHistory">
+        <div class="history-card">
+          <h2>Reservation history</h2>
+          <p class="reservation-history-note">Waiting is a request for a preferred time, not a stock guarantee. Ready for Pickup means a copy is held. There is no automatic expiry; cancel in the catalog or contact staff if you cannot attend. All times are Philippine time.</p>
+          <div id="reservationHistoryContent"><p class="loading-msg">Loading reservations…</p></div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -170,7 +179,8 @@
 
 <script src="js/philippine-phone.js"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
-<script src="js/profile.js?v=20261027-phase3a"></script>
+<script src="js/reservation-scheduling.js?v=20261027-phase4"></script>
+<script src="js/profile.js?v=20261027-phase4"></script>
 
 </body>
 </html>

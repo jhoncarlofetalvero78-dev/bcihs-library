@@ -11,17 +11,17 @@ try {
     $stmt = $pdo->query(
         'SELECT
             r.id, r.status, r.reserved_at, r.pickup_at, r.ready_at, r.fulfilled_at, r.due_date, r.returned_at,
-            u.id AS user_id, u.full_name AS student_name,
-            b.id AS book_id, b.title AS book_title, b.total_copies, b.borrowed_copies
+            u.id AS user_id, u.full_name AS student_name, u.student_id, u.year_section,
+            b.id AS book_id, b.title AS book_title, b.author, b.accession_number, b.total_copies, b.borrowed_copies
          FROM reservations r
          JOIN users u ON u.id = r.user_id
          JOIN books b ON b.id = r.book_id
-         ORDER BY r.book_id, r.reserved_at ASC'
+         ORDER BY r.book_id, r.reserved_at ASC, r.id ASC'
     );
     $reservations = $stmt->fetchAll();
 
     // Compute each 'waiting' reservation's place in line, per book, without
-    // storing it — position 1 is the next one eligible to be marked ready.
+    // storing it. This is advisory order; staff still verify stock before allocation.
     $positionByBook = [];
     foreach ($reservations as &$r) {
         if ($r['status'] === 'waiting') {
@@ -33,6 +33,15 @@ try {
         }
     }
     unset($r);
+
+    $availability = [];
+    foreach ($reservations as &$reservation) {
+        $key = (int) $reservation['book_id'];
+        if (!isset($availability[$key])) $availability[$key] = borrowingStock($pdo, ['id' => $key,
+            'total_copies' => $reservation['total_copies'], 'borrowed_copies' => $reservation['borrowed_copies']]);
+        $reservation = array_merge($reservation, $availability[$key]);
+    }
+    unset($reservation);
 
     // Most-recent-first is friendlier for admin browsing than grouped-by-book.
     usort($reservations, fn($a, $b) => strtotime($b['reserved_at']) <=> strtotime($a['reserved_at']));

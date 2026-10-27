@@ -22,6 +22,8 @@ function page(script) {
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/borrowing-status.js'),'utf8'),context);
   context.borrowing=context.window.borrowing;
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/reservation-scheduling.js'),'utf8'),context);
+  context.reservationScheduling=context.window.reservationScheduling;
   if(script)vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/'+script),'utf8'),context);
   return {run:code=>vm.runInContext(code,context),elements,requests,context};
 }

@@ -26,6 +26,7 @@ try {
     if ($bookId === false) throw new DomainException('That reservation no longer exists.', 404);
 
     $pdo->beginTransaction();
+    $settings = $action === 'schedule' ? reservationSettings($pdo, true) : null;
     $book = lockBorrowingBook($pdo, (int) $bookId);
     $stmt = $pdo->prepare('SELECT * FROM reservations WHERE id = :id FOR UPDATE');
     $stmt->execute(['id' => $id]);
@@ -65,6 +66,9 @@ try {
         $sql = 'UPDATE reservations SET status = "cancelled" WHERE id = :id';
     } else {
         if ($status !== 'waiting') throw new DomainException('Pickup time is final once the reservation is ready.', 409);
+        $pickupAt = validatePickupAt($pdo, $input['pickup_at'] ?? null);
+        if ($pickupAt === null) throw new DomainException('That pickup time has passed. Choose a future time.', 422);
+        requirePickupCapacity($pdo, $settings, $pickupAt, $id);
         $pdo->prepare('UPDATE reservations SET pickup_at = :pickup WHERE id = :id')->execute(['pickup' => $pickupAt, 'id' => $id]);
         $sql = null;
     }

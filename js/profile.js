@@ -440,3 +440,28 @@ function loadBorrowingHistory(){
   // Load borrowing history
   loadBorrowingHistory();
 })();
+
+
+function loadReservationHistory() {
+  const container = document.getElementById('reservationHistoryContent');
+  return fetch('backend/my-reservations-data.php', {credentials:'same-origin', cache:'no-store'})
+    .then(async response => {
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.reservations)) throw new Error('Could not load reservations.');
+      return data.reservations;
+    })
+    .then(rows => {
+      if (!rows.length) { container.innerHTML = '<p class="empty-msg">No reservation history yet.</p>'; return; }
+      const date = value => value ? escapeHtml(reservationScheduling.format(value)) : '—';
+      container.innerHTML = `<table class="history-table"><thead><tr><th>Book</th><th>Status</th><th>Preferred / confirmed pickup</th><th>Checked out</th><th>Due</th><th>Returned</th><th>Catalog</th></tr></thead><tbody>${rows.map(row => `
+        <tr><td><strong>${escapeHtml(row.book_title)}</strong></td>
+          <td><span class="status-badge ${escapeHtml(row.status)}">${escapeHtml(borrowing.label(row.status))}</span></td>
+          <td>${date(row.pickup_at)}</td><td>${date(row.fulfilled_at)}</td><td>${date(row.due_date)}</td><td>${date(row.returned_at)}</td>
+          <td><a class="reservation-history-link" href="browse-books.html?book=${Number(row.book_id)}">View book${['waiting','ready'].includes(row.status) ? ' / manage pickup' : ''}</a></td></tr>`).join('')}</tbody></table>`;
+    })
+    .catch(() => { container.innerHTML = '<p class="empty-msg" role="alert">Could not load reservation history. Reload to try again.</p>'; });
+}
+loadReservationHistory();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { loadBorrowingHistory(); loadReservationHistory(); }
+});

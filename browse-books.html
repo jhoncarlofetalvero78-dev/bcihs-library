@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/browse-books.css?v=20261026-qr-login-required">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/reservation-scheduling.css?v=20261027-phase4">
 </head>
 <body class="catalog-page browse-books-page">
 
@@ -40,7 +41,8 @@
 <dialog class="pickup-dialog" id="pickupDialog" aria-labelledby="pickupDialogTitle">
   <form id="pickupForm">
     <h2 id="pickupDialogTitle">Choose a pickup time</h2>
-    <p class="pickup-help">Available pickup dates are Monday to Friday, 7:00 AM–4:00 PM, in 30-minute intervals. Choose a future date and time.</p>
+    <p class="pickup-help">Available pickup dates are Monday to Friday, 7:00 AM–4:00 PM, in 30-minute intervals. All times are Philippine time. Closed dates and full slots cannot be selected.</p>
+    <p class="pickup-help" id="pickupCapacityNote"></p>
     <div class="pickup-calendar-heading">
       <button type="button" id="pickupPreviousMonth" aria-label="Previous month">&lsaquo;</button>
       <span class="pickup-month" id="pickupMonth" aria-live="polite"></span>
@@ -52,6 +54,7 @@
       <option value="">Select a time</option>
     </select>
     <p class="pickup-error" id="pickupError" role="alert"></p>
+    <button type="button" id="pickupRetry" class="pickup-cancel" hidden>Try again</button>
     <div class="pickup-dialog-actions">
       <button type="button" class="pickup-cancel" id="pickupCancel">Cancel</button>
       <button type="submit" class="pickup-save" id="pickupSave">Confirm</button>
@@ -60,7 +63,8 @@
 </dialog>
 
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
-<script src="js/browse-books.js?v=20261027-phase3a"></script>
+<script src="js/reservation-scheduling.js?v=20261027-phase4"></script>
+<script src="js/browse-books.js?v=20261027-phase4"></script>
 
 </body>
 </html>

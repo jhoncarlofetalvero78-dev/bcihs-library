@@ -10,7 +10,7 @@ try {
     if (!isset($_SESSION['user_id'])) bookError(401, 'not_logged_in');
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') bookError(405, 'method_not_allowed');
     $stmt = $pdo->prepare(
-        'SELECT r.id, r.book_id, r.status, r.reserved_at, r.pickup_at, r.fulfilled_at, r.due_date, r.returned_at, b.title AS book_title
+        'SELECT r.id, r.book_id, r.status, r.reserved_at, r.pickup_at, r.ready_at, r.fulfilled_at, r.due_date, r.returned_at, b.title AS book_title, b.author
          FROM reservations r
          JOIN books b ON b.id = r.book_id
          WHERE r.user_id = :user_id

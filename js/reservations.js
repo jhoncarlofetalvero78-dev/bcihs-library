@@ -24,7 +24,8 @@
   let allReservations = [];
   let csrfToken = '';
   const activeActions = new Set();
-  let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let calendarMonth = new Date(reservationScheduling.today().slice(0, 7) + '-01T12:00:00');
+  let pickupSettings = {daily_limit:null, slot_limit:null};
   let selectedDate = '';
 
   function reservationDateKey(datetime) {
@@ -39,13 +40,18 @@
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const firstWeekday = calendarMonth.getDay();
     const daysInMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
-    const today = new Date();
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayKey = reservationScheduling.today();
+    const basis = document.getElementById('calendarBasis').value;
+    const scheduled = {};
     const counts = {};
 
     allReservations.forEach(reservation => {
-      const key = reservationDateKey(reservation.reserved_at);
+      const key = reservationDateKey(reservation[basis]);
       if (key) counts[key] = (counts[key] || 0) + 1;
+      if (['waiting','ready'].includes(reservation.status) && reservation.pickup_at) {
+        const pickup = reservationDateKey(reservation.pickup_at);
+        scheduled[pickup] = (scheduled[pickup] || 0) + 1;
+      }
     });
 
     grid.innerHTML = weekdays.map(day => `<span class="calendar-weekday" aria-hidden="true">${day}</span>`).join('');
@@ -60,9 +66,13 @@
       const classes = ['calendar-day'];
       if (key === todayKey) classes.push('today');
       if (key === selectedDate) classes.push('selected');
+      const weekday = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day).getDay();
+      if (weekday === 0 || weekday === 6) classes.push('closed');
+      const full = basis === 'pickup_at' && pickupSettings.daily_limit !== null && (scheduled[key] || 0) >= pickupSettings.daily_limit;
+      if (full) classes.push('full');
       grid.insertAdjacentHTML('beforeend', `
         <button type="button" class="${classes.join(' ')}" data-date="${key}" aria-pressed="${key === selectedDate}" aria-label="${dateLabel}${count ? `, ${count} reservation${count === 1 ? '' : 's'}` : ', no reservations'}">
-          ${day}${count ? `<span class="calendar-day-count">${count} res.</span>` : ''}
+          ${day}${count ? `<span class="calendar-day-count">${count} res.</span>` : ''}${full ? '<span class="calendar-day-count">Full day</span>' : ''}
         </button>
       `);
     }
@@ -77,8 +87,8 @@
 
     const selected = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
     document.getElementById('calendarSelection').textContent = selected
-      ? `Showing reservations from ${selected.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}.`
-      : 'Showing reservations from all dates.';
+      ? `Showing ${basis === 'pickup_at' ? 'pickups' : 'submissions'} for ${selected.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}.`
+      : `Showing reservations for all ${basis === 'pickup_at' ? 'pickup' : 'submission'} dates.`;
     document.getElementById('clearCalendarDate').hidden = !selectedDate;
   }
 
@@ -90,15 +100,22 @@
 
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = borrowing.date(mysqlDatetime);
-    if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    });
+    return reservationScheduling.format(mysqlDatetime);
+  }
+
+  function reservationActions(r) {
+    const canCheckout = r.status === 'ready' ? r.available_copies > 0 : r.requestable_copies > 0;
+    const buttons = [`<button class="action-btn view" onclick="showReservationDetails(${r.id})">Details</button>`];
+    if (r.status === 'waiting') {
+      buttons.push(`<button class="action-btn view" onclick="scheduleReservation(${r.id})">Schedule</button>`);
+      buttons.push(`<button class="action-btn ready" ${!r.pickup_at || r.requestable_copies < 1 ? 'disabled' : ''} onclick="act(${r.id}, 'ready')">Mark Ready</button>`);
+    }
+    if (['waiting','ready'].includes(r.status)) {
+      buttons.push(`<button class="action-btn fulfill" ${canCheckout ? '' : 'disabled title="No unallocated physical copy is available"'} onclick="act(${r.id}, 'fulfill')">Confirm Checkout</button>`);
+      buttons.push(`<button class="action-btn cancel" onclick="act(${r.id}, 'cancel')">Cancel</button>`);
+    }
+    if (r.status === 'fulfilled') buttons.push(`<button class="action-btn fulfill" onclick="act(${r.id}, 'return')">Confirm Return</button>`);
+    return buttons.join('');
   }
 
   function renderRows(reservations) {
@@ -109,25 +126,13 @@
     }
     body.innerHTML = reservations.map(r => `
       <tr>
-        <td>${escapeHtml(r.student_name)}</td>
-        <td>${escapeHtml(r.book_title)}</td>
+        <td><strong>${escapeHtml(r.student_name)}</strong><small class="reservation-meta">${escapeHtml(r.student_id || 'No student ID')} · ${escapeHtml(r.year_section || '—')}</small></td>
+        <td>${escapeHtml(r.book_title)}<small class="reservation-meta">${r.requestable_copies} available for new requests · ${r.held_copies} held</small></td>
         <td>${r.queue_position ? `<span class="queue-pos">#${r.queue_position}</span>` : '—'}</td>
         <td>${formatDate(r.reserved_at)}</td>
         <td>${r.pickup_at ? formatDate(r.pickup_at) : 'Not scheduled'}</td>
         <td><span class="status-pill ${r.status}">${borrowing.label(r.status)}</span></td>
-        <td>
-          <button class="action-btn ready" title="${!r.pickup_at && r.status === 'waiting' ? 'User must choose a pickup time first' : 'Mark Ready'}" ${r.status !== 'waiting' || !r.pickup_at ? 'disabled' : ''} onclick="act(${r.id}, 'ready')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          </button>
-          <button class="action-btn fulfill" title="Confirm physical checkout" aria-label="Confirm Checkout" ${!['waiting','ready'].includes(r.status) ? 'disabled' : ''} onclick="act(${r.id}, 'fulfill')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
-          </button>
-          <button class="action-btn fulfill" title="Confirm physical return" aria-label="Confirm Return" ${r.status !== 'fulfilled' ? 'disabled' : ''} onclick="act(${r.id}, 'return')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M9 14l-4-4 4-4"/><path d="M5 10h9a5 5 0 0 1 5 5v1"/></svg>
-          </button>
-          <button class="action-btn cancel" title="Cancel" ${!['waiting','ready'].includes(r.status) ? 'disabled' : ''} onclick="act(${r.id}, 'cancel')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </button>
+        <td><div class="reservation-actions">${reservationActions(r)}</div>
         </td>
       </tr>
     `).join('');
@@ -136,8 +141,9 @@
   function applyFilters() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     const status = document.getElementById('statusFilter').value;
+    const basis = document.getElementById('calendarBasis').value;
     const filtered = allReservations.filter(r => {
-      if (selectedDate && reservationDateKey(r.reserved_at) !== selectedDate) return false;
+      if (selectedDate && reservationDateKey(r[basis]) !== selectedDate) return false;
       if (status && r.status !== status) return false;
       if (!q) return true;
       return [r.student_name, r.book_title].join(' ').toLowerCase().includes(q);
@@ -148,13 +154,17 @@
   }
 
   function loadReservations() {
-    return fetch('backend/reservations-data.php', { credentials: 'same-origin' })
-      .then(res => {
-        if (res.status === 401) throw new Error('not_logged_in');
-        if (!res.ok) throw new Error('failed');
-        return res.json();
+    return Promise.all([fetch('backend/reservations-data.php', { credentials:'same-origin', cache:'no-store' }),
+      fetch('backend/reservation-settings.php', { credentials:'same-origin', cache:'no-store' })])
+      .then(async responses => {
+        if (responses.some(response => response.status === 401)) throw new Error('not_logged_in');
+        if (responses.some(response => !response.ok)) throw new Error('failed');
+        return Promise.all(responses.map(response => response.json()));
       })
-      .then(data => {
+      .then(([data, policy]) => {
+        pickupSettings = policy.settings;
+        document.getElementById('dailyLimit').value = pickupSettings.daily_limit ?? '';
+        document.getElementById('slotLimit').value = pickupSettings.slot_limit ?? '';
         if (!data || !Array.isArray(data.reservations)) {
           throw new Error('invalid_response');
         }
@@ -200,7 +210,7 @@
         showToast(`Reservation ${labels[action]}.`);
         loadReservations();
       })
-      .catch(err => showToast(err.message))
+      .catch(err => { showToast(err.message); loadReservations(); })
       .finally(() => activeActions.delete(id));
   };
 
@@ -229,3 +239,48 @@
 
   renderCalendar();
   loadReservations();
+
+  document.getElementById('calendarBasis').addEventListener('change', () => { selectedDate = ''; renderCalendar(); applyFilters(); });
+  const staffPickupPicker = reservationScheduling.createPicker(async (target, pickupAt) => {
+    const response = await fetch('backend/reservation-action.php', {method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json', 'X-CSRF-Token':csrfToken},
+      body:JSON.stringify({id:target.reservation.id, action:'schedule', pickup_at:pickupAt})});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Could not change the schedule.');
+    showToast('Preferred pickup updated. A copy is held only after Mark Ready.');
+    loadReservations();
+  });
+  window.scheduleReservation = id => {
+    const reservation = allReservations.find(row => Number(row.id) === id);
+    if (reservation?.status === 'waiting') staffPickupPicker.open({reservation}, 'Set preferred pickup', 'Save schedule');
+  };
+  window.showReservationDetails = id => {
+    const row = allReservations.find(item => Number(item.id) === id);
+    if (!row) return;
+    const details = [['Student',row.student_name],['Student ID',row.student_id || '—'],['Book',row.book_title],
+      ['Author',row.author],['Accession',row.accession_number || '—'],['Status',borrowing.label(row.status)],
+      ['Submitted',formatDate(row.reserved_at)],['Pickup',formatDate(row.pickup_at)],['Ready',formatDate(row.ready_at)],
+      ['Checked out',formatDate(row.fulfilled_at)],['Due',formatDate(row.due_date)],['Returned',formatDate(row.returned_at)]];
+    document.getElementById('reservationDetailsBody').innerHTML = details.map(([label,value]) =>
+      `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join('');
+    document.getElementById('reservationDetailsDialog').showModal();
+  };
+  document.getElementById('closeReservationDetails').addEventListener('click', () => document.getElementById('reservationDetailsDialog').close());
+  document.getElementById('pickupSettingsForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = document.getElementById('savePickupSettings');
+    if (button.disabled || !confirm('Save these pickup capacity limits for the library? Blank means unlimited.')) return;
+    button.disabled = true;
+    const message = document.getElementById('pickupSettingsMessage');
+    try {
+      const response = await fetch('backend/reservation-settings.php', {method:'POST', credentials:'same-origin',
+        headers:{'Content-Type':'application/json', 'X-CSRF-Token':csrfToken}, body:JSON.stringify({
+          daily_limit:document.getElementById('dailyLimit').value, slot_limit:document.getElementById('slotLimit').value})});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not save pickup capacity.');
+      message.textContent = 'Pickup capacity saved. Existing schedules and inventory are unchanged.';
+      await loadReservations();
+    } catch (exception) { message.textContent = exception.message; }
+    finally { button.disabled = false; }
+  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !document.querySelector('dialog[open]')) loadReservations(); });
