@@ -11,7 +11,7 @@ function localRowSnapshot(PDO $pdo): array
     return $result;
 }
 
-function backupLocalDatabase(PDO $pdo, string $directory, string $dumpTool): string
+function backupLocalDatabase(PDO $pdo, string $directory, string $dumpTool, string $label = 'phase4'): string
 {
     if (!is_dir($directory) && !mkdir($directory, 0700, true)) throw new RuntimeException('Cannot create backup directory.');
     $directory = realpath($directory);
@@ -20,7 +20,8 @@ function backupLocalDatabase(PDO $pdo, string $directory, string $dumpTool): str
         throw new RuntimeException('Choose a private backup directory outside the web root.');
     }
     if (!is_file($dumpTool)) throw new RuntimeException('Specify the local mysqldump executable.');
-    $backup = $directory . '/before-phase4-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.sql';
+    if (!preg_match('/^[a-z0-9-]+$/', $label)) throw new RuntimeException('Invalid backup label.');
+    $backup = $directory . '/before-' . $label . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.sql';
     $optionFile = tempnam($directory, '.mysql-options-');
     $errorFile = tempnam($directory, '.mysql-errors-');
     chmod($optionFile, 0600);

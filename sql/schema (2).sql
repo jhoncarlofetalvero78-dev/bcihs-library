@@ -25,8 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Student attendance records capture each manual time-in. Repeated entries
--- are permitted; the name and ID snapshot preserve history if a user is deleted.
+-- Attendance snapshots preserve visit details; departure tracking is optional.
 CREATE TABLE IF NOT EXISTS attendance (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id             INT UNSIGNED NULL,
@@ -35,6 +34,13 @@ CREATE TABLE IF NOT EXISTS attendance (
   section             VARCHAR(25)  NOT NULL,
   student_identifier  VARCHAR(50)  NULL,
   time_in             DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  year_section_snapshot VARCHAR(50) NULL,
+  tracks_departure TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  time_out DATETIME NULL,
+  submission_key CHAR(32) NULL,
+  submission_hash CHAR(64) NULL,
+  UNIQUE KEY uq_attendance_submission (submission_key),
+  INDEX idx_attendance_open (tracks_departure, time_out),
   INDEX idx_attendance_time_in (time_in),
   INDEX idx_attendance_user_time (user_id, time_in),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -203,3 +209,12 @@ CREATE TABLE IF NOT EXISTS reservation_settings (
 ) ENGINE=InnoDB;
 
 INSERT IGNORE INTO reservation_settings (id, daily_limit, slot_limit) VALUES (1, NULL, NULL);
+
+-- Phase 5 attendance policy: unlimited visits, departure tracking off by default.
+CREATE TABLE IF NOT EXISTS attendance_settings (
+  id TINYINT UNSIGNED PRIMARY KEY,
+  daily_visit_limit SMALLINT UNSIGNED NULL,
+  occupancy_limit SMALLINT UNSIGNED NULL,
+  track_departures TINYINT UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+INSERT IGNORE INTO attendance_settings (id) VALUES (1);
