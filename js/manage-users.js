@@ -71,15 +71,16 @@
           <td>${escapeHtml(detailsFor(u))}</td>
           <td>${escapeHtml(u.phone) || '—'}</td>
           <td><span class="status-pill ${escapeHtml(u.account_status)}">${escapeHtml(accountStatusLabel(u.account_status).toUpperCase())}</span></td>
-          <td>
+          <td><div class="user-actions" role="group" aria-label="Account actions">
             ${u.account_status !== 'accepted' ? `<button class="action-btn approve" title="Approve account" onclick="setAccountStatus(${u.id}, 'accepted')">Approve</button>` : ''}
-            <button class="action-btn reject" title="Reject account" onclick="setAccountStatus(${u.id}, 'rejected')" ${u.account_status === 'accepted' || u.account_status === 'rejected' ? 'disabled' : ''}>Reject</button>
-            <button class="action-btn view" title="View" onclick="viewUser(${u.id})">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            ${u.account_status === 'pending' ? `<button class="action-btn reject" title="Reject pending account" onclick="setAccountStatus(${u.id}, 'rejected')">Reject</button>` : ''}
+            <button class="action-btn view" aria-label="View account details" title="View account details" onclick="viewUser(${u.id})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>View
             </button>
             <button class="action-btn delete" title="Delete" onclick="deleteUser(${u.id})" ${Number(u.has_history) || String(u.id)===String(currentUserId) ? 'disabled aria-label="Deletion unavailable: linked history or your own account"' : ''}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>Delete
             </button>
+            </div>
             ${Number(u.has_history)?'<small class="history-note">History linked — deletion unavailable</small>':''}
           </td>
         </tr>

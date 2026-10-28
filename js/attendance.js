@@ -13,7 +13,7 @@
     el(id).classList.toggle('error', error);
   }
   function status(record) {
-    return Number(record.tracks_departure) ? (record.time_out ? 'Completed' : 'Inside') : 'Time In only';
+    return Number(record.tracks_departure) ? (record.time_out ? 'Completed' : 'Inside Library') : 'Time In only';
   }
   function duration(record) {
     if (record.duration_seconds == null) return 'Not tracked';
@@ -47,7 +47,7 @@
     el('registeredFields').hidden = manual;
     el('studentLookup').hidden = manual;
     el('studentAccount').required = !manual;
-    ['studentName', 'yearLevel', 'studentSection'].forEach(id => { el(id).required = manual; });
+    ['studentName', 'yearLevel'].forEach(id => { el(id).required = manual; });
     message('lookupMessage', '');
     resetRepeat();
   }
@@ -87,8 +87,8 @@
       message('historyMessage', '');
       el('attendanceBody').innerHTML = records.length ? records.map(record => `
         <tr><td><strong>${escapeHtml(record.student_name)}</strong><small>#${Number(record.id)} · ${record.user_id ? 'Registered · ' + escapeHtml(record.student_identifier || 'Account #' + record.user_id) : 'Manual walk-in'}</small></td>
-        <td>${escapeHtml(record.year_section_snapshot || [record.year_level, record.section].filter(Boolean).join(' / ') || 'Not provided')}</td>
-        <td>${escapeHtml(record.time_in)}</td><td>${escapeHtml(record.time_out || '—')}</td>
+        <td>${escapeHtml(record.user_id ? (record.year_section_snapshot || 'Not provided') : [record.year_level, record.year_section_snapshot, record.section].filter(Boolean).join(' · '))}</td>
+        <td>${escapeHtml(record.time_in)}</td><td>${escapeHtml(record.time_out || (Number(record.tracks_departure) ? 'Awaiting departure' : 'Tracking disabled for this visit'))}</td>
         <td><span class="visit-status ${Number(record.tracks_departure) ? (record.time_out ? 'completed' : 'inside') : 'time_in_only'}">${status(record)}</span><small>${duration(record)}</small></td>
         <td>${Number(record.tracks_departure) && !record.time_out ? `<button class="primary-btn" type="button" data-time-out="${Number(record.id)}">Confirm Time Out</button>` : '—'}</td></tr>`).join('') : '<tr><td colspan="6" class="empty-msg">No visits match these filters.</td></tr>';
       el('exportAttendance').disabled = records.length === 0;
@@ -133,7 +133,7 @@
     el('recordButton').disabled = true;
     const data = { mode: el('visitorType').value, submission_key: formToken, confirm_repeat: el('confirmRepeat').checked };
     if (data.mode === 'registered') data.user_id = el('studentAccount').value;
-    else Object.assign(data, { student_name: el('studentName').value.trim(), year_level: el('yearLevel').value.trim(), section: el('studentSection').value.trim() });
+    else Object.assign(data, { student_name: el('studentName').value.trim(), year_level: el('yearLevel').value.trim(), section: el('studentSection').value.trim(), visitor_type: el('yearLevel').value, organization: el('visitorOrganization').value.trim() });
     try {
       const result = await request('attendance-add', data);
       formToken = result.formToken;
@@ -193,7 +193,7 @@
   el('exportAttendance').addEventListener('click', () => {
     const rows = [['Visit','Visitor type','Name','Student ID','Year / section','Time In (PHT)','Time Out (PHT)','Status','Duration seconds'],
       ...records.map(record => [record.id, record.user_id ? 'Registered' : 'Manual walk-in', record.student_name, record.student_identifier,
-        record.year_section_snapshot || [record.year_level, record.section].filter(Boolean).join(' / '), record.time_in, record.time_out, status(record), record.duration_seconds])];
+        record.user_id ? (record.year_section_snapshot || [record.year_level, record.section].filter(Boolean).join(' / ')) : [record.year_level, record.year_section_snapshot, record.section].filter(Boolean).join(' · '), record.time_in, record.time_out, status(record), record.duration_seconds])];
     const url = URL.createObjectURL(new Blob(['\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a'); link.href = url;
     link.download = `attendance-${el('attendanceView').value === 'inside' ? 'currently-inside' : el('attendanceDate').value}.csv`;

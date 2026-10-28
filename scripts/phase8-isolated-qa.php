@@ -28,7 +28,7 @@ try {
         $relative = substr($file->getPathname(), strlen($root)+1);
         if (preg_match('#^(\.git/|uploads/|tests/|scripts/)#', $relative)
             || preg_match('#(^|/)(db-local|sms-local|pickup-local|semaphore-api-key)\.php$#', $relative)
-            || str_contains($relative, '.sms-local-safe-')) continue;
+            || $relative === 'includes/report-local.json' || str_contains($relative, '.sms-local-safe-')) continue;
         $destination = $directory.'/'.$relative;
         if (!is_dir(dirname($destination))) mkdir(dirname($destination), 0700, true);
         copy($file->getPathname(), $destination);

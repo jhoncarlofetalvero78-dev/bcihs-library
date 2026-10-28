@@ -17,8 +17,11 @@ try {
     $userId = $mode === 'registered' ? attendanceId($input['user_id'] ?? null) : null;
     $name = $mode === 'manual' ? attendanceText($input['student_name'] ?? null, 150) : '';
     $year = $mode === 'manual' ? attendanceText($input['year_level'] ?? null, 20) : '';
-    $section = $mode === 'manual' ? attendanceText($input['section'] ?? null, 25) : '';
-    $hash = hash('sha256', json_encode([$mode,$userId,$name,$year,$section], JSON_THROW_ON_ERROR));
+    $section = $mode === 'manual' ? attendanceText($input['section'] ?? '', 25, false) : '';
+    $organization = $mode === 'manual' ? attendanceText($input['organization'] ?? '', 50, false) : '';
+    if (isset($input['visitor_type']) && !in_array($input['visitor_type'], ['External visitor','BCIHS student','Teacher / faculty','Other visitor'], true)) throw new DomainException('Choose a valid walk-in type.', 422);
+    if ($mode === 'manual' && isset($input['visitor_type'])) $year = $input['visitor_type'];
+    $hash = hash('sha256', json_encode([$mode,$userId,$name,$year,$section,$organization], JSON_THROW_ON_ERROR));
     $pdo->beginTransaction();
     // One policy lock serializes every entry, departure and capacity change.
     $settings = attendanceSettings($pdo, true);
@@ -32,7 +35,7 @@ try {
             'time_in'=>$existing['time_in'],'formToken'=>attendanceFormToken()]);
         exit;
     }
-    $studentIdentifier = $yearSection = null;
+    $studentIdentifier = null; $yearSection = $organization !== '' ? $organization : null;
     $today = $pdo->query('SELECT CURDATE()')->fetchColumn();
     if ($userId !== null) {
         $stmt = $pdo->prepare('SELECT full_name, student_id, id_number, year_section, department, role, account_status FROM users WHERE id = :id FOR UPDATE');

@@ -55,7 +55,7 @@ try {
         $records=$stmt->fetchAll();
         foreach ($records as &$row) {
             $row['status']=!(int)$row['tracks_departure']?'time_in_only':($row['time_out']?'completed':'inside');
-            $row['year_section']=$row['year_section_snapshot'] ?: trim($row['year_level'].' / '.$row['section'],' /');
+            $row['year_section']=$row['user_id']!==null ? ($row['year_section_snapshot'] ?: trim($row['year_level'].' / '.$row['section'],' /')) : implode(' · ',array_filter([$row['year_level'],$row['year_section_snapshot'],$row['section']],static fn($value)=>$value!==null && $value!==''));
             $row['visitor_type']=$row['user_id']!==null?'Registered':'Manual / unlinked';
         }unset($row);
         $seen=[];

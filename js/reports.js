@@ -42,7 +42,7 @@
       el('reportPeriod').textContent=(['inventory','overdue'].includes(data.report)?'Current snapshot':data.range.from+' to '+data.range.to+' (PHT)')+
         ` · Search: ${search || 'All'} · Status: ${reporting.label(status)}`;
       el('reportScope').textContent=data.scope;
-      el('reportGenerated').textContent=`Generated ${data.generatedAt} PHT · Generic working report; official school template pending.`;
+      el('reportGenerated').textContent=`Generated ${data.generatedAt} PHT · Generic library report; official statistical outputs are available separately below.`;
       el('reportWarning').hidden=data.current.inventory_matches_loans && !data.current.undated_loan_records;
       el('reportWarning').textContent='Some inventory balances differ from timestamped outstanding loans, or loan records lack checkout dates. Ask the librarian to review source records; this report has not changed them.';
       el('reportSummary').innerHTML=Object.entries(data.summary).map(([label,value])=>`<div class="stat-card"><span class="stat-label">${escapeHtml(reporting.label(label))}</span><strong class="stat-value">${escapeHtml(value)}</strong></div>`).join('');

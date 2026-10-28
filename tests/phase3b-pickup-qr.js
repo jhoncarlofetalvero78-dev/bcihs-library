@@ -20,7 +20,7 @@ function harness(file, search, allowProfileHtml=false) {
     };
   }
   const get=id=>{if(!elements.has(id))elements.set(id,node());return elements.get(id);};
-  const context=vm.createContext({window:{location:{search,href:''},addEventListener:(event,callback)=>events[event]=callback},document:{getElementById:get,createElement:node,hidden:false,
+  const context=vm.createContext({window:{location:{search,href:''},addEventListener:(event,callback)=>events[event]=callback},document:{getElementById:get,createElement:node,hidden:false,querySelector:selector=>get(selector),
     addEventListener:(event,callback)=>events['document:'+event]=callback,
     querySelectorAll(selector){
       if(selector!=='.tab-btn')return [];
@@ -64,7 +64,7 @@ async function main(){
   release(response({success:true}));await saving;
   verify(ui.get('checkoutButton').hidden && ui.get('pickupMessage').textContent.includes('Checkout confirmed'),'success reloads used status and hides checkout');
   ui.context.respond=async()=>response({error:'Only library staff'},403);await api.loadPickup();
-  verify(ui.get('pickupDetails').hidden && ui.get('pickupMessage').textContent==='Only library staff','unauthorized access hides previous details');
+  verify(ui.get('pickupDetails').hidden && ui.get('pickupFields').children.length===0 && ui.context.window.location.href==='admin-login.html?pickup='+token,'borrower session hides details and routes to staff-only login');
   ui.context.respond=async()=>response({error:'not_logged_in'},401);await api.loadPickup();
   verify(ui.context.window.location.href==='admin-login.html?pickup='+token,'signed-out verification preserves only validated QR token');
   ui.context.respond=async()=>{throw new Error('offline');};await api.loadPickup();

@@ -4,3 +4,6 @@
 /includes/sms-local.php
 /includes/.sms-local-safe-*.php
 .DS_Store
+
+/vendor/
+/includes/report-local.json

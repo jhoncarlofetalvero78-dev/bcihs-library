@@ -23,6 +23,9 @@ verify(users.get('usersBody').innerHTML.includes('History linked — deletion un
 users.get('statusFilter').value='pending';users.api.applyFilters();verify(users.get('countBadge').textContent.includes('1 of 3'),'approval filter works');
 users.get('roleFilter').value='teacher';users.api.applyFilters();verify(users.get('usersBody').innerHTML.includes('No users found'),'combined role/status empty state');
 users.get('statusFilter').value='accepted';users.api.applyFilters();verify(users.get('usersBody').innerHTML.includes('Teacher'),'approved teacher filter');
+verify(!users.get('usersBody').innerHTML.includes('action-btn reject'),'approved account has no pending-review Reject control');
+verify(users.get('usersBody').innerHTML.includes('>View') && users.get('usersBody').innerHTML.includes('stroke="currentColor"'),'View has a permanent visible label and inherited icon color');
+verify(users.get('usersBody').innerHTML.includes('class="user-actions"'),'account actions form a separate aligned group');
 users.get('roleFilter').value='';users.get('statusFilter').value='';users.get('searchInput').value='visitor@example';users.api.applyFilters();verify(users.get('countBadge').textContent.includes('1 of 3'),'email identifier search supported');
 users.get('searchInput').value='TCH2';users.api.applyFilters();verify(users.get('usersBody').innerHTML.includes('Teacher'),'staff ID search');
 verify(users.api.formatDate('2026-10-27 00:01:00').includes('27'),'Philippine date independent of Honolulu device');

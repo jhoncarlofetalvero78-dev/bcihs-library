@@ -1,0 +1,20 @@
+.official-controls{padding:20px;margin-top:24px}.official-controls label{display:flex;flex-direction:column;gap:6px}.official-controls input{padding:9px;max-width:100%;min-width:0}.official-controls .report-actions{flex-wrap:wrap;margin:16px 0}.official-page{background:white;color:black;padding:24px;margin:20px 0;border:1px solid #bbb}.official-page h2,.official-page h3,.official-page>p{text-align:center}.official-page h2{font-size:20px}.official-page h3{font-size:16px;margin:8px 0}.official-table{border-collapse:collapse;width:100%;min-width:500px}.official-table th,.official-table td{border:1px solid black;padding:9px;vertical-align:middle}.official-table thead,.official-table tfoot{background:#e7e6e6}.official-table td:not(:first-child){text-align:center}.official-table .sip-row{background:#fff2cc}.official-signatories{display:flex;justify-content:space-between;gap:16px;margin-top:36px;flex-wrap:wrap}.official-signatories p{flex:1;min-width:160px;overflow-wrap:anywhere;line-height:1.8}.official-chart-svg{width:100%;min-width:850px;height:auto}.official-page #officialMetric,.official-page #officialRanking{font-size:12px;text-align:left;line-height:1.5}
+@media print {
+  .skip-link,.official-controls,body:not(.official-print) #officialOutput{display:none!important}
+  body.official-print> :not(#officialOutput){display:none!important}
+  html:has(body.official-print),body.official-print{page:official-chart}
+  body.official-print #officialOutput{display:block!important;page:official-chart}
+  body.official-print .official-page{border:0;padding:0;margin:0;page:official-statistical;break-after:auto}
+  body.official-print .official-page+.official-page{page:official-chart;break-before:page}
+  @page official-statistical{size:A4 portrait;margin:12mm}
+  @page official-chart{size:A4 landscape;margin:12mm}
+  body.official-print .official-table{min-width:0;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.official-print .official-table td,body.official-print .official-table th{padding:6px}
+  body.official-print .official-chart-svg{min-width:0;width:100%;max-height:650px}
+  body.official-print .official-signatories{margin-top:18px;break-inside:avoid}
+  body.official-print .official-signatories p{min-width:0;font-size:9pt;line-height:1.3}
+  body.official-print .table-overflow-hint{display:none!important}
+  body.official-print .official-page h2{font-size:16pt;margin:0 0 8px}
+  body.official-print .official-page h3{margin:4px 0;line-height:1.2}
+  body.official-print .ui-table-scroll{overflow:visible!important}
+}

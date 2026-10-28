@@ -10,8 +10,8 @@ function loginPickupToken(): ?string
 
 function backToSignin(string $error): void
 {
-    if ($token = loginPickupToken()) {
-        header('Location: ../admin-login.html?' . http_build_query(['pickup' => $token, 'error' => $error]));
+    if (($token = loginPickupToken()) || !empty($GLOBALS['staffLoginOnly'])) {
+        header('Location: ../admin-login.html?' . http_build_query(array_filter(['pickup' => $token, 'error' => $error], static fn($value) => $value !== null)));
         exit;
     }
     $role = $_POST['role'] ?? '';
@@ -36,7 +36,7 @@ $identifier = is_string($_POST['identifier'] ?? null) ? trim($_POST['identifier'
 $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
 $remember = isset($_POST['remember']);
 if ($identifier === '' || $password === '' || strlen($identifier) > 190 || strlen($password) > 72) {
-    backToSignin('Enter your school ID or username and password.');
+    backToSignin('Enter your sign-in identifier and password.');
 }
 try {
     if (!securityBudget('login-ip', $_SERVER['REMOTE_ADDR'] ?? 'local', 30, 900)
@@ -56,10 +56,13 @@ $adminStmt = $pdo->prepare('SELECT id, username, password_hash FROM admins WHERE
 $adminStmt->execute(['username' => $identifier]);
 $admins = $adminStmt->fetchAll();
 // A colliding identifier must never silently select an account or privileged role.
-if (count($users) + count($admins) !== 1) backToSignin('Incorrect school ID, username, or password.');
+if (count($users) + count($admins) !== 1) backToSignin('Incorrect sign-in details.');
 $accountType = $admins ? 'admin' : 'user';
 $account = $admins[0] ?? $users[0];
-if (!password_verify($password, $account['password_hash'])) backToSignin('Incorrect school ID, username, or password.');
+if (!password_verify($password, $account['password_hash'])) backToSignin('Incorrect sign-in details.');
+if ((!empty($staffLoginOnly) || loginPickupToken()) && $accountType !== 'admin' && $account['role'] !== 'librarian') {
+    backToSignin('Only authorized library staff may sign in here. Use the Student Portal for borrower access.');
+}
 if ($accountType === 'user' && $account['account_status'] !== 'accepted') {
     $message = $account['account_status'] === 'rejected'
         ? 'Your account was rejected. Please contact the library for assistance.'

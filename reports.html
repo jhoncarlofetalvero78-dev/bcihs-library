@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 <link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/statistical-report.css">
 </head>
 <body class="admin-page reports-page">
 
@@ -84,7 +85,7 @@
   </header>
 
   <main>
-    <div class="page-head"><div><h1>Reports</h1><p>Library records and current statistics. Generic working report; official school template pending.</p></div><div class="report-actions"><button class="print-btn" id="exportReport" disabled>Export CSV</button><button class="print-btn" id="printBtn" disabled>Print Report</button></div></div>
+    <div class="page-head"><div><h1>Reports</h1><p>Library records and current statistics. Existing reports and separate official school statistical outputs.</p></div><div class="report-actions"><button class="print-btn" id="exportReport" disabled>Export CSV</button><button class="print-btn" id="printBtn" disabled>Print Report</button></div></div>
     <form class="report-filters" id="reportFilters" aria-label="Report filters">
       <div class="date-filter"><label for="reportType">Report</label><select id="reportType">
         <option value="inventory">Book Inventory</option><option value="loans">Checkouts</option><option value="returns">Returns</option><option value="requests">Borrow Requests</option><option value="overdue">Overdue Loans</option><option value="reservations">Reservations</option><option value="attendance">Attendance</option><option value="users">User Statistics</option>
@@ -107,12 +108,30 @@
       <section class="panel borrowing-panel" id="topBooksPanel" hidden><h2>Most Borrowed Books</h2><p>Ranked by actual checkouts matching the displayed filters.</p><ol id="topBooksList"></ol></section>
       <section class="panel" id="attendanceDaily" hidden><h2>Daily attendance totals</h2><p>Matching visits grouped by Philippine Time In date.</p><div id="dailyTotals"></div></section>
     </div>
+  <section class="panel official-controls" aria-labelledby="officialHeading">
+      <h2 id="officialHeading">Official School Statistical Reports</h2>
+      <p>Monthly circulation counts actual checkout transactions, including reservation loans and returned books in their checkout month. It is not current inventory. School year is a report label; confirm it with the librarian.</p>
+      <form id="officialFilters" class="report-filters">
+        <label>Ending / table month <input id="officialMonth" type="month" required></label>
+        <label>Comparison months <input id="officialMonths" type="number" min="1" max="12" value="3" required></label>
+        <label>School year <input id="officialYear" pattern="[0-9]{4}-[0-9]{4}" placeholder="YYYY-YYYY" required></label>
+        <button type="submit" class="apply-filter-btn" id="officialLoad">Show official reports</button>
+      </form>
+      <p id="officialMessage" role="status" aria-live="polite"></p>
+      <div class="report-actions"><button type="button" class="print-btn" id="officialExcel" disabled>Export formatted Excel (.xlsx)</button><button type="button" class="print-btn" id="officialCsv" disabled>Raw circulation CSV</button><button type="button" class="print-btn" id="officialPrint" disabled>Print official table and chart</button></div>
+      <details><summary>Configure report signatories (staff only)</summary><p>Enter verified current names/titles. Blank is allowed; example officeholders are not prefilled. Settings apply to future exports only.</p><form id="signatoryForm" class="report-filters"></form><p id="signatoryMessage" role="status"></p></details>
+    </section>
+    <div id="officialOutput" hidden>
+      <section class="official-page"><h2>STATISTICAL REPORT</h2><h3 id="officialTableMonth"></h3><h3 class="officialSchoolYear"></h3><p>Monthly circulated books · checkout transactions</p><div class="ui-table-scroll"><table class="official-table"><thead><tr><th>CLASSIFICATION</th><th>QUANTITY</th><th>RANK</th></tr></thead><tbody id="officialRows"></tbody><tfoot><tr><th>TOTAL</th><th id="officialTotal"></th><th></th></tr></tfoot></table></div><p id="officialRanking"></p><div class="official-signatories"></div></section>
+      <section class="official-page"><h2>STATISTICAL REPORT IN CHART</h2><h3 id="officialChartMonth"></h3><h3 class="officialSchoolYear"></h3><h3>CIRCULATED BOOKS</h3><div id="officialChart" class="ui-table-scroll"></div><div class="official-signatories"></div><p id="officialMetric"></p></section>
+    </div>
   </main>
 </div>
 
 <script src="js/library-ui.js?v=phase8"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
 <script src="js/reporting.js?v=20261027-phase6a"></script>
+<script src="js/statistical-report.js"></script>
 <script src="js/reports.js?v=20261027-phase6a"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>

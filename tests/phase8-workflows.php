@@ -9,18 +9,19 @@ function http(string $endpoint,string $method='GET',?array $data=null,?array $se
     global $base;
     $parts=explode('?', $endpoint, 2);
     $c=curl_init($base.'/backend/'.$parts[0].'.php'.(isset($parts[1])?'?'.$parts[1]:''));
-    $headers=[];
+    $headers=[];$responseHeaders=[];
     $options=[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>15,CURLOPT_CUSTOMREQUEST=>$method];
     if($session){$options[CURLOPT_COOKIEFILE]=$session['cookie'];$options[CURLOPT_COOKIEJAR]=$session['cookie'];}
     if($data!==null){
-        if(in_array($endpoint,['login-process','register-process'],true)) $options[CURLOPT_POSTFIELDS]=http_build_query($data);
+        if(in_array($endpoint,['login-process','admin-login-process','register-process'],true)) $options[CURLOPT_POSTFIELDS]=http_build_query($data);
         else {$options[CURLOPT_POSTFIELDS]=json_encode($data);$headers[]='Content-Type: application/json';}
     }
     if($csrf && isset($session['token']))$headers[]='X-CSRF-Token: '.$session['token'];
+    $options[CURLOPT_HEADERFUNCTION]=static function($curl,$line)use(&$responseHeaders){$responseHeaders[]=$line;return strlen($line);};
     $options[CURLOPT_HTTPHEADER]=$headers;curl_setopt_array($c,$options);
     $body=curl_exec($c);if($body===false)throw new RuntimeException('Local HTTP failed.');
     $status=curl_getinfo($c,CURLINFO_RESPONSE_CODE);curl_close($c);
-    return [$status,json_decode($body,true),$body];
+    return [$status,json_decode($body,true),$body,$responseHeaders];
 }
 function session():array {global $cookies;$file=tempnam(sys_get_temp_dir(),'phase8-cookie-');chmod($file,0600);$cookies[]=$file;return ['cookie'=>$file];}
 function login(string $id):array {global $password;$s=session();[$code]=http('login-process','POST',['identifier'=>$id,'password'=>$password],$s);check($code===302,'sign-in redirects');[$code,$data]=http('books-data','GET',null,$s);check($code===200,'authenticated catalog');$s['token']=$data['csrfToken'];return $s;}
@@ -185,6 +186,7 @@ try {
     $notice=post('announcement-save',['title'=>'Phase8 "Readers" & café','body'=>'Literal <script>notice</script>','category'=>'Notice','submission_key'=>$announcementForm['submissionToken']],$staff);
     [$status,$notices]=http('announcements-data');check($status===200 && count($notices['announcements'])===1,'published announcement visible');
     post('announcement-delete',['id'=>$notice['id']],$staff);
+    require __DIR__.'/client-workflows.php';
     $profile=post('profile-update',['full_name'=>'Phase8 teacher changed','phone'=>'09170000002','department'=>'Science','email'=>'discarded@example.invalid'],$teacherSession);
     check($profile['success']===true && $pdo->query('SELECT department FROM users WHERE id='.$teacher)->fetchColumn()==='Science','teacher profile persists permitted fields');
     [$status,$visitorUpdate]=http('profile-update','POST',['full_name'=>'Visitor','phone'=>'09170000003','email'=>'phase8-admin'],$visitorSession);

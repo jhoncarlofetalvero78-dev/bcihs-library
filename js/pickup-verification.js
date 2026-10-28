@@ -41,13 +41,13 @@ function renderPickup(data) {
 
 async function loadPickup() {
   if (pickupBusy) return;
-  pickupRequest = null; pickupCsrf = ''; pickupDetails.hidden = true; checkoutButton.hidden = true; handover.hidden = true; staffSignin.hidden = true;
+  pickupRequest = null; pickupCsrf = ''; document.getElementById('pickupFields').replaceChildren(); pickupDetails.hidden = true; checkoutButton.hidden = true; handover.hidden = true; staffSignin.hidden = true;
   if (!validPickupToken) { pickupMessage.textContent = 'Invalid pickup QR. Ask the borrower to reopen their approved request.'; return; }
   pickupMessage.textContent = 'Checking pickup QR…'; refreshPickup.disabled = true;
   try {
     const response = await fetch('backend/pickup-verification-data.php?token=' + pickupToken, {credentials:'same-origin',cache:'no-store'});
     const data = await response.json();
-    if (response.status === 401) { window.location.href = 'admin-login.html?pickup=' + pickupToken; return; }
+    if (response.status === 401 || response.status === 403) { window.location.href = 'admin-login.html?pickup=' + pickupToken; return; }
     if (!response.ok) throw new Error(data.error || 'Could not verify this QR.');
     renderPickup(data); pickupMessage.textContent = 'Pickup details verified. All times are Philippine time.';
   } catch (error) {
