@@ -18,7 +18,7 @@ function smsResult(string $state, string $reason, ?string $providerId = null): a
 function smsProviderResult(int $httpCode, $body, string $phone): array
 {
     if ($httpCode < 200 || $httpCode >= 300) {
-        return smsResult('failed', match ($httpCode) {
+        return smsResult($httpCode === 0 || $httpCode >= 500 ? 'unknown' : 'failed', match ($httpCode) {
             401,403 => 'provider_authentication_rejected', 429 => 'provider_rate_limited',
             default => $httpCode >= 500 ? 'provider_unavailable' : 'provider_http_rejected'
         });
@@ -137,7 +137,7 @@ function smsEventDate($value): string
 function smsEventMessage(string $event, array $details = []): string
 {
     $title = preg_replace('/\s+/u', ' ', trim((string)($details['title'] ?? 'your book')));
-    $title = mb_substr($title, 0, 45);
+    $title = mb_substr($title !== '' ? $title : 'your book', 0, 45);
     return match ($event) {
         'account_approved' => 'BCIHS Library: Your account is approved. You may sign in to the library portal.',
         'borrow_ready' => 'BCIHS Library: "' . $title . '" is approved and held for pickup. Show your request QR to staff. Not yet checked out.',

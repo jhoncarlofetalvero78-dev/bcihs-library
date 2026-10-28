@@ -68,8 +68,14 @@ try {
     }
     foreach([400=>'provider_http_rejected',401=>'provider_authentication_rejected',403=>'provider_authentication_rejected',429=>'provider_rate_limited',500=>'provider_unavailable'] as $http=>$reason) {
         $r=smsDispatch($config,'09123456789','Message',static fn($payload)=>['http'=>$http,'body'=>'FAKE_KEY_AND_PERSONAL_DATA']);
-        verify($r['state']==='failed' && $r['reason']===$reason && !str_contains(json_encode($r),'FAKE_KEY'),'mock HTTP failure produces safe reason without raw provider data');
+        verify($r['state']===($http>=500?'unknown':'failed') && $r['reason']===$reason && !str_contains(json_encode($r),'FAKE_KEY'),'mock HTTP failure produces safe reason without raw provider data');
     }
+    foreach (['Insufficient balance','Unapproved sender name','Invalid number'] as $error) {
+        $r=smsDispatch($config,'09123456789','Message',static fn($payload)=>['http'=>400,'body'=>json_encode(['error'=>$error,'private'=>'MUST_NOT_LOG'])]);
+        verify($r['state']==='failed' && $r['reason']==='provider_http_rejected' && !str_contains(json_encode($r),'MUST_NOT_LOG'),'Semaphore validation rejection stays safe: '.$error);
+    }
+    $r=smsDispatch($config,'09123456789','Message',static fn($payload)=>['http'=>0,'body'=>false]);
+    verify($r['state']==='unknown','missing HTTP response has an uncertain outcome');
     foreach(['not json','{}','[]','[{"message_id":1,"recipient":"09999999999","status":"Sent"}]','[{"recipient":"09123456789","status":"Queued"}]','[{"message_id":1,"recipient":"09123456789","status":[]}]'] as $body) {
         $r=smsDispatch($config,'09123456789','Message',static fn($payload)=>['http'=>202,'body'=>$body]);
         verify($r['state']==='unknown','HTTP success with unsupported content is not accepted/delivered');
@@ -82,6 +88,7 @@ try {
         verify(str_starts_with($message,'BCIHS Library:') && !str_contains($message,'TEST'),'event template is identified and not silently ignored as TEST');
         verify(!str_contains($message,'delivered'),'event template makes no SMS delivery claim');
     }
+    verify(str_contains(smsEventMessage('borrow_ready',['title'=>'   ']), '"your book"'), 'blank title uses a meaningful fallback');
     verify(str_contains(smsEventMessage('checkout',['due_date'=>'2026-11-11 10:30:00']),'Nov 11, 2026 10:30 AM (PHT)'),'checkout uses exact stored due date');
     verify(str_contains(smsEventMessage('borrow_ready'),'Not yet checked out'),'approval message distinguishes hold from loan');
     verify(str_contains(smsEventMessage('reservation_ready'),'ready for pickup') && !str_contains(smsEventMessage('reservation_ready'),'1970'),'unscheduled reservation does not invent a date');

@@ -187,6 +187,7 @@ try {
     [$status,$notices]=http('announcements-data');check($status===200 && count($notices['announcements'])===1,'published announcement visible');
     post('announcement-delete',['id'=>$notice['id']],$staff);
     require __DIR__.'/client-workflows.php';
+    if (getenv('BCIHS_SMS_ACCEPTANCE_ROOT')) require __DIR__.'/sms-acceptance-workflows.php';
     $profile=post('profile-update',['full_name'=>'Phase8 teacher changed','phone'=>'09170000002','department'=>'Science','email'=>'discarded@example.invalid'],$teacherSession);
     check($profile['success']===true && $pdo->query('SELECT department FROM users WHERE id='.$teacher)->fetchColumn()==='Science','teacher profile persists permitted fields');
     [$status,$visitorUpdate]=http('profile-update','POST',['full_name'=>'Visitor','phone'=>'09170000003','email'=>'phase8-admin'],$visitorSession);
@@ -213,6 +214,10 @@ try {
     $ambiguous=session();[$status]=http('login-process','POST',['identifier'=>'PH8-LIB','password'=>$password],$ambiguous);
     [$status,$ambiguousStatus]=http('admin-session-status','GET',null,$ambiguous);check(!$ambiguousStatus['loggedIn'],'colliding admin/user identifier cannot select privilege');
     $pdo->exec('DELETE FROM admins WHERE username="PH8-LIB"'); // Remove this run's intentional collision fixture only.
-    check((int)$pdo->query('SELECT COUNT(*) FROM sms_logs WHERE status<>"skipped"')->fetchColumn()===0,'all notifications simulated or safely skipped');
+    if (!getenv('BCIHS_SMS_ACCEPTANCE_ROOT')) {
+        check((int)$pdo->query('SELECT COUNT(*) FROM sms_logs WHERE status<>"skipped"')->fetchColumn()===0,'all notifications simulated or safely skipped');
+    } else {
+        check(is_file(getenv('BCIHS_SMS_ACCEPTANCE_ROOT').'/mock-calls.jsonl'),'SMS acceptance used the isolated capture transport');
+    }
     echo 'Completed '.$checks.' isolated Phase 8 workflow checks. Zero live provider calls; disposable database only.'."\n";
 } finally {foreach($cookies as $file)if(is_file($file))unlink($file);}

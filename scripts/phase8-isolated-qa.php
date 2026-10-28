@@ -3,6 +3,7 @@
 if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run') exit("Usage: php scripts/phase8-isolated-qa.php --run\n");
 require_once __DIR__ . '/../includes/db_config.php';
 if (!in_array(DB_HOST, ['127.0.0.1','localhost','::1'], true) || DB_NAME !== 'bcihs_library') exit("Requires the local source schema.\n");
+$smsAcceptance = ($argv[2] ?? '') === '--sms-acceptance';
 $php = PHP_BINARY;
 $name = 'bcihs_phase8_test_' . bin2hex(random_bytes(6));
 $directory = sys_get_temp_dir() . '/' . $name;
@@ -21,6 +22,7 @@ try {
     $test->exec('SET FOREIGN_KEY_CHECKS=1');
     if ((int)$test->query('SELECT COUNT(*) FROM users')->fetchColumn() !== 0) throw new RuntimeException('Isolation failed.');
     mkdir($directory, 0700);
+    $directory = realpath($directory);
     $root = dirname(__DIR__);
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
     foreach ($iterator as $file) {
@@ -39,6 +41,7 @@ try {
     if ($replaced!==1) throw new RuntimeException('Recovery fixture injection did not match.');
     file_put_contents($recoveryFile,$recoverySource);
     file_put_contents($directory.'/includes/sms-local.php', "<?php return ['mode'=>'simulate','provider'=>'simulation','live_enabled'=>false];\n");
+    if ($smsAcceptance) require __DIR__.'/../tests/sms-acceptance-install.php';
     mkdir($directory.'/sessions',0700);
     file_put_contents($directory.'/router.php', <<<'ROUTER'
 <?php
@@ -56,6 +59,10 @@ ROUTER);
     $env['BCIHS_SMS_MODE']='simulate'; $env['BCIHS_SMS_LIVE_ENABLED']='0'; $env['BCIHS_SMS_PROVIDER']='simulation';
     $env['BCIHS_PHASE8_PASSWORD']='Phase8-Only!'.bin2hex(random_bytes(12));
     $env['BCIHS_PUBLIC_BASE_URL']='http://127.0.0.1:8898';
+    if ($smsAcceptance) {
+        unset($env['BCIHS_SMS_MODE'], $env['BCIHS_SMS_LIVE_ENABLED'], $env['BCIHS_SMS_PROVIDER']);
+        $env['BCIHS_SMS_ACCEPTANCE_ROOT']=$directory;
+    }
     $env['BCIHS_PHASE8_ISOLATED']='1'; $env['PHP_CLI_SERVER_WORKERS']='4';
     $server = proc_open([$php,'-d','disable_functions=curl_exec','-d','session.save_path='.$directory.'/sessions','-S','127.0.0.1:8898','-t',$directory,$directory.'/router.php'],
         [0=>['pipe','r'],1=>['file',$directory.'/server.log','a'],2=>['file',$directory.'/server.log','a']],$pipes,null,$env);
