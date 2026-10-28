@@ -306,12 +306,12 @@ function renderBorrowingHistory(data){
   const rows = data.map(row => {
     const statusClass = row.status_code || row.status.toLowerCase();
     return `<tr>
-      <td><strong>${escapeHtml(row.book_title)}</strong></td>
-      <td>${escapeHtml(row.author)}</td>
-      <td>${escapeHtml(row.borrow_date)}</td>
-      <td>${escapeHtml(row.due_date)}</td>
-      <td>${escapeHtml(row.return_date)}</td>
-      <td><span class="status-badge ${statusClass}">${escapeHtml(row.status)}</span></td>
+      <td data-label="Book"><strong>${escapeHtml(row.book_title)}</strong></td>
+      <td data-label="Author">${escapeHtml(row.author)}</td>
+      <td data-label="Checked out">${escapeHtml(row.borrow_date)}</td>
+      <td data-label="Due">${escapeHtml(row.due_date)}</td>
+      <td data-label="Returned">${escapeHtml(row.return_date)}</td>
+      <td data-label="Status"><span class="status-badge ${statusClass}">${escapeHtml(row.status)}</span></td>
     </tr>`;
   }).join('');
   container.innerHTML = `
@@ -320,7 +320,7 @@ function renderBorrowingHistory(data){
         <tr>
           <th>Book Title</th>
           <th>Author</th>
-          <th>Borrow Date</th>
+          <th>Checked out</th>
           <th>Due Date</th>
           <th>Return Date</th>
           <th>Status</th>

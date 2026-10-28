@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 <link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
 <body class="admin-page sms-logs-page">
 <aside class="sidebar">
@@ -50,7 +51,9 @@
     </div>
     <div class="panel">
       <p id="smsMode" role="status">Checking notification mode…</p>
-      <p class="status-note" id="smsStatusNote">Refresh reloads saved BCIHS records only. It does not poll UniSMS or Semaphore. Status may lag behind the provider dashboard; a sent status does not confirm handset receipt.</p>
+      <p class="status-note">Refresh reloads local records only; it does not check provider delivery.</p>
+      <details class="sms-status-help"><summary>Understanding notification statuses</summary>
+      <p class="status-note" id="smsStatusNote">Refresh reloads saved BCIHS records only. It does not poll UniSMS or Semaphore. Status may lag behind the provider dashboard; a sent status does not confirm handset receipt.</p></details>
       <div class="controls">
         <input type="search" id="searchInput" placeholder="Search recipient, last phone digits, message, or event" aria-label="Search SMS logs">
         <select id="statusFilter" aria-label="Filter by notification status">

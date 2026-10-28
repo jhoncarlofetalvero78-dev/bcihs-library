@@ -1,0 +1,297 @@
+/* Shared screen design. Official print layouts retain their own rules. */
+@media screen {
+  :root {
+    --ui-primary:#64131b;--ui-primary-hover:#852934;--ui-bg:#f5f2f0;--ui-text:#273143;
+    --ui-muted:#62666f;--ui-border:#e1d8d4;--ui-radius:14px;
+    --ui-shadow:0 4px 18px #32131b06;
+    --maroon:#64131b;--maroon-dark:#481018;--red-maroon:#64131b;--red-dark:#64131b;
+    --red-solid:#64131b;--red-mid:#8e303b;--red-light:#eadbd7;--red-pale:#f4e9e6;
+    --ink:#273143;--bg:#f5f2f0;--card-shadow:var(--ui-shadow);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  body{font-family:inherit;color:var(--ui-text);line-height:1.55}
+  h1,h2,h3,h4{letter-spacing:-.025em;line-height:1.25}
+  button,input,select,textarea{font:inherit}
+  button,a{touch-action:manipulation}
+  :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #9b6d28;outline-offset:3px}
+  input::placeholder,textarea::placeholder{color:#73737b;opacity:1}
+  :is(.admin-page,.profile-page,.catalog-page){background:var(--ui-bg)}
+  :is(.panel,.stat-card,.profile-card,.stats-card,.history-card,.book-card,.announce-card){border:1px solid var(--ui-border);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
+  :is(.admin-page,.catalog-page,.profile-page) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){border:1px solid #cbbeba;border-radius:8px;background:#fff;color:var(--ui-text);min-height:44px;max-width:100%}
+  :is(.admin-page,.catalog-page,.profile-page) :is(.primary-btn,.add-btn,.export-btn,.refresh-btn,.print-btn,.post-btn,.apply-filter-btn,.borrow-btn,.save-btn){min-height:44px;padding:10px 16px;border-radius:8px;font-size:.9rem;font-weight:600;letter-spacing:0}
+  :is(.empty-msg,.loading-msg){color:var(--ui-muted);padding:32px 20px;line-height:1.6}
+  :is(.status-pill,.status-badge,.visit-status,.type-pill,.category-pill){font-weight:600;letter-spacing:0;border-radius:6px;padding:4px 9px}
+  :is(.status-pill,.status-badge).unknown{background:#fff0ce;color:#76500a}
+  :is(.status-pill,.status-badge).simulated{background:#e5eff9;color:#24577f}
+  :is(.status-pill,.status-badge).skipped{background:#eeeae7;color:#5b5552}
+  .admin-page .sidebar{background:#54111a;border-right:1px solid #ffffff18;padding-top:22px}
+  .admin-page .sidebar-header{padding-bottom:22px;margin-bottom:14px}
+  .admin-page .nav-list li a{border-radius:8px;margin:3px 0;padding-top:12px;padding-bottom:12px;font-weight:500}
+  .admin-page .nav-list li.active a,.admin-page .nav-list a[aria-current=page]{background:#fff;color:#64131b;box-shadow:0 2px 5px #26040b15}
+  .admin-page .sidebar .topbar-subtitle{color:#e2cacc}
+  .admin-page .topbar{background:#fff;color:var(--ui-text);border-bottom:1px solid var(--ui-border);box-shadow:none;min-height:76px}
+  .admin-page .account-role{color:var(--ui-muted)}
+  .admin-page .account-avatar{background:#f3e6e4;color:var(--ui-primary)}
+  .admin-page main{padding:30px 32px 48px}
+  .admin-page .page-head{margin-bottom:24px;align-items:center;gap:16px}
+  .admin-page .page-head h1{font-size:1.8rem;font-weight:650;color:var(--ui-text)}
+  .admin-page .page-head p{font-size:.9rem;color:var(--ui-muted);max-width:75ch;margin-top:6px}
+  .admin-page .page-head-icon{background:#f0e3e2;color:var(--ui-primary);border-radius:12px;box-shadow:none}
+  .admin-page .page-head-icon svg{stroke:currentColor}
+  .admin-page :is(.panel-head,.panel-heading){padding-bottom:14px;border-bottom:1px solid #eee7e4;margin-bottom:16px;gap:12px}
+  .admin-page :is(.panel-head,.panel-heading) h2{font-size:1.05rem;font-weight:650;color:var(--ui-text)}
+  .admin-page .stat-grid{gap:16px}
+  .admin-page .stat-card{padding:20px;min-height:112px}
+  .admin-page .stat-value{font-size:2rem;font-weight:650;line-height:1.2;color:var(--ui-text)}
+  .admin-page .stat-label{font-size:.82rem;font-weight:500;color:var(--ui-muted);letter-spacing:0}
+  .admin-page :is(.stat-icon,.bell-icon){background:#f3e8e5;color:var(--ui-primary);border-radius:10px;box-shadow:none}
+  .admin-page .stat-icon svg{stroke:currentColor}
+  .admin-page :is(.controls,.report-filters,.filters){gap:12px;align-items:end}
+  .admin-page :is(th,td){font-size:.84rem;line-height:1.5;padding:14px 16px}
+  .admin-page th{background:#f6f3f1;color:#5c5860;font-size:.72rem;font-weight:650;letter-spacing:.035em}
+  .admin-page td{border-color:#eee8e5}
+  .admin-page tbody tr:hover{background:#faf7f5}
+  .admin-page td small{line-height:1.5;color:var(--ui-muted)}
+  .admin-page .action-btn{font-size:.8rem;min-height:40px;border-radius:7px}
+  .admin-page .modal-overlay .modal{width:min(960px,calc(100% - 24px));max-height:calc(100dvh - 32px);border:1px solid var(--ui-border);border-radius:16px;padding:24px;overflow-y:auto}
+  .admin-page .modal h2{font-size:1.4rem;margin-bottom:20px}
+  .admin-page .modal .field label{font-size:.84rem;font-weight:600}
+  .book-form-section{font-size:.8rem;color:var(--ui-primary);border-top:1px solid var(--ui-border);padding-top:16px;margin:12px 0}
+  .manage-books-page .book-form-grid{grid-template-columns:minmax(0,2fr) minmax(200px,1fr);gap:24px}
+  .manage-books-page .modal-btn-row{position:sticky;bottom:-24px;background:#fff;padding:16px 0;border-top:1px solid var(--ui-border);z-index:2}
+  .manage-books-page .book-form-side{background:#faf7f5;border-radius:12px;padding:16px;align-self:start}
+  .admin-dashboard-page .content-grid{align-items:start}
+  .admin-dashboard-page .content-grid>.panel:nth-child(3){order:4}
+  .admin-dashboard-page .content-grid>.panel:nth-child(4){order:3}
+  .dashboard-circulation{padding:12px 16px;background:#ede8e5;border-radius:8px;font-size:.86rem;color:#5d5354}
+  .sms-logs-page #smsMode{background:#eaf1f6;color:#24577f;border:1px solid #c7d9e6;font-weight:600}
+  .sms-logs-page .status-note{font-size:.87rem;max-width:85ch;color:var(--ui-muted)}
+  .sms-logs-page td{vertical-align:top}
+  .sms-logs-page td:nth-child(4){min-width:250px;max-width:390px}
+  .sms-logs-page td:last-child{min-width:215px;max-width:310px}
+  .reports-page .official-controls{border-top:4px solid var(--ui-primary);padding:24px;margin-top:32px}
+  .reports-page .official-controls>p{font-size:.9rem;max-width:90ch;color:var(--ui-muted);margin:10px 0 18px}
+  .reports-page .official-controls details{border-top:1px solid var(--ui-border);padding-top:14px;margin-top:16px}
+  summary{cursor:pointer;font-weight:600}
+  .manage-announcements-page .announcement-card img,.announce-card img{object-fit:contain;background:#f2eeeb;max-height:260px}
+  /* Public school identity: compact navigation and quiet opaque reading surfaces. */
+  .public-page{background:#faf7f5;background-image:none;color:var(--ui-text)}
+  .public-page>header,.auth-page>header{background:#fff;color:var(--ui-primary);border-bottom:1px solid var(--ui-border);box-shadow:0 3px 16px #32131b06;padding:18px 4vw}
+  .public-page>header{display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:24px;align-items:center}
+  .public-page .brand,.auth-page .brand{order:0;flex-basis:auto;gap:12px;min-width:0}
+  .public-page .logo,.auth-page .logo{width:48px;height:48px;border:1px solid #d8c9c4;flex-shrink:0}
+  .public-page .school-name,.auth-page .school-name{font:600 .98rem/1.35 system-ui,sans-serif;letter-spacing:0;max-width:300px;color:var(--ui-primary)}
+  .public-page #mainNav{order:0;flex:none;width:auto;margin:0}
+  .public-page #mainNav ul{gap:4px;flex-wrap:wrap;justify-content:center}
+  .public-page #mainNav li a{background:transparent;color:#5e5354;border:0;border-radius:6px;font-size:.85rem;font-weight:600;padding:10px 12px;box-shadow:none;min-height:44px;display:flex;align-items:center}
+  .public-page #mainNav li.active a,.public-page #mainNav li a:hover{background:#f3e7e4;color:var(--ui-primary)}
+  .public-page .login-menu,.public-page .profile-pill{position:relative;right:auto;top:auto;order:0;margin:0;transform:none}
+  .public-page .login-btn{background:var(--ui-primary);color:#fff;border-radius:8px;padding:10px 16px;min-height:44px;box-shadow:none;transform:none;font-size:.83rem}
+  .public-page .profile-pill{background:#f5efec;color:var(--ui-primary);padding:8px 12px;border:1px solid var(--ui-border);border-radius:8px;min-width:0;max-width:230px}
+  .public-page .profile-pill .avatar-icon{background:var(--ui-primary);color:#fff}
+  .public-page .profile-name{font-size:.85rem;overflow-wrap:anywhere}
+  .public-page .profile-role{font-size:.75rem;color:var(--ui-muted)}
+  .public-page .hero{min-height:540px;padding:80px max(5vw,24px);background:linear-gradient(90deg,#351016f5 0%,#351016e8 38%,#35101620 100%),url('../images/school-entrance.png') center 48%/cover}
+  .public-page .hero-content{background:none;backdrop-filter:none;box-shadow:none;padding:0;border-radius:0;max-width:620px;color:#fff}
+  .public-page .hero h1{font:600 clamp(2.4rem,4vw,4.3rem)/1.08 system-ui,sans-serif;color:#fff;letter-spacing:-.045em;max-width:12ch;margin:12px 0 20px}
+  .public-page .hero h2{font:500 1rem/1.5 system-ui,sans-serif;color:#ead8d5;margin:0 0 18px}
+  .public-page .hero p{font-size:1rem;color:#f4e9e6;max-width:50ch;line-height:1.75}
+  .public-page .hero .eyebrow{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .public-page .hero-buttons{margin-top:30px;gap:12px}
+  .public-page .btn{padding:12px 20px;min-height:48px;font-size:.92rem;border-radius:8px}
+  .public-page .btn-solid{background:#fff;color:var(--ui-primary)}
+  .public-page .btn-ghost{background:transparent;border:1px solid #ead8d5;color:#fff}
+  .public-page .section{max-width:1320px;margin:auto;padding:52px 4vw;background:none}
+  .public-page .section-head{margin-bottom:22px;align-items:center;gap:16px}
+  .public-page .section-head h3{font:650 1.5rem/1.3 system-ui,sans-serif;color:var(--ui-text)}
+  .public-page .view-all{font-size:.85rem;color:var(--ui-primary);font-weight:600}
+  .public-page .two-col{gap:32px}
+  .public-page :is(.service-card,.announcement-item,.announce-card,.about-card,.content-card){background:#fff;backdrop-filter:none;border:1px solid var(--ui-border);box-shadow:var(--ui-shadow);border-radius:14px}
+  .public-page .service-card{padding:26px;display:flex;flex-direction:column;gap:12px;transform:none}
+  .public-page .service-card h4,.public-page .service-card h3{font-size:1.05rem;color:var(--ui-text)}
+  .public-page .service-card p{font-size:.9rem;color:#62666f;line-height:1.7}
+  .public-page .icon-badge{background:#f1e3df;color:var(--ui-primary);border-radius:10px;width:44px;height:44px;box-shadow:none}
+  .public-page .icon-badge svg{stroke:currentColor}
+  .public-page .cta{background:var(--ui-primary);color:#fff;border-radius:8px;font-size:.88rem;margin-top:auto;align-self:start;min-height:44px;padding:10px 16px}
+  .public-page .page-head{background:none;padding:0;margin:0 auto 32px;box-shadow:none;backdrop-filter:none;max-width:760px;text-align:center}
+  .public-page .page-head h1{font:650 clamp(1.8rem,3vw,2.5rem)/1.2 system-ui,sans-serif;color:var(--ui-primary);margin-bottom:14px}
+  .public-page .page-head p{color:var(--ui-muted);font-size:1rem;line-height:1.7}
+  .public-page :is(.services-wrap,.announce-wrap,.about-wrap){padding:48px 4vw 64px;max-width:1320px;margin:auto}
+  .public-page footer{background:#40101a;color:#f4e9e6;padding:44px 4vw 20px}
+  .public-page .footer-grid{max-width:1240px;margin:auto;gap:32px;grid-template-columns:2fr 1fr 1fr 1.4fr}
+  .public-page footer :is(h5,h6){color:#fff;font-family:inherit;font-size:.9rem;margin-bottom:14px}
+  .public-page footer :is(p,li,a,.footer-bottom){font-size:.8rem;line-height:1.8;color:#ead8d5}
+  .public-page .footer-bottom{border-top:1px solid #ffffff26;margin-top:30px;padding-top:18px;text-align:center}
+  .public-page .social-links{grid-column:auto}
+  .public-page .social-link{color:#ead8d5}
+  /* Authentication and borrower portal use the same restrained components. */
+  .auth-page{background:#f5f2f0}
+  .auth-page :is(.registration-hero,.login-hero){background:linear-gradient(#f5f2f0e8,#f5f2f0ed),url('../images/school-entrance.png') center/cover;padding:40px 20px}
+  .auth-page .page-heading h1{font-size:1.8rem;font-weight:650;letter-spacing:-.025em;color:var(--ui-primary);text-transform:none}
+  .auth-page .page-heading p{font-size:.9rem;letter-spacing:0;color:var(--ui-muted)}
+  .auth-page .registration-layout{display:flex;flex-direction:column;gap:0;max-width:720px;width:100%;margin:24px auto}
+  .auth-page .role-selector{width:100%;background:#efe7e3;border:1px solid var(--ui-border);border-radius:14px 14px 0 0;padding:18px 28px;box-shadow:none;display:flex;align-items:center;gap:20px}
+  .auth-page .role-selector label{margin:0;white-space:nowrap;font-size:.85rem}
+  .auth-page .role-selector select{flex:1;min-height:44px;background:#fff;border:1px solid #cbbeba;border-radius:8px;padding:10px 12px}
+  .auth-page .registration-panel{width:100%}
+  .auth-page .registration-form:is(.student,.teacher,.visitor,.librarian){width:100%;max-width:none;border-radius:0 0 14px 14px;padding:28px;background:#fff}
+  .auth-page .registration-form .form-icon{display:none}
+  .auth-page .registration-form .field input,.auth-page .login-card input,.auth-page .field select{background:#fff;border:1px solid #cbbeba;border-radius:8px;min-height:44px;padding:11px 13px;color:var(--ui-text)}
+  .auth-page .field label{font-weight:600;font-size:.85rem}
+  .auth-page .field{margin-bottom:16px}
+  .auth-page .registration-form h2{font-size:1.45rem;font-weight:650}
+  .auth-page .registration-form .subtitle{margin-bottom:24px;font-size:.88rem;line-height:1.6}
+  .auth-page .login-card{background:#fff;border-radius:14px;padding:32px;width:min(460px,100%)}
+  .auth-page .login-card h1{font-weight:650;letter-spacing:-.03em}
+  .catalog-page main{max-width:1280px;padding:32px 24px 60px}
+  .catalog-page .top-bar{box-shadow:none;border-bottom:1px solid var(--ui-border);padding:20px 4vw;gap:16px}
+  .catalog-page .top-bar h1{color:var(--ui-primary);font-weight:650}
+  .catalog-page .book-grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:20px}
+  :is(.catalog-page,.public-page) .book-card{padding:16px;gap:8px;display:flex;flex-direction:column;background:#fff}
+  .catalog-page .book-cover,.public-page .book-cover{height:190px;background:#eee6e1;border:1px solid #e0d5d0;border-radius:8px}
+  :is(.catalog-page,.public-page) .book-cover svg{stroke:#85645f}
+  :is(.catalog-page,.public-page) .book-cover img{object-fit:contain;width:100%;height:100%}
+  :is(.catalog-page,.public-page) .book-card :is(h3,h4){font-size:1rem;font-weight:650;line-height:1.4;color:var(--ui-text)}
+  :is(.catalog-page,.public-page) .book-card :is(.author,.genre,.isbn,.call-number,.book-details){color:#62666f;font-size:.8rem;line-height:1.5}
+  .catalog-page .borrow-btn{margin-top:auto;width:100%}
+  .catalog-page .avail-count{font-size:.82rem}
+  .catalog-page .borrow-btn.unavailable{background:#eeebe9;color:#625c59}
+  .profile-page .page-wrapper{max-width:1320px;padding:32px 24px 60px}
+  .profile-page .profile-grid{grid-template-columns:280px minmax(0,1fr);gap:24px}
+  .profile-page .page-header h1{font-size:1.8rem;font-weight:650;color:var(--ui-text)}
+  .profile-page .profile-header-gradient{height:72px;background:#64131b}
+  .profile-page .profile-avatar{width:76px;height:76px;background:#f0e1dd}
+  .profile-page .profile-info h2{font-size:1.2rem;font-weight:650}
+  .profile-page .stats-card h3{text-transform:none;font-size:.9rem;font-weight:600}
+  .profile-page .stat-item{background:#f7f3f0;color:var(--ui-text);padding:16px;border-radius:8px}
+  .profile-page .stat-item.total{background:#eee4df;color:var(--ui-primary)}
+  .profile-page .stat-item strong{color:var(--ui-primary);font-size:1.6rem}
+  .profile-page .stat-item svg{stroke:var(--ui-primary);color:var(--ui-primary)}
+  .profile-page .tab-bar{border:1px solid var(--ui-border);box-shadow:none;padding:6px;border-radius:10px;margin-bottom:24px}
+  .profile-page .tab-btn{font-weight:600;font-size:.86rem;padding:12px;border-radius:6px}
+  .profile-page .tab-btn.active{background:var(--ui-primary);color:#fff}
+  .profile-page .history-card{padding:24px;overflow-x:auto}
+  .profile-page .history-card h2{font-size:1.2rem;font-weight:650;margin-bottom:16px}
+  .profile-page .history-table{min-width:680px}
+  .profile-page .history-table :is(th,td){padding:14px 12px;font-size:.83rem;line-height:1.5}
+  .profile-page .history-table th{background:#f5f1ee;font-weight:600;letter-spacing:.025em;font-size:.73rem}
+  .pickup-qr-card{background:#f9f5f2;border:1px solid #dbcac4;border-left:4px solid #8e303b;padding:20px;border-radius:10px;margin:16px 0 24px}
+  .pickup-qr-card h3{font-size:1rem;margin-bottom:10px}
+  .pickup-qr-card p{font-size:.88rem;line-height:1.65;margin:10px 0}
+  .pickup-qr-card button{background:var(--ui-primary);color:#fff;padding:10px 16px;border:0;border-radius:8px;min-height:44px;font-weight:600}
+  .pickup-qr-card canvas{display:block;max-width:100%;height:auto;border:12px solid white;margin:16px 0}
+  .pickup-qr-card a{display:inline-block;color:var(--ui-primary);text-decoration:underline;font-size:.88rem;padding:8px 0}
+  @media(min-width:640px){.auth-page .registration-form{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.auth-page .registration-form> :not(.field){grid-column:1/-1}}
+  @media(max-width:1100px){.public-page>header{grid-template-columns:1fr auto;gap:12px}.public-page #mainNav{grid-row:2;grid-column:1/-1}.public-page .footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:760px){
+    .admin-page main{padding:24px 16px 40px}.admin-page .topbar{min-height:64px}
+    .admin-page .page-head h1{font-size:1.5rem}.admin-page .stat-value{font-size:1.7rem}
+    .public-page .hero{padding:52px 24px;min-height:490px;background-image:linear-gradient(90deg,#351016ec,#3510169e),url('../images/school-entrance.png')}
+    .public-page .hero h1{font-size:2.8rem}.public-page .section{padding:32px 20px}
+    .public-page .two-col{grid-template-columns:1fr;gap:32px}.public-page .cards-row{grid-template-columns:1fr}
+    .public-page .services-grid{grid-template-columns:1fr}.public-page .footer-grid{gap:24px}
+    .profile-page .profile-grid{grid-template-columns:1fr}.profile-page .profile-grid>aside{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .profile-page .stats-card{margin:0}.profile-page .history-card{padding:18px}.profile-page .main-content{padding:0}
+    .manage-books-page .book-form-grid{grid-template-columns:1fr}.manage-books-page .modal-btn-row{bottom:-24px}
+  }
+  @media(max-width:600px){
+    .public-page>header{padding:14px 16px;gap:10px;grid-template-columns:1fr auto auto;position:relative}
+    .public-page .school-name{font-size:.8rem;max-width:220px}.public-page .logo{width:40px;height:40px}
+    .public-page .hamburger{display:block;order:0;color:var(--ui-primary);min-width:44px;min-height:44px}
+    .public-page #mainNav{grid-column:1/-1;grid-row:2}.public-page #mainNav ul{display:flex;flex-direction:column;align-items:stretch}
+    .public-page #mainNav li a{justify-content:center}.public-page .login-btn{padding:8px 10px;font-size:.75rem}
+    .public-page .login-btn .avatar-circle{display:none}.public-page .profile-pill{max-width:120px;padding:8px;gap:6px}
+    .public-page .profile-pill .avatar-icon{display:none}.public-page .profile-info{min-width:0}
+    .public-page .footer-grid{grid-template-columns:1fr}.public-page .hero-buttons{flex-wrap:wrap}
+    .public-page .services-wrap,.public-page .announce-wrap{padding:32px 20px}
+    .auth-page .registration-form:is(.student,.teacher,.visitor,.librarian){padding:22px 18px}.auth-page .role-selector{padding:16px 18px;gap:10px}
+    .auth-page .school-name{font-size:.85rem}.auth-page .page-heading h1{font-size:1.5rem}
+    .profile-page .page-wrapper{padding:24px 12px}.profile-page .profile-grid>aside{grid-template-columns:1fr}
+    .profile-page .tab-bar{gap:4px;flex-wrap:wrap}.profile-page .tab-btn{flex:1 1 100%;min-height:44px}
+    .catalog-page main{padding:24px 16px}.catalog-page .book-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+    .admin-page .modal-overlay .modal{padding:18px}.manage-books-page .modal-btn-row{bottom:-18px}
+  }
+}
+@media screen {
+  .profile-page .stat-item.total span{color:#64131b}
+  .sms-logs-page td:nth-child(4){min-width:140px;max-width:190px}
+  .sms-logs-page td.message-cell{min-width:260px;max-width:380px;line-height:1.7}
+  .sms-logs-page .response-cell details{margin-top:8px;font-size:.8rem;color:#62666f}
+  .sms-logs-page .response-cell summary{color:#64131b;min-height:32px}
+  .sms-status-help{border-bottom:1px solid var(--ui-border);padding-bottom:16px;margin-bottom:20px;font-size:.85rem}
+  .sms-status-help p{margin-top:10px}
+  .lifecycle-note{font-size:.85rem;color:var(--ui-muted);line-height:1.65;margin-bottom:18px}
+  .public-page .about-wrap section,.public-page .hymn-card,.public-page .mission-card,.public-page .vision-card,.public-page .goals-card,.public-page .ddc-card{background:#fff;border:1px solid var(--ui-border);box-shadow:var(--ui-shadow);backdrop-filter:none}
+  @media(max-width:600px){
+    .profile-page #historyContent .history-table{min-width:0;width:100%;display:block}
+    .profile-page #historyContent .history-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+    .profile-page #historyContent .history-table tbody{display:grid;gap:14px}
+    .profile-page #historyContent .history-table tr{display:block;border:1px solid var(--ui-border);border-radius:10px;padding:8px}
+    .profile-page #historyContent .history-table td{display:grid;grid-template-columns:85px minmax(0,1fr);gap:12px;border:0;padding:8px;font-size:.83rem;max-width:none}
+    .profile-page #historyContent .history-table td::before{content:attr(data-label);font-size:.75rem;color:var(--ui-muted);font-weight:500}
+    .profile-page #historyContent .status-badge{white-space:normal;word-break:normal;overflow-wrap:normal}
+  }
+}
+@media screen {
+  .admin-dashboard-page .stat-card{padding:16px;min-height:128px;gap:12px}
+  .admin-dashboard-page .stat-card .stat-label{min-height:2.8em;line-height:1.4}
+  #availableBooksHint{font-size:.72rem;line-height:1.5;display:block;margin-top:6px;color:var(--ui-muted)}
+  .public-page .card{background:#fff;border:1px solid var(--ui-border);box-shadow:var(--ui-shadow);backdrop-filter:none;border-radius:14px}
+  .public-page .stanza p{font-size:.92rem;line-height:1.85;color:#49444a}
+  .public-page .mv-card p,.public-page .objectives-list li{font-size:.95rem;line-height:1.8;color:#49444a}
+}
+@media screen {
+  .admin-page .topbar .topbar-subtitle{color:var(--ui-muted)}
+  @media(max-width:760px){
+    .admin-page .sidebar{padding:8px 16px}
+    .admin-page .sidebar-header{padding:0;margin:0;border:0;min-height:44px}
+    .admin-page .sidebar-header .sidebar-toggle{margin-left:auto}
+  }
+}
+@media screen and (max-width:600px){
+  .public-page .brand{grid-column:1;grid-row:1}
+  .public-page .hamburger{grid-column:2;grid-row:1}
+  .public-page .login-menu,.public-page .profile-pill{grid-column:3;grid-row:1}
+  .profile-page .profile-card{display:grid;grid-template-columns:60px minmax(0,1fr);padding:16px;gap:12px;align-items:center}
+  .profile-page .profile-header-gradient{display:none}
+  .profile-page .profile-avatar-wrap{margin:0}
+  .profile-page .profile-avatar{width:60px;height:60px;border-width:3px}
+  .profile-page .profile-avatar svg{width:36px;height:36px}
+  .profile-page .profile-info{text-align:left;padding:0}
+  .profile-page .profile-info .grade{font-size:.8rem;margin-bottom:6px}
+  .profile-page .student-id-tag{font-size:.7rem;padding:4px 8px}
+  .profile-page .stats-card{padding:16px}
+  .profile-page .stats-card h3{margin-bottom:12px}
+  .profile-page .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .profile-page .stat-item,.profile-page .stat-item.total{grid-column:auto;min-height:110px;padding:10px 4px;gap:6px}
+  .profile-page .stat-item span{font-size:.75rem;line-height:1.4}
+  .profile-page .stat-item svg{width:20px;height:20px}
+}
+@media screen {
+  .admin-page :is(.status-pill,.status-badge).unknown{background:#fff0ce;color:#76500a}
+  .admin-page :is(.status-pill,.status-badge).simulated{background:#e5eff9;color:#24577f}
+  .admin-page :is(.status-pill,.status-badge).skipped{background:#eeeae7;color:#5b5552}
+  .public-page footer .hours p,.public-page footer .contact li,.public-page footer ul li a{color:#ead8d5}
+  .public-page footer .social-link svg{fill:#ead8d5}
+  .profile-page .tab-btn,.profile-page .stat-item{transition:none;transform:none}
+  .profile-page .edit-btn{background:var(--ui-primary);box-shadow:none;transform:none;border-radius:8px;min-height:44px}
+}
+@media screen {
+  .catalog-page .borrow-btn:disabled{opacity:1}
+  .catalog-page .borrow-btn.approved{background:var(--ui-info-bg);color:var(--ui-info)}
+  .admin-page .modal-btn{min-height:44px}
+  @media(max-width:600px){
+    .profile-page .tab-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+    .profile-page .tab-btn{padding:10px 4px;font-size:.75rem;min-height:52px}
+  }
+}
+@media screen {
+  :root{--text-light:#62666f;--red:#64131b;--navy:#273143}
+  .auth-page .field input::placeholder{color:#73737b;opacity:1}
+}
+@media screen and (max-width:600px){
+  .public-page .hero-buttons .btn{flex:1 1 180px;white-space:nowrap;text-align:center}
+}
+@media screen {
+  .public-page .profile-toggle{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+}

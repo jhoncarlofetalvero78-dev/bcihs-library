@@ -76,7 +76,7 @@
           <td>${escapeHtml(eventLabels[log.event] || 'Historical / other')}</td>
           <td class="message-cell">${escapeHtml(log.message)}</td>
           <td><span class="status-pill ${state}">${escapeHtml(statusLabels[state])}</span></td>
-          <td class="response-cell">${escapeHtml(reasonLabels[log.reason] || 'Status requires staff review.')}<br>${escapeHtml(providerLabels[log.provider] || 'Historical provider')}${log.reference ? '<br>' + escapeHtml(log.reference) : ''}<br>${log.request_attempted === true ? 'API request attempted' : log.request_attempted === false ? 'No API request' : 'Request history unverified'}${Number.isInteger(log.http_status) && log.http_status >= 100 && log.http_status <= 599 ? ' (HTTP ' + log.http_status + ')' : ''}</td>
+          <td class="response-cell"><span class="provider-name">${escapeHtml(providerLabels[log.provider] || 'Historical provider')}</span><details><summary>Attempt details</summary>${escapeHtml(reasonLabels[log.reason] || 'Status requires staff review.')}<br>${escapeHtml(providerLabels[log.provider] || 'Historical provider')}${log.reference ? '<br>' + escapeHtml(log.reference) : ''}<br>${log.request_attempted === true ? 'API request attempted' : log.request_attempted === false ? 'No API request' : 'Request history unverified'}${Number.isInteger(log.http_status) && log.http_status >= 100 && log.http_status <= 599 ? ' (HTTP ' + log.http_status + ')' : ''}</details></td>
         </tr>`;
       }).join('');
     }

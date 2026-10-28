@@ -54,6 +54,37 @@
   window.libraryUI = { confirm: confirmAction, dialogFeedback };
 
   function enhancePage() {
+    const profileMenu = document.getElementById('profilePill');
+    const dropdown = document.getElementById('profileDropdown');
+    if (profileMenu && dropdown) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button'; toggle.className = 'profile-toggle';
+      toggle.setAttribute('aria-label', 'Account menu'); toggle.setAttribute('aria-controls', dropdown.id);
+      [...profileMenu.children].filter(node => node !== dropdown).forEach(node => toggle.append(node));
+      profileMenu.prepend(toggle);
+      const expanded = () => toggle.setAttribute('aria-expanded', String(dropdown.classList.contains('show')));
+      expanded(); new MutationObserver(expanded).observe(dropdown, {attributes:true,attributeFilter:['class']});
+      profileMenu.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && dropdown.classList.contains('show')) { toggle.click(); toggle.focus(); }
+      });
+    }
+    const menuButton = document.getElementById('hamburger'), navigation = document.getElementById('mainNav');
+    if (menuButton && navigation) {
+      menuButton.setAttribute('aria-controls', navigation.id);
+      const expanded = () => menuButton.setAttribute('aria-expanded', String(navigation.classList.contains('open')));
+      expanded(); new MutationObserver(expanded).observe(navigation,{attributes:true,attributeFilter:['class']});
+    }
+    document.querySelectorAll('[role="tablist"]').forEach(list => {
+      list.addEventListener('keydown', event => {
+        if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+        const tabs = [...list.querySelectorAll('[role="tab"]')], current = tabs.indexOf(document.activeElement);
+        if (current < 0) return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length-1
+          : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[next].click(); tabs[next].focus();
+      });
+    });
     const main = document.querySelector('main');
     if (main) {
       main.id ||= 'main-content'; main.tabIndex = -1;
