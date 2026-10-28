@@ -11,16 +11,11 @@
       document.getElementById('staffInitial').textContent = name.charAt(0).toUpperCase();
     }).catch(() => {});
 
-  document.querySelectorAll('[data-soon]').forEach(button => {
-    button.addEventListener('click', () => {
-      window.alert(`${button.dataset.soon} isn't wired up yet — coming soon.`);
-    });
-  });
 
   function escapeHtml(value) {
     const element = document.createElement('span');
     element.textContent = value == null ? '' : String(value);
-    return element.innerHTML;
+    return element.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDateTime(value) {

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/security.php';
 function bookError(int $code, string $message): void
 {
     http_response_code($code);
@@ -9,19 +10,19 @@ function bookError(int $code, string $message): void
 function requireBookAccess(PDO $pdo, bool $staffOnly = false): string
 {
     if (isset($_SESSION['admin_id'])) {
-        $stmt = $pdo->prepare('SELECT id FROM admins WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, password_hash FROM admins WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $_SESSION['admin_id']]);
-        if ($stmt->fetch()) {
+        if (($admin = $stmt->fetch()) && securitySessionMatches($admin['password_hash'])) {
             return 'admin';
         }
     }
     if (!isset($_SESSION['user_id'])) {
         bookError(401, 'not_logged_in');
     }
-    $stmt = $pdo->prepare('SELECT role, account_status FROM users WHERE id = :id LIMIT 1');
+    $stmt = $pdo->prepare('SELECT role, account_status, password_hash FROM users WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $_SESSION['user_id']]);
     $user = $stmt->fetch();
-    if (!$user || $user['account_status'] !== 'accepted') {
+    if (!$user || $user['account_status'] !== 'accepted' || !securitySessionMatches($user['password_hash'])) {
         bookError(401, 'account_not_accepted');
     }
     if ($staffOnly && $user['role'] !== 'librarian') {

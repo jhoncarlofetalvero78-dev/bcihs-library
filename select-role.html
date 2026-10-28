@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registration | BCIHS Library</title>
 <link rel="stylesheet" href="css/select-role.css?v=20261027-phase7a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
-<body>
+<body class="auth-page">
 <header>
   <a class="brand" href="index.html">
     <div class="logo"><img src="images/logo.jpeg" alt="Batangas National High School Seal" class="extracted-style-1"></div>
@@ -36,7 +37,7 @@
         <div class="form-icon"><svg viewBox="0 0 24 24" fill="var(--indigo)"><path d="M12 2 1 7l11 5 9-4.09V17h2V7L12 2z"/><path d="M5 10.18v4.4C5 17.5 8.13 19.5 12 19.5s7-2 7-4.92v-4.4l-7 3.18-7-3.18z"/></svg></div>
         <h2>Create Student Account</h2><p class="subtitle">Fill in the details below to create account</p>
         <input type="hidden" name="role" value="student">
-        <div class="field"><label for="student_id">Student ID Number</label><input type="text" id="student_id" name="student_id" placeholder="Generated automatically" readonly></div>
+        <div class="field"><label for="student_id">Student ID Number</label><input type="text" id="student_id" name="student_id" placeholder="Enter your school-issued ID" required></div>
         <div class="field"><label for="student_full_name">Full Name<span class="req">*</span></label><input type="text" id="student_full_name" name="full_name" placeholder="Enter your full name" autocomplete="name" required></div>
         <div class="field"><label for="student_grade_level">Grade Level<span class="req">*</span></label><input type="text" id="student_grade_level" name="grade_level" placeholder="e.g., Grade 7 or Grade 11" maxlength="20" required></div>
         <div class="field"><label for="student_section">Section<span class="req">*</span></label><input type="text" id="student_section" name="section" placeholder="Enter your section" maxlength="25" required></div>
@@ -52,7 +53,7 @@
         <div class="form-icon"><svg viewBox="0 0 24 24" fill="var(--green)"><circle cx="8.5" cy="6.5" r="2.5"/><circle cx="15" cy="7.5" r="3.2"/><path d="M2 19.5c0-3.6 2.9-6 6.5-6 1.1 0 2.1.24 3 .68C10.6 15.3 10 16.7 10 18.3v1.2H2v-.9z"/><path d="M9.8 14.9c1.1-1.1 2.9-1.8 5.2-1.8 4 0 7 2.6 7 6.4v1H10v-1c0-1.9-.7-3.5-.2-4.6z"/></svg></div>
         <h2>Create Teacher Account</h2><p class="subtitle">Fill in the details below to create account</p>
         <input type="hidden" name="role" value="teacher">
-        <div class="field"><label for="teacher_id">ID Number<span class="req">*</span></label><input type="text" id="teacher_id" name="id_number" placeholder="Generated automatically" readonly required></div>
+        <div class="field"><label for="teacher_id">ID Number<span class="req">*</span></label><input type="text" id="teacher_id" name="id_number" placeholder="Enter your school-issued ID" required></div>
         <div class="field"><label for="teacher_full_name">Full Name<span class="req">*</span></label><input type="text" id="teacher_full_name" name="full_name" placeholder="Enter your full name" autocomplete="name" required></div>
         <div class="field"><label for="teacher_department">Department/Faculty<span class="req">*</span></label><input type="text" id="teacher_department" name="department" placeholder="Enter your department/position" required></div>
         <div class="field"><label for="teacher_phone">Phone Number<span class="req">*</span></label><input type="tel" id="teacher_phone" name="phone" placeholder="+63 912 345 6789" autocomplete="tel" inputmode="tel" minlength="11" maxlength="16" title="Use 09XXXXXXXXX or +639XXXXXXXXX" data-ph-mobile required></div>
@@ -67,7 +68,7 @@
         <div class="form-icon"><svg viewBox="0 0 24 24" fill="var(--purple)"><circle cx="8.5" cy="6.5" r="2.5"/><circle cx="15" cy="7.5" r="3.2"/><path d="M2 19.5c0-3.6 2.9-6 6.5-6 1.1 0 2.1.24 3 .68C10.6 15.3 10 16.7 10 18.3v1.2H2v-.9z"/><path d="M9.8 14.9c1.1-1.1 2.9-1.8 5.2-1.8 4 0 7 2.6 7 6.4v1H10v-1c0-1.9-.7-3.5-.2-4.6z"/></svg></div>
         <h2>Create Librarian Account</h2><p class="subtitle">Fill in the details below to create your librarian account</p>
         <input type="hidden" name="role" value="librarian">
-        <div class="field"><label for="librarian_id">ID Number<span class="req">*</span></label><input type="text" id="librarian_id" name="id_number" placeholder="Generated automatically" readonly required></div>
+        <div class="field"><label for="librarian_id">ID Number<span class="req">*</span></label><input type="text" id="librarian_id" name="id_number" placeholder="Enter your school-issued ID" required></div>
         <div class="field"><label for="librarian_full_name">Full Name<span class="req">*</span></label><input type="text" id="librarian_full_name" name="full_name" placeholder="Enter your full name" autocomplete="name" required></div>
         <div class="field"><label for="librarian_phone">Phone Number<span class="req">*</span></label><input type="tel" id="librarian_phone" name="phone" placeholder="+63 912 345 6789" autocomplete="tel" inputmode="tel" minlength="11" maxlength="16" title="Use 09XXXXXXXXX or +639XXXXXXXXX" data-ph-mobile required></div>
         <div class="field"><label for="librarian_department">Department / Faculty</label><input type="text" id="librarian_department" name="department" placeholder="Enter your department or section (optional)"></div>
@@ -94,6 +95,7 @@
   </div>
 </main>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/select-role.js?v=20261027-phase7a"></script>
 <script src="js/philippine-phone.js"></script>
 </body>

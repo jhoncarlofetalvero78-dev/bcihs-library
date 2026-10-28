@@ -31,7 +31,7 @@ let profileCsrfToken="";
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'grade_level', label: 'Grade Level', type: 'text' },
         { key: 'section', label: 'Section', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
       ],
       gradeLabel: 'Grade Level',
@@ -48,7 +48,7 @@ let profileCsrfToken="";
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
       ],
       gradeLabel: 'Department',
@@ -65,7 +65,7 @@ let profileCsrfToken="";
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
       ],
       gradeLabel: 'Department',
@@ -82,7 +82,7 @@ let profileCsrfToken="";
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
       ],
       gradeLabel: 'Department',
@@ -123,7 +123,7 @@ let profileCsrfToken="";
 function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str == null ? '' : String(str);
-  return d.innerHTML;
+  return d.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
 function showToast(msg){
@@ -175,7 +175,7 @@ function populateForm(){
       phoneInput.value = window.philippineMobilePhone.format(phoneInput.value);
     });
   }
-  document.getElementById('cancelEditBtn').addEventListener('click', () => editModal.classList.remove('show'));
+  document.getElementById('cancelEditBtn').addEventListener('click', () => { if (!document.getElementById('saveEditBtn')?.disabled) editModal.classList.remove('show'); });
   document.getElementById('editForm').addEventListener('submit', handleSave);
 }
 
@@ -234,6 +234,7 @@ const editBtn = document.getElementById('editProfileBtn');
 
 function handleSave(e){
   e.preventDefault();
+  if (document.getElementById('saveEditBtn').disabled) return;
   const phoneInput = document.getElementById('edit_phone');
   const normalizedPhone = phoneInput
     ? window.philippineMobilePhone.normalize(phoneInput.value)
@@ -246,6 +247,7 @@ function handleSave(e){
 
   const saveBtn = document.getElementById('saveEditBtn');
   saveBtn.disabled = true;
+  document.getElementById('cancelEditBtn').disabled = true;
   saveBtn.textContent = 'Saving…';
 
   const originalProfile={...profileData};
@@ -284,12 +286,13 @@ function handleSave(e){
   .catch(error => {Object.assign(profileData,originalProfile);showToast(error.message || 'Could not reach the server. Your profile was not saved.');})
   .finally(() => {
     saveBtn.disabled = false;
+    document.getElementById('cancelEditBtn').disabled = false;
     saveBtn.textContent = 'Save';
   });
 }
 
 editModal.addEventListener('click', (e) => {
-  if (e.target === editModal) editModal.classList.remove('show');
+  if (e.target === editModal && !document.getElementById('saveEditBtn')?.disabled) editModal.classList.remove('show');
 });
 
 /* ===== BORROWING HISTORY ===== */

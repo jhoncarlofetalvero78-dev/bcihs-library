@@ -4,6 +4,7 @@
     .then(data => {
       if (!data.loggedIn) { window.location.href = 'admin-login.html'; return; }
       const name = data.username || 'Admin';
+      document.querySelector('.account-role').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
     })
@@ -31,7 +32,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDate(mysqlDatetime) {
@@ -63,10 +64,10 @@
       if (r.status === 'awaiting_pickup') buttons.push(`<button class="action-btn checkout" type="button" onclick="act(${Number(r.id)}, 'checkout')">Confirm Checkout</button>`);
       if (borrowing.isCheckedOut(r.status)) buttons.push(`<button class="action-btn return" type="button" onclick="act(${Number(r.id)}, 'return')">Confirm Return</button>`);
       return `<tr>
-        <td>${escapeHtml(r.student_name)}</td><td>${escapeHtml(r.book_title)}</td>
+        <td><strong>${escapeHtml(r.student_name)}</strong><small class="reservation-meta">${escapeHtml(borrowing.roleLabel(r.borrower_role))} · ${escapeHtml(r.borrower_identifier || "Staff-verified borrower")}</small></td><td>${escapeHtml(r.book_title)}</td>
         <td>${formatDate(r.requested_at)}</td><td>${formatDate(borrowing.loanStart(r))}</td><td>${formatDate(r.due_date)}</td>
         <td><span class="status-pill ${r.status}">${borrowing.label(r.status)}</span></td>
-        <td><div class="borrow-actions">${buttons.join('')}</div></td>
+        <td><div class="borrow-actions">${activeActions.has(Number(r.id)) ? '<span role="status">Saving…</span>' : buttons.join('')}</div></td>
       </tr>`;
     }).join('') : '<tr><td colspan="7" class="empty-msg">No requests match.</td></tr>';
   }
@@ -151,7 +152,7 @@
     document.getElementById('bookOptions').replaceChildren();
     studentInput.value = '';
     bookInput.value = '';
-    studentInput.placeholder = 'Type the student name';
+    studentInput.placeholder = 'Type the borrower name';
     bookInput.placeholder = 'Loading books…';
     studentInput.focus();
 
@@ -210,7 +211,7 @@
     }
 
     const rows = [
-      ['Student Name', request.student_name || '—'],
+      ['Borrower Name', request.student_name || '—'],
       ['Book Title', request.book_title || '—'],
       ['Author', request.author || '—'],
       ['Accession Number', request.accession_number || '—'],
@@ -237,7 +238,7 @@
     if (event.target === event.currentTarget) closeRequestDetails();
   });
 
-  document.getElementById('borrowForm').addEventListener('submit', function(event) {
+  document.getElementById('borrowForm').addEventListener('submit', async function(event) {
     event.preventDefault();
     const studentInput = document.getElementById('studentInput');
     const bookInput = document.getElementById('bookInput');
@@ -252,7 +253,7 @@
     const dueDate = document.getElementById('dueDate').value;
 
     if (!borrowerName) {
-      showToast('Type the student name.');
+      showToast('Type the borrower name.');
       studentInput.focus();
       return;
     }
@@ -264,7 +265,7 @@
 
     const save = document.getElementById('manualCheckoutBtn');
     if (save.disabled) return;
-    if (!confirm(`Confirm that ${borrowerName} is receiving the physical copy of ${book.title} now? This starts the loan and updates inventory.`)) return;
+    if (!await window.libraryUI.confirm(`Confirm that ${borrowerName} is receiving the physical copy of ${book.title} now? This starts the loan and updates inventory.`, {title:"Confirm physical checkout",confirmLabel:"Confirm Checkout"})) return;
     save.disabled = true;
     savingManual = true;
     fetch('backend/borrow-request-add.php', {
@@ -297,8 +298,9 @@
       checkout: 'Confirm that the physical book is being handed to this borrower now? The 14-day loan starts now.',
       return: 'Confirm that the physical book has been returned to the library?'
     };
-    if (!prompts[action] || !confirm(`${request.student_name} — ${request.book_title}\n\n${prompts[action]}`)) return;
+    if (!prompts[action] || !await window.libraryUI.confirm(`${request.student_name} — ${request.book_title}\n\n${prompts[action]}`, {danger:action === "reject", confirmLabel:({approve:"Approve for pickup",reject:"Reject request",checkout:"Confirm Checkout",return:"Confirm return"})[action]})) return;
     activeActions.add(id);
+    applyFilters();
     try {
       const response = await fetch('backend/borrow-request-action.php', {
         method: 'POST', credentials: 'same-origin',
@@ -310,7 +312,7 @@
       showToast(({approve:'Approved; a copy is held for pickup.', reject:'Request rejected.', checkout:'Checkout confirmed; the loan has started.', return:'Return confirmed; inventory restored.'})[action]);
       await loadRequests();
     } catch (error) { showToast(error.message); }
-    finally { activeActions.delete(id); }
+    finally { activeActions.delete(id); applyFilters(); }
   };
 
   document.getElementById('searchInput').addEventListener('input', applyFilters);

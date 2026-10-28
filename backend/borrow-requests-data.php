@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -11,7 +11,7 @@ try {
     $stmt = $pdo->query(
         'SELECT br.id, br.status, br.requested_at, br.approved_at, br.checked_out_at, br.due_date, br.rejected_at, br.returned_at,
                 COALESCE(br.checked_out_at, CASE WHEN br.status IN ("approved","returned") THEN br.approved_at END) AS borrowed_at,
-                br.user_id, COALESCE(br.borrower_name, u.full_name) AS student_name,
+                br.user_id, u.role AS borrower_role, COALESCE(u.student_id,u.id_number,u.email) AS borrower_identifier, COALESCE(br.borrower_name, u.full_name) AS student_name,
                 b.id AS book_id, b.title AS book_title, b.author, b.accession_number
          FROM borrow_requests br LEFT JOIN users u ON u.id = br.user_id
          JOIN books b ON b.id = br.book_id ORDER BY br.requested_at DESC, br.id DESC'

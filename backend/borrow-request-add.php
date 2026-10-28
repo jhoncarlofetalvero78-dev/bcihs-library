@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -10,10 +10,10 @@ try {
     $name = $input['borrower_name'] ?? '';
     if (!is_string($name) || trim($name) === '' || preg_match('/[\x00-\x1F\x7F]/', $name)
         || ($length = preg_match_all('/./us', trim($name))) === false || $length > 150) {
-        throw new DomainException('Enter the student name using at most 150 characters.', 422);
+        throw new DomainException('Enter the borrower name using at most 150 characters.', 422);
     }
     if (($input['confirm_checkout'] ?? false) !== true) {
-        throw new DomainException('Confirm that the physical book is being handed to the student now.', 422);
+        throw new DomainException('Confirm that the physical book is being handed to the borrower now.', 422);
     }
     $bookId = borrowingId($input['book_id'] ?? null);
     $dueDate = $input['due_date'] ?? '';

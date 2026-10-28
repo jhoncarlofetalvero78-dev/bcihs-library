@@ -1,6 +1,8 @@
 
   let allBooks = [];
   let csrfToken = '';
+  let canBorrow = true;
+  const submittingRequests = new Set();
   let myRequestByBook = {};  // Active request/loan status by book ID.
   let myReservationsByBook = {};  // book_id -> active reservation
   const urlParams = new URLSearchParams(window.location.search);
@@ -13,7 +15,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function showBanner(message, kind) {
@@ -24,6 +26,8 @@
   }
 
   function buttonFor(book) {
+    if (!canBorrow) return '<p class="pickup-info">Catalog viewing only. Ask library staff about borrower eligibility. Walk-in attendance does not authorize borrowing.</p>';
+    if (submittingRequests.has(book.id)) return '<button class="borrow-btn" disabled>Submitting request…</button>';
     const available = borrowing.requestable(book);
     const myStatus = myRequestByBook[book.id];
     const myReservation = myReservationsByBook[book.id];
@@ -132,6 +136,10 @@
   }
 
   window.requestBook = function(bookId) {
+    if (!canBorrow || submittingRequests.has(bookId)) return;
+    submittingRequests.add(bookId);
+    applyFilter();
+
     fetch('backend/borrow-request-process.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
@@ -147,7 +155,8 @@
         showBanner('Request submitted! Library librarian will review it soon.', 'success');
         loadEverything();
       })
-      .catch(err => showBanner(err.message, 'error'));
+      .catch(err => showBanner(err.message, 'error'))
+      .finally(() => { submittingRequests.delete(bookId); applyFilter(); });
   };
 
   const pickupPicker = reservationScheduling.createPicker(async (target, pickupAt) => {
@@ -178,7 +187,7 @@
 
   const cancellingReservations = new Set();
   window.cancelReservation = async function(id, button) {
-    if (cancellingReservations.has(id) || !confirm('Cancel this reservation and release any pickup hold?')) return;
+    if (cancellingReservations.has(id) || !await window.libraryUI.confirm('Cancel this reservation and release any pickup hold?', {title:'Cancel reservation',confirmLabel:'Cancel reservation',danger:true})) return;
     cancellingReservations.add(id);
     button.disabled = true;
     try {
@@ -215,6 +224,7 @@
       .then(([booksData, requestsData, reservationsData]) => {
         if (!Array.isArray(booksData.books) || !Array.isArray(requestsData.requests) || !Array.isArray(reservationsData.reservations)) throw new Error('invalid_response');
         allBooks = booksData.books;
+        canBorrow = booksData.canBorrow !== false;
         csrfToken = booksData.csrfToken || '';
         myRequestByBook = {};
         (requestsData.requests || []).forEach(r => {

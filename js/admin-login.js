@@ -30,7 +30,7 @@
 
     if (!identifier || !password) {
       e.preventDefault();
-      errorMsg.textContent = 'Please enter your username and password.';
+      errorMsg.textContent = 'Please enter your school ID or username and password.';
       return;
     }
 
@@ -67,5 +67,5 @@
 
   document.getElementById('forgotLink').addEventListener('click', (e) => {
     e.preventDefault();
-    window.location.href = 'forgot-password.html?role=staff';
+    window.location.href = 'forgot-password.html?role=librarian';
   });

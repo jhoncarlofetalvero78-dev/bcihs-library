@@ -32,7 +32,11 @@ data.settings.daily_limit = null;data.settings.slot_limit = null;
 verify(picker.slotAvailable(data,'2026-10-28','09:00',now), 'unconfigured limits preserve unlimited scheduling');
 const adminSource = fs.readFileSync('js/reservations.js','utf8');
 const actions = adminSource.slice(adminSource.indexOf('  function reservationActions('),adminSource.indexOf('  function renderRows('));
+context.activeActions=new Set();
 vm.runInContext(actions,context);
+context.activeActions.add(999);
+verify(context.reservationActions({id:999}).includes('Saving…'),'in-flight reservation actions expose progress instead of repeat buttons');
+context.activeActions.clear();
 for (const [status, expected, excluded] of [
   ['waiting',['Schedule','Mark Ready','Confirm Checkout','Cancel'],['Confirm Return']],
   ['ready',['Confirm Checkout','Cancel'],['Schedule','Mark Ready','Confirm Return']],

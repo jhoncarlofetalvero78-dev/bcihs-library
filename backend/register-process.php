@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 require_once __DIR__ . '/../includes/account-management.php';
 function backToRegister(string $role,string $error): void {
@@ -35,7 +35,9 @@ try {
     // Identifiers are used by the same sign-in field, so prevent cross-column collisions too.
     $stmt=$pdo->prepare('SELECT id FROM users WHERE student_id=:student OR id_number=:employee OR email=:email LIMIT 1');
     $stmt->execute(['student'=>$identifier,'employee'=>$identifier,'email'=>$identifier]);
-    if ($stmt->fetch()) throw new DomainException('An account with that identifier already exists.',409);
+    $adminCheck=$pdo->prepare('SELECT id FROM admins WHERE username=:identifier LIMIT 1');
+    $adminCheck->execute(['identifier'=>$identifier]);
+    if ($adminCheck->fetch() || $stmt->fetch()) throw new DomainException('An account with that identifier already exists.',409);
     $pdo->prepare('INSERT INTO users(full_name,student_id,id_number,email,year_section,department,phone,password_hash,role,account_status)
         VALUES(:name,:student,:employee,:email,:year,:department,:phone,:hash,:role,"pending")')
         ->execute(['name'=>$name,'student'=>$student,'employee'=>$employee,'email'=>$email,'year'=>$year,'department'=>$department,

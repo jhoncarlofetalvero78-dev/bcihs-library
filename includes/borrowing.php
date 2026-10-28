@@ -31,11 +31,11 @@ function borrowingPost(PDO $pdo, bool $staffOnly = false): array
 
 function borrowingUser(PDO $pdo, int $id): array
 {
-    $stmt = $pdo->prepare('SELECT id, full_name, phone, account_status FROM users WHERE id = :id FOR UPDATE');
+    $stmt = $pdo->prepare('SELECT id, full_name, phone, account_status, role FROM users WHERE id = :id FOR UPDATE');
     $stmt->execute(['id' => $id]);
     $user = $stmt->fetch();
-    if (!$user || $user['account_status'] !== 'accepted') {
-        throw new DomainException('The borrower must have an accepted library account.', 403);
+    if (!$user || $user['account_status'] !== 'accepted' || !in_array($user['role'], ['student','teacher','librarian','staff','employee'], true)) {
+        throw new DomainException('The borrower must have an approved school borrower account. Visitors need library staff assistance.', 403);
     }
     return $user;
 }

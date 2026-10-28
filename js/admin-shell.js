@@ -77,7 +77,8 @@
     topbar.append(account);
     if (mobileLayout.matches) {
       sidebar.classList.remove('is-collapsed');
-      setToggleState(false);
+      sidebar.classList.add('is-collapsed');
+      setToggleState(true);
       topbar.insertBefore(brand, account);
       header.append(toggle);
     } else {

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
 <body class="admin-page transactions-page">
 
@@ -141,7 +142,7 @@
       <p class="loading-msg" id="loadingMsg">Loading transactions…</p>
       <table id="txTable">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Requested</th><th>Approved / Ready</th><th>Checked Out</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
+          <tr><th>Borrower Name</th><th>Book Title</th><th>Requested</th><th>Approved / Ready</th><th>Checked Out</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
         </thead>
         <tbody id="txBody"></tbody>
       </table>
@@ -149,6 +150,7 @@
   </main>
 </div>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
 <script src="js/transactions.js?v=20261027-phase2b"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>

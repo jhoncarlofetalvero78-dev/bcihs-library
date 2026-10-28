@@ -28,8 +28,8 @@
           profileDropdown.classList.toggle('show');
         });
 
-        logoutBtn.addEventListener('click', () => {
-          if (confirm('Are you sure you want to log out?')) {
+        logoutBtn.addEventListener('click', async () => {
+          if (await window.libraryUI.confirm('Sign out of your library account?', {title:'Sign out', confirmLabel:'Sign out'})) {
             window.location.href = 'backend/logout.php';
           }
         });

@@ -27,7 +27,7 @@
 
     if (!identifier || !password) {
       e.preventDefault();
-      errorMsg.textContent = 'Please enter your username and password.';
+      errorMsg.textContent = 'Please enter your school ID or username and password.';
       return;
     }
 

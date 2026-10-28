@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -35,20 +35,20 @@ try {
     $studentIdentifier = $yearSection = null;
     $today = $pdo->query('SELECT CURDATE()')->fetchColumn();
     if ($userId !== null) {
-        $stmt = $pdo->prepare('SELECT full_name, student_id, year_section, role, account_status FROM users WHERE id = :id FOR UPDATE');
+        $stmt = $pdo->prepare('SELECT full_name, student_id, id_number, year_section, department, role, account_status FROM users WHERE id = :id FOR UPDATE');
         $stmt->execute(['id'=>$userId]);
         $user = $stmt->fetch();
-        if (!$user || $user['role'] !== 'student' || $user['account_status'] !== 'accepted') throw new DomainException('Select an accepted student account.', 422);
-        $name = $user['full_name']; $studentIdentifier = $user['student_id']; $yearSection = $user['year_section'];
+        if (!$user || !in_array($user['role'], ['student','teacher'], true) || $user['account_status'] !== 'accepted') throw new DomainException('Select an approved student or teacher account.', 422);
+        $name = $user['full_name']; $studentIdentifier = $user['student_id'] ?: $user['id_number']; $yearSection = $user['role'] === 'teacher' ? mb_substr('Teacher/Faculty · ' . ($user['department'] ?: 'Not specified'), 0, 50) : $user['year_section'];
         $stmt = $pdo->prepare('SELECT id FROM attendance WHERE user_id = :id AND tracks_departure = 1 AND time_out IS NULL LIMIT 1');
         $stmt->execute(['id'=>$userId]);
-        if ($stmt->fetch()) throw new DomainException('This student already has an open visit. Confirm departure before another Time In.', 409);
+        if ($stmt->fetch()) throw new DomainException('This visitor already has an open visit. Confirm departure before another Time In.', 409);
         $stmt = $pdo->prepare('SELECT id FROM attendance WHERE user_id = :id AND time_in >= :start AND time_in < :end LIMIT 1');
         $stmt->execute(['id'=>$userId,'start'=>$today . ' 00:00:00','end'=>(new DateTimeImmutable($today))->modify('+1 day')->format('Y-m-d') . ' 00:00:00']);
         if ($stmt->fetch() && ($input['confirm_repeat'] ?? false) !== true) {
             $pdo->rollBack();
             http_response_code(409);
-            echo json_encode(['error'=>'This student visited today. Confirm that this is a separate return visit.', 'code'=>'repeat_visit_confirmation_required']);
+            echo json_encode(['error'=>'This visitor visited today. Confirm that this is a separate return visit.', 'code'=>'repeat_visit_confirmation_required']);
             exit;
         }
     }

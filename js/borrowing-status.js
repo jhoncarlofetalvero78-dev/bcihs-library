@@ -5,6 +5,9 @@ window.borrowing = {
       approved:'Checked Out', returned:'Returned', rejected:'Rejected', waiting:'Waiting', ready:'Ready for Pickup',
       fulfilled:'Checked Out', cancelled:'Cancelled', borrowed:'Checked Out'})[status] || status || 'Unknown';
   },
+  roleLabel(role) {
+    return ({student:'Student',teacher:'Teacher/Faculty',librarian:'Librarian',staff:'Staff',employee:'Staff',visitor:'Visitor'})[role] || 'Manual checkout';
+  },
   isCheckedOut(status) {
     return ['checked_out', 'approved', 'fulfilled', 'borrowed'].includes(status);
   },

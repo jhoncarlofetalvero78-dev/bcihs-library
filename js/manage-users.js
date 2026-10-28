@@ -13,6 +13,7 @@
   const toast = document.getElementById('toast');
   let toastTimer;
   function showToast(msg) {
+    window.libraryUI?.dialogFeedback?.(msg);
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
@@ -33,7 +34,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function roleGroup(role) {
@@ -104,7 +105,7 @@
   }
 
   function formatDateTime(mysqlDatetime) {
-    if (!mysqlDatetime) return 'Never';
+    if (!mysqlDatetime) return 'Not recorded';
     const d = new Date(mysqlDatetime.replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime;
     return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone:'Asia/Manila' });
@@ -159,6 +160,9 @@
   function askAction(id,status) {
     const user=findUser(id);if(!user || busy)return;
     pendingAction={id,status};
+    const confirmButton=document.getElementById('confirmAccountAction');
+    confirmButton.classList.toggle('ui-danger',status!=='accepted');
+    confirmButton.textContent=status==='accepted'?'Approve account':status==='rejected'?'Reject account':'Delete account';
     document.getElementById('accountActionPrompt').textContent=status
       ? `${status==='accepted'?'Approve':'Reject'} ${user.full_name}'s account? ${status==='accepted'?'This permits portal access.':'This prevents portal access.'}`
       : `Permanently delete ${user.full_name}'s account? Only accounts without linked library or audit history can be removed.`;

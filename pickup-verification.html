@@ -6,6 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>Verify Book Pickup | BCIHS Library</title>
   <link rel="stylesheet" href="css/pickup-qr.css?v=20261027-phase3b">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
 <body class="pickup-verification">
   <header><h1>BCIHS Library</h1><p>Book pickup verification · Library staff only</p></header>
@@ -16,17 +17,18 @@
       <dl id="pickupFields"></dl>
       <p id="pickupEligibility"></p>
       <button id="checkoutButton" type="button" hidden>Confirm Checkout</button>
-      <section id="checkoutConfirmation" hidden>
-        <p>Have you checked the student's identity and physically handed over this book? Confirm only after handover.</p>
+      <dialog id="checkoutConfirmation" hidden data-managed-confirmation="Confirm physical checkout">
+        <p>Have you checked the borrower's identity and physically handed over this book? Confirm only after handover.</p>
         <button id="confirmHandover" type="button">Yes, book handed over — Confirm Checkout</button>
         <button id="cancelHandover" type="button" class="secondary">Cancel</button>
-      </section>
+      </dialog>
     </section>
     <button id="refreshPickup" type="button" class="secondary">Recheck status</button>
     <p><a id="staffSignin" href="admin-login.html" hidden>Sign in as library staff</a></p>
     <p><a href="borrow-requests.html">Open Borrow Requests / manual checkout</a></p>
     <p>Opening a QR never checks out a book. The existing 14-day loan starts only after confirmed handover.</p>
   </main>
-  <script src="js/pickup-verification.js?v=20261027-phase3b"></script>
+  <script src="js/library-ui.js?v=phase8"></script>
+<script src="js/pickup-verification.js?v=20261027-phase3b"></script>
 </body>
 </html>

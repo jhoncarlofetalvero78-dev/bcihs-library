@@ -14,7 +14,7 @@ function page(script) {
     return elements.get(id);
   }
   const context = vm.createContext({
-    window:{location:{href:'http://localhost:8888/bcihs-library/browse-books.html',search:''}},
+    window:{libraryUI:{confirm:async()=>true},location:{href:'http://localhost:8888/bcihs-library/browse-books.html',search:''}},
     document:{getElementById:element, querySelectorAll(){return [];}, addEventListener(){}, createElement(){return {
       set textContent(value){this.innerHTML=String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}, innerHTML:''};}},
     fetch:(url,options)=>{requests.push({url,options});return new Promise(()=>{});},
@@ -27,6 +27,7 @@ function page(script) {
   if(script)vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/'+script),'utf8'),context);
   return {run:code=>vm.runInContext(code,context),elements,requests,context};
 }
+(async () => {
 const shared=page();
 verify(shared.run("borrowing.label('approved')")==='Checked Out','legacy approvals are actual old loans');
 verify(shared.run("borrowing.label('awaiting_pickup')")==='Approved / Awaiting Pickup','new approvals have an explicit pickup label');
@@ -54,9 +55,15 @@ for(const [status,expected,excluded] of [
   for(const label of excluded)verify(!html.includes('>'+label+'</button>'),status+' hides '+label);
 }
 staff.run('allRequests = '+JSON.stringify([{...base,status:'awaiting_pickup'}])+"; csrfToken='test-token'; window.act(1,'checkout');");
+await new Promise(resolve=>setImmediate(resolve));
 const checkout=staff.requests.find(item=>item.url==='backend/borrow-request-action.php');
 verify(checkout.options.headers['X-CSRF-Token']==='test-token','librarian action includes the session token');
 verify(JSON.parse(checkout.options.body).action==='checkout','physical checkout is an explicit action');
+const cancelled=page('borrow-requests.js');
+cancelled.context.window.libraryUI.confirm=async()=>false;
+cancelled.run('allRequests = '+JSON.stringify([{...base,status:'pending'}])+";window.act(1,'approve');");
+await new Promise(resolve=>setImmediate(resolve));
+verify(!cancelled.requests.some(item=>item.url==='backend/borrow-request-action.php'),'cancelling asynchronous confirmation performs no mutation');
 const catalog=page('browse-books.js');
 for(const [status,label] of [['pending','Request Pending'],['awaiting_pickup','Approved — Awaiting Pickup'],['checked_out','Already Borrowed'],['approved','Already Borrowed']]){
   catalog.run('myRequestByBook = {1:'+JSON.stringify(status)+'}');
@@ -68,7 +75,11 @@ verify(catalog.run('buttonFor({id:1,total_copies:1,borrowed_copies:0,requestable
 catalog.run("myReservationsByBook={1:{status:'fulfilled'}}");
 verify(catalog.run('buttonFor({id:1,total_copies:2,borrowed_copies:1,requestable_copies:1})').includes('Checked Out'),'reservation borrowers cannot request the same title again');
 verify(!catalog.requests.some(item=>/borrow-request-process|reservation-process/.test(item.url)),'opening the QR/catalog page performs no automatic borrowing mutation');
+catalog.run('window.requestBook(123);window.requestBook(123);');
+verify(catalog.requests.filter(item=>item.url==='backend/borrow-request-process.php').length===1,'repeated catalog clicks submit at most one in-flight request');
 const transactions=page('transactions.js');
 verify(!transactions.run('durationFor('+JSON.stringify({...base,status:'awaiting_pickup',approved_at:'2026-10-01 09:00:00'})+')').includes('ongoing'),'awaiting pickup has no running loan duration');
 verify(transactions.run('durationFor('+JSON.stringify({...base,status:'checked_out',approved_at:'2026-10-01 09:00:00',checked_out_at:'2026-10-27 09:00:00'})+')').includes('ongoing'),'duration begins only at checkout');
 console.log('Completed '+checks+' Phase 2B JavaScript checks.');
+
+})().catch(error=>{console.error(error);process.exitCode=1;});

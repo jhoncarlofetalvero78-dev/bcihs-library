@@ -5,9 +5,10 @@
   function escapeHtml(value) {
     const span = document.createElement('span');
     span.textContent = value == null ? '' : String(value);
-    return span.innerHTML;
+    return span.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
   function message(id, text, error = false) {
+    if (error) window.libraryUI?.dialogFeedback?.(text);
     el(id).textContent = text;
     el(id).classList.toggle('error', error);
   }
@@ -88,7 +89,7 @@
         <tr><td><strong>${escapeHtml(record.student_name)}</strong><small>#${Number(record.id)} · ${record.user_id ? 'Registered · ' + escapeHtml(record.student_identifier || 'Account #' + record.user_id) : 'Manual walk-in'}</small></td>
         <td>${escapeHtml(record.year_section_snapshot || [record.year_level, record.section].filter(Boolean).join(' / ') || 'Not provided')}</td>
         <td>${escapeHtml(record.time_in)}</td><td>${escapeHtml(record.time_out || '—')}</td>
-        <td><span class="visit-status">${status(record)}</span><small>${duration(record)}</small></td>
+        <td><span class="visit-status ${Number(record.tracks_departure) ? (record.time_out ? 'completed' : 'inside') : 'time_in_only'}">${status(record)}</span><small>${duration(record)}</small></td>
         <td>${Number(record.tracks_departure) && !record.time_out ? `<button class="primary-btn" type="button" data-time-out="${Number(record.id)}">Confirm Time Out</button>` : '—'}</td></tr>`).join('') : '<tr><td colspan="6" class="empty-msg">No visits match these filters.</td></tr>';
       el('exportAttendance').disabled = records.length === 0;
     } catch (error) {
@@ -110,7 +111,7 @@
   el('studentLookup').addEventListener('submit', async event => {
     event.preventDefault();
     el('searchButton').disabled = true;
-    el('studentAccount').innerHTML = '<option value="">Choose a student</option>';
+    el('studentAccount').innerHTML = '<option value="">Choose an account</option>';
     el('selectedStudent').textContent = '';
     resetRepeat();
     message('lookupMessage', 'Searching…');
@@ -119,10 +120,10 @@
       data.students.forEach(student => {
         const option = document.createElement('option');
         option.value = student.id;
-        option.textContent = `${student.full_name} · ${student.student_id || 'Account #' + student.id} · ${student.year_section || 'Year/section not provided'}`;
+        option.textContent = `${student.role === 'teacher' ? 'Teacher/Faculty' : 'Student'} · ${student.full_name} · ${student.student_id || 'Account #' + student.id} · ${student.year_section || 'Year/section not provided'}`;
         el('studentAccount').appendChild(option);
       });
-      message('lookupMessage', data.students.length ? `${data.students.length} account(s) found (up to 20). Select the correct ID before confirming.` : 'No accepted student accounts found. Try a different name or student ID.');
+      message('lookupMessage', data.students.length ? `${data.students.length} account(s) found (up to 20). Select the correct ID before confirming.` : 'No approved student or teacher accounts found. Try a different name or school ID.');
     } catch (error) { message('lookupMessage', error.message, true); }
     finally { el('searchButton').disabled = false; }
   });

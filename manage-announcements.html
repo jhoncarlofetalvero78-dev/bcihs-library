@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/manage-announcements.css?v=20261027-phase7a">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
 <body class="admin-page manage-announcements-page">
 
@@ -109,7 +110,7 @@
     </div>
 
     <p>Saving publishes immediately to the public homepage and Announcements page. Editing keeps the original publication date. To withdraw a notice, remove it; there are no drafts or hidden notices.</p>
-    <section class="panel" id="deleteConfirmation" hidden><p id="deletePrompt"></p><button type="button" class="modal-btn save" id="confirmDelete">Remove announcement</button> <button type="button" class="modal-btn cancel" id="cancelDelete">Cancel</button></section>
+    <dialog class="panel" id="deleteConfirmation" hidden data-managed-confirmation="Remove announcement"><p id="deletePrompt"></p><button type="button" class="modal-btn save" id="confirmDelete">Remove announcement</button> <button type="button" class="modal-btn cancel" id="cancelDelete">Cancel</button></dialog>
     <p class="count-badge extracted-style-1" id="countBadge"></p>
 
     <p class="loading-msg" id="loadingMsg">Loading announcements…</p>
@@ -155,6 +156,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/manage-announcements.js?v=20261027-phase7a"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>

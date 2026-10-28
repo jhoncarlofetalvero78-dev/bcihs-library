@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -17,7 +17,7 @@ try {
     if (!is_string($report) || !isset($allowed[$report])) throw new DomainException('Choose a valid report.',422);
     $status=$_GET['status']??'all';
     if (!in_array($status,$allowed[$report],true)) throw new DomainException('Choose a valid status for this report.',422);
-    $range=reportRange($_GET);
+    $range=reportRange(in_array($report,['inventory','overdue'],true) ? ['period'=>'month'] : $_GET);
     $search=attendanceText($_GET['search']??'',100,false);
     $basis=$_GET['basis']??'created_at';
     if (!in_array($basis,['created_at','pickup_at'],true)) throw new DomainException('Choose reservation creation or scheduled pickup date.',422);
@@ -48,7 +48,7 @@ try {
         usort($records,static fn($a,$b)=>strcmp($b[$dateField]??'',$a[$dateField]??'') ?: strcmp($b['record_key'],$a['record_key']));
         $fields=['record_key','borrower_name','book_title'];
     } elseif ($report==='attendance') {
-        $scope='Time In date (PHT). Visits and distinct linked students are different counts. Occupancy is current across all dates.';
+        $scope='Time In date (PHT). Visits and distinct linked people are different counts. Occupancy is current across all dates.';
         $stmt=$pdo->prepare('SELECT id,user_id,student_name,student_identifier,year_level,section,year_section_snapshot,
             time_in,time_out,tracks_departure FROM attendance WHERE time_in>=:start AND time_in<:end ORDER BY time_in DESC,id DESC');
         $stmt->execute(['start'=>$range['from'].' 00:00:00','end'=>(new DateTimeImmutable($range['to']))->modify('+1 day')->format('Y-m-d').' 00:00:00']);
@@ -85,7 +85,7 @@ try {
             if ($row['user_id']!==null) {$students[$row['user_id']]=true;}
             else $walkIns++;
         }
-        $summary['Total visits']=count($records);$summary['Unique registered students']=count($students);
+        $summary['Total visits']=count($records);$summary['Unique registered people']=count($students);
         $summary['Manual / unlinked visits']=$walkIns;
         $summary['Registered repeat visits on same day']=count(array_filter($records,static fn($row)=>$row['repeat_visit']));
         ksort($daily);$summary['Current occupancy (all dates)']=$current['occupancy']??'Not tracked';

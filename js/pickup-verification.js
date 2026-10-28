@@ -21,7 +21,7 @@ function renderPickup(data) {
   pickupRequest = data.request; pickupCsrf = data.csrfToken;
   const request = data.request;
   const fields = [
-    ['Student / borrower', request.full_name], ['Identifier', request.student_id || request.id_number || request.email],
+    ['Borrower', request.full_name], ['Identifier', request.student_id || request.id_number || request.email],
     ['Year / section', request.year_section], ['Book', request.title], ['Author', request.author],
     ['Call number', request.call_number], ['Request', '#' + request.id], ['Requested', pickupDate(request.requested_at)],
     ['Approved', pickupDate(request.approved_at)], ['Account approval', request.account_status === 'accepted' ? 'Approved' : request.account_status],
@@ -34,7 +34,7 @@ function renderPickup(data) {
     term.textContent = label; detail.textContent = value || '—'; holder.append(term,detail);
   });
   document.getElementById('pickupEligibility').textContent = data.eligible
-    ? 'Awaiting pickup. Verify the student and book before confirming physical handover.'
+    ? 'Awaiting pickup. Verify the borrower and book before confirming physical handover.'
     : 'This QR cannot be used for checkout. It is already used, no longer awaiting pickup, or the account is not approved.';
   checkoutButton.hidden = !data.eligible; pickupDetails.hidden = false;
 }
@@ -42,7 +42,7 @@ function renderPickup(data) {
 async function loadPickup() {
   if (pickupBusy) return;
   pickupRequest = null; pickupCsrf = ''; pickupDetails.hidden = true; checkoutButton.hidden = true; handover.hidden = true; staffSignin.hidden = true;
-  if (!validPickupToken) { pickupMessage.textContent = 'Invalid pickup QR. Ask the student to reopen their approved request.'; return; }
+  if (!validPickupToken) { pickupMessage.textContent = 'Invalid pickup QR. Ask the borrower to reopen their approved request.'; return; }
   pickupMessage.textContent = 'Checking pickup QR…'; refreshPickup.disabled = true;
   try {
     const response = await fetch('backend/pickup-verification-data.php?token=' + pickupToken, {credentials:'same-origin',cache:'no-store'});

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../includes/db_connect.php';
@@ -11,7 +11,7 @@ try {
     $stmt = $pdo->query(
         'SELECT
             r.id, r.status, r.reserved_at, r.pickup_at, r.ready_at, r.fulfilled_at, r.due_date, r.returned_at,
-            u.id AS user_id, u.full_name AS student_name, u.student_id, u.year_section,
+            u.id AS user_id, u.full_name AS student_name, COALESCE(u.student_id,u.id_number) AS student_id, COALESCE(u.year_section,u.department) AS year_section, u.role AS borrower_role,
             b.id AS book_id, b.title AS book_title, b.author, b.accession_number, b.total_copies, b.borrowed_copies
          FROM reservations r
          JOIN users u ON u.id = r.user_id

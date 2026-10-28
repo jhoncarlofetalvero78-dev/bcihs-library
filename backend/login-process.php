@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 
 function loginPickupToken(): ?string
@@ -32,42 +32,34 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     backToSignin('');
 }
 
-$identifier = trim($_POST['identifier'] ?? '');
-$password = $_POST['password'] ?? '';
+$identifier = is_string($_POST['identifier'] ?? null) ? trim($_POST['identifier']) : '';
+$password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
 $remember = isset($_POST['remember']);
-
-if ($identifier === '' || $password === '') {
-    backToSignin('Please fill in both fields.');
+if ($identifier === '' || $password === '' || strlen($identifier) > 190 || strlen($password) > 72) {
+    backToSignin('Enter your school ID or username and password.');
 }
-
+try {
+    if (!securityBudget('login-ip', $_SERVER['REMOTE_ADDR'] ?? 'local', 30, 900)
+        || !securityBudget('login-identifier', strtolower($identifier), 10, 900)) {
+        backToSignin('Too many sign-in attempts. Please wait 15 minutes and try again.');
+    }
+} catch (RuntimeException $exception) {
+    backToSignin('Sign-in is temporarily unavailable. Please try again later.');
+}
 $userStmt = $pdo->prepare(
     'SELECT id, full_name, student_id, id_number, email, password_hash, role, account_status
-     FROM users
-     WHERE student_id = :student_id OR id_number = :id_number OR email = :email
-     LIMIT 1'
+     FROM users WHERE student_id = :student OR id_number = :employee OR email = :email LIMIT 2'
 );
-$userStmt->execute([
-    'student_id' => $identifier,
-    'id_number' => $identifier,
-    'email' => $identifier,
-]);
-$user = $userStmt->fetch();
-
-$adminStmt = $pdo->prepare(
-    'SELECT id, username, password_hash FROM admins WHERE username = :username LIMIT 1'
-);
+$userStmt->execute(['student' => $identifier, 'employee' => $identifier, 'email' => $identifier]);
+$users = $userStmt->fetchAll();
+$adminStmt = $pdo->prepare('SELECT id, username, password_hash FROM admins WHERE username = :username LIMIT 2');
 $adminStmt->execute(['username' => $identifier]);
-$admin = $adminStmt->fetch();
-
-if ($admin && password_verify($password, $admin['password_hash'])) {
-    $accountType = 'admin';
-    $account = $admin;
-} elseif ($user && password_verify($password, $user['password_hash'])) {
-    $accountType = 'user';
-    $account = $user;
-} else {
-    backToSignin('Incorrect username or password.');
-}
+$admins = $adminStmt->fetchAll();
+// A colliding identifier must never silently select an account or privileged role.
+if (count($users) + count($admins) !== 1) backToSignin('Incorrect school ID, username, or password.');
+$accountType = $admins ? 'admin' : 'user';
+$account = $admins[0] ?? $users[0];
+if (!password_verify($password, $account['password_hash'])) backToSignin('Incorrect school ID, username, or password.');
 if ($accountType === 'user' && $account['account_status'] !== 'accepted') {
     $message = $account['account_status'] === 'rejected'
         ? 'Your account was rejected. Please contact the library for assistance.'
@@ -76,6 +68,7 @@ if ($accountType === 'user' && $account['account_status'] !== 'accepted') {
 }
 
 session_regenerate_id(true);
+$_SESSION['password_fingerprint'] = hash('sha256', $account['password_hash']);
 foreach (['admin_id', 'admin_username', 'user_id', 'full_name', 'role', 'student_id', 'id_number', 'email'] as $key) {
     unset($_SESSION[$key]);
 }
@@ -101,21 +94,19 @@ if ($accountType === 'admin') {
         : '../index.html';
 }
 
+if ($accountType === 'user' && $account['role'] === 'librarian') $destination = '../admin-dashboard.html';
+
 if (loginPickupToken() && ($accountType === 'admin' || $account['role'] === 'librarian')) {
     $destination = '../pickup-verification.html?token=' . loginPickupToken();
 }
 
 if ($remember) {
     $params = session_get_cookie_params();
-    setcookie(
-        session_name(),
-        session_id(),
-        time() + 60 * 60 * 24 * 30,
-        $params['path'],
-        $params['domain'],
-        $params['secure'],
-        $params['httponly']
-    );
+    setcookie(session_name(), session_id(), [
+        'expires' => time() + 60 * 60 * 24 * 30,
+        'path' => $params['path'], 'domain' => $params['domain'],
+        'secure' => $params['secure'], 'httponly' => true, 'samesite' => 'Lax',
+    ]);
 }
 
 header('Location: ' . $destination);

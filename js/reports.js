@@ -4,7 +4,7 @@
   const statuses={inventory:[],loans:['checked_out','returned'],returns:['returned'],requests:['pending','awaiting_pickup','approved','checked_out','returned','rejected'],overdue:['checked_out'],reservations:['waiting','ready','fulfilled','returned','cancelled'],attendance:['time_in_only','inside','completed'],users:['accepted','pending','rejected']};
   let loaded=null, version=0, loadedSearch='', loadedStatus='all';
   function escapeHtml(value) {
-    const span=document.createElement('span');span.textContent=String(value??'');return span.innerHTML;
+    const span=document.createElement('span');span.textContent=String(value??'');return span.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
   function controls() {
     const type=el('reportType').value;

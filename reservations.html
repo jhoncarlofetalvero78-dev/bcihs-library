@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 <link rel="stylesheet" href="css/reservation-scheduling.css?v=20261027-phase4">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
 <body class="admin-page reservations-page">
 
@@ -139,7 +140,7 @@
       <button type="button" class="retry-btn" id="retryReservations" hidden>Try again</button>
       <table id="reservationsTable">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Queue #</th><th>Reserved Date &amp; Time</th><th>Pickup Date &amp; Time</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Borrower Name</th><th>Book Title</th><th>Queue #</th><th>Reserved Date &amp; Time</th><th>Pickup Date &amp; Time</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody id="reservationsBody"></tbody>
       </table>
@@ -177,6 +178,7 @@
 </dialog>
 <div class="toast" id="toast"></div>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
 <script src="js/reservation-scheduling.js?v=20261027-phase4"></script>
 <script src="js/reservations.js?v=20261027-phase4"></script>

@@ -3,6 +3,7 @@
     .then(data => {
       if (!data.loggedIn) { window.location.href = 'admin-login.html'; return; }
       const name = data.username || 'Admin';
+      document.querySelector('.account-role').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
     })
@@ -108,7 +109,7 @@
         <td class="inventory-cell"><span>Total: ${Number(book.total_copies)}</span><span>Borrowed: ${Number(book.borrowed_copies)}</span><span class="copies-pill ${available <= 0 ? 'zero' : ''}">Available: ${available}</span><small>Held for pickup: ${Number(book.held_copies) || 0}</small></td>
         <td class="actions-column"><div class="book-actions">
           <button type="button" class="action-btn edit" aria-label="Edit ${escapeHtml(book.title)}" onclick="openEditModal(${book.id})">Edit</button>
-          <button type="button" class="action-btn delete" aria-label="Delete ${escapeHtml(book.title)}" onclick="deleteBook(${book.id})">Delete</button>
+          <button type="button" class="action-btn delete" ${deletingBooks.has(Number(book.id)) ? 'disabled' : ''} aria-label="Delete ${escapeHtml(book.title)}" onclick="deleteBook(${book.id})">Delete</button>
         </div></td>
       </tr>`;
     }).join('') : `<tr><td colspan="7" class="empty-msg">${allBooks.length ? 'No books match these filters. Clear filters to see the full catalog.' : 'No books in the catalog yet. Use Add Book to create the first title.'}</td></tr>`;
@@ -256,15 +257,20 @@
     showBookModal();
   };
 
+  const deletingBooks = new Set();
   window.deleteBook = async function(id) {
+    if (deletingBooks.has(id)) return;
     const book = allBooks.find(book => book.id === id);
-    if (!book || !confirm(`Delete "${book.title}"? Only titles without borrowed copies or transaction history can be deleted. This cannot be undone.`)) return;
+    if (!book || !await window.libraryUI.confirm(`Delete "${book.title}"? Only titles without borrowed copies or transaction history can be deleted. This cannot be undone.`, {title:"Delete book",confirmLabel:"Delete book",danger:true})) return;
+    deletingBooks.add(id);
+    applyFilter(false);
     try {
       await fetch('backend/book-delete.php', { method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ id }) }).then(readResponse);
       showToast('Book deleted.');
       await loadBooks();
     } catch (error) { showToast(error.message); }
+    finally { deletingBooks.delete(id); applyFilter(false); }
   };
 
   function restoreStoredPhoto() {

@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sign In | BCIHS Library</title>
 <link rel="stylesheet" href="css/login.css">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
-<body>
+<body class="auth-page">
 
 <header>
   <a class="brand" href="index.html">
@@ -24,8 +25,8 @@
     <input type="hidden" id="bookReturn" name="book" value="">
 
     <div class="field">
-      <label for="identifier">Username</label>
-      <input type="text" id="identifier" name="identifier" placeholder="Enter your username" autocomplete="username" required>
+      <label for="identifier">School ID or Username</label>
+      <input type="text" id="identifier" name="identifier" placeholder="School ID, username, or registered email" autocomplete="username" required>
     </div>
 
     <div class="field">
@@ -66,6 +67,7 @@
     <button type="button" id="registrationDialogClose">Got it</button>
 </dialog>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/login.js"></script>
 
 </body>

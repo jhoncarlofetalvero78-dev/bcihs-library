@@ -4,6 +4,7 @@
     .then(data => {
       if (!data.loggedIn) { window.location.href = 'admin-login.html'; return; }
       const name = data.username || 'Admin';
+      document.querySelector('.account-role').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
     })
@@ -95,7 +96,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDate(mysqlDatetime) {
@@ -104,6 +105,7 @@
   }
 
   function reservationActions(r) {
+    if (activeActions.has(Number(r.id))) return '<span role="status">Saving…</span>';
     const canCheckout = r.status === 'ready' ? r.available_copies > 0 : r.requestable_copies > 0;
     const buttons = [`<button class="action-btn view" onclick="showReservationDetails(${r.id})">Details</button>`];
     if (r.status === 'waiting') {
@@ -126,7 +128,7 @@
     }
     body.innerHTML = reservations.map(r => `
       <tr>
-        <td><strong>${escapeHtml(r.student_name)}</strong><small class="reservation-meta">${escapeHtml(r.student_id || 'No student ID')} · ${escapeHtml(r.year_section || '—')}</small></td>
+        <td><strong>${escapeHtml(r.student_name)}</strong><small class="reservation-meta">${escapeHtml(borrowing.roleLabel(r.borrower_role))} · ${escapeHtml(r.student_id || 'No school ID')} · ${escapeHtml(r.year_section || '—')}</small></td>
         <td>${escapeHtml(r.book_title)}<small class="reservation-meta">${r.requestable_copies} available for new requests · ${r.held_copies} held</small></td>
         <td>${r.queue_position ? `<span class="queue-pos">#${r.queue_position}</span>` : '—'}</td>
         <td>${formatDate(r.reserved_at)}</td>
@@ -189,11 +191,12 @@
       });
   }
 
-  window.act = function(id, action) {
+  window.act = async function(id, action) {
     if (activeActions.has(id)) return;
     const prompts = {ready:'Hold an available copy for this reservation? This does not check it out.', fulfill:'Confirm physical handover and start this loan now?', return:'Confirm the physical book has been returned?', cancel:'Cancel this reservation and release any hold?'};
-    if (!prompts[action] || !confirm(prompts[action])) return;
+    if (!prompts[action] || !await window.libraryUI.confirm(prompts[action], {danger:action === "cancel",confirmLabel:({ready:"Mark Ready",fulfill:"Confirm Checkout",return:"Confirm return",cancel:"Cancel reservation"})[action]})) return;
     activeActions.add(id);
+    applyFilters();
     const labels = { ready: 'marked ready', fulfill: 'fulfilled', cancel: 'cancelled', return: 'marked returned' };
     fetch('backend/reservation-action.php', {
       method: 'POST',
@@ -208,10 +211,10 @@
       })
       .then(() => {
         showToast(`Reservation ${labels[action]}.`);
-        loadReservations();
+        return loadReservations();
       })
-      .catch(err => { showToast(err.message); loadReservations(); })
-      .finally(() => activeActions.delete(id));
+      .catch(err => { showToast(err.message); return loadReservations(); })
+      .finally(() => { activeActions.delete(id); applyFilters(); });
   };
 
   document.getElementById('searchInput').addEventListener('input', applyFilters);
@@ -257,7 +260,7 @@
   window.showReservationDetails = id => {
     const row = allReservations.find(item => Number(item.id) === id);
     if (!row) return;
-    const details = [['Student',row.student_name],['Student ID',row.student_id || '—'],['Book',row.book_title],
+    const details = [['Borrower',row.student_name],['School ID',row.student_id || '—'],['Book',row.book_title],
       ['Author',row.author],['Accession',row.accession_number || '—'],['Status',borrowing.label(row.status)],
       ['Submitted',formatDate(row.reserved_at)],['Pickup',formatDate(row.pickup_at)],['Ready',formatDate(row.ready_at)],
       ['Checked out',formatDate(row.fulfilled_at)],['Due',formatDate(row.due_date)],['Returned',formatDate(row.returned_at)]];
@@ -269,7 +272,7 @@
   document.getElementById('pickupSettingsForm').addEventListener('submit', async event => {
     event.preventDefault();
     const button = document.getElementById('savePickupSettings');
-    if (button.disabled || !confirm('Save these pickup capacity limits for the library? Blank means unlimited.')) return;
+    if (button.disabled || !await window.libraryUI.confirm('Save these pickup capacity limits for the library? Blank means unlimited.', {title:'Save capacity settings',confirmLabel:'Save settings'})) return;
     button.disabled = true;
     const message = document.getElementById('pickupSettingsMessage');
     try {

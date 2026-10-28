@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
 <body class="admin-page borrow-requests-page">
 
@@ -109,7 +110,7 @@
       <p class="loading-msg" id="loadingMsg">Loading requests…</p>
       <table id="requestsTable" class="extracted-style-1">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Date Requested</th><th>Checked Out</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Borrower Name</th><th>Book Title</th><th>Date Requested</th><th>Checked Out</th><th>Due Date</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody id="requestsBody"></tbody>
       </table>
@@ -128,8 +129,8 @@
     <form id="borrowForm">
       <div class="form-grid">
         <label>
-          Student Name
-          <input id="studentInput" type="text" placeholder="Type the student name" autocomplete="off" maxlength="150" required>
+          Borrower Name
+          <input id="studentInput" type="text" placeholder="Type the borrower name" autocomplete="off" maxlength="150" required>
         </label>
 
         <label>
@@ -162,6 +163,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
 <script src="js/borrow-requests.js?v=20261027-phase2b"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>

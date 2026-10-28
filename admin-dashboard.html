@@ -4,11 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard | BCIHS Library</title>
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="css/admin-dashboard.css?v=20261027-phase6a">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
 </head>
 <body class="admin-page admin-dashboard-page">
 
@@ -151,7 +153,7 @@
         <div class="extracted-style-4">
           <table>
             <thead>
-              <tr><th>Student Name</th><th>Book Title</th><th>Date Requested</th><th>Status</th></tr>
+              <tr><th>Borrower Name</th><th>Book Title</th><th>Date Requested</th><th>Status</th></tr>
             </thead>
             <tbody id="borrowRequestBody"></tbody>
           </table>
@@ -166,7 +168,7 @@
         <div class="extracted-style-4">
           <table>
             <thead>
-              <tr><th>Student Name</th><th>Book Title</th><th>Queue #</th><th>Reserved</th><th>Status</th></tr>
+              <tr><th>Borrower Name</th><th>Book Title</th><th>Queue #</th><th>Reserved</th><th>Status</th></tr>
             </thead>
             <tbody id="reservationBody"></tbody>
           </table>

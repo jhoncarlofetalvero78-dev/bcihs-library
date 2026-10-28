@@ -27,7 +27,7 @@
       document.getElementById('activeReservationsValue').textContent=(current.waiting+current.ready).toLocaleString();
       document.getElementById('availableBooksHint').textContent=`${current.requestable_copies} available for requests · ${current.held_copies} held for pickup`;
       document.getElementById('dashboardScope').textContent=`Current snapshot · ${data.generatedAt} PHT · ${current.titles} catalog titles · ${current.accepted_students} accepted students`;
-      document.getElementById('circulationSummary').textContent=`${current.pending} pending requests · ${current.awaiting_pickup} approved / awaiting pickup · ${current.overdue} overdue loans · Reservations: ${current.waiting} waiting, ${current.ready} ready · Today: ${current.attendance_today.visits} attendance visits, ${current.attendance_today.registered_students} unique registered students · Occupancy: ${current.occupancy === null ? 'not tracked' : current.occupancy}`;
+      document.getElementById('circulationSummary').textContent=`${current.pending} pending requests · ${current.awaiting_pickup} approved / awaiting pickup · ${current.overdue} overdue loans · Reservations: ${current.waiting} waiting, ${current.ready} ready · Today: ${current.attendance_today.visits} attendance visits, ${current.attendance_today.registered_students} unique registered people · Occupancy: ${current.occupancy === null ? 'not tracked' : current.occupancy}`;
       document.getElementById('dashboardWarning').hidden=current.inventory_matches_loans && !current.undated_loan_records;
       renderBookInventoryChart(current);
     }).catch(() => {
@@ -74,7 +74,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   fetch('backend/borrow-requests-data.php', { credentials: 'same-origin' })

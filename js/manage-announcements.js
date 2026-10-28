@@ -17,6 +17,7 @@
   const toast = document.getElementById('toast');
   let toastTimer;
   function showToast(msg) {
+    window.libraryUI?.dialogFeedback?.(msg);
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
@@ -155,7 +156,7 @@
     pendingDelete=id;document.getElementById('deletePrompt').textContent=`Remove published announcement “${announcement.title}”? It will disappear from public pages. This cannot be undone.`;
     document.getElementById('deleteConfirmation').hidden=false;document.getElementById('confirmDelete').focus();
   };
-  document.getElementById('cancelDelete').addEventListener('click',()=>{pendingDelete=null;document.getElementById('deleteConfirmation').hidden=true;});
+  document.getElementById('cancelDelete').addEventListener('click',()=>{if(deleting)return;pendingDelete=null;document.getElementById('deleteConfirmation').hidden=true;});
   document.getElementById('confirmDelete').addEventListener('click',async()=>{
     if(!pendingDelete || deleting)return;deleting=true;document.getElementById('confirmDelete').disabled=true;
     try {
@@ -167,7 +168,7 @@
   });
 
   document.getElementById('addBtn').addEventListener('click', openAddModal);
-  document.getElementById('cancelBtn').addEventListener('click', () => overlay.classList.remove('show'));
+  document.getElementById('cancelBtn').addEventListener('click', () => {if(!document.getElementById('saveBtn').disabled)overlay.classList.remove('show');});
   overlay.addEventListener('click', (e) => { if (e.target === overlay && !document.getElementById('saveBtn').disabled) overlay.classList.remove('show'); });
 
   form.addEventListener('submit', (e) => {

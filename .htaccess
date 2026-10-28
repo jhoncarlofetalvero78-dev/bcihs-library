@@ -5,3 +5,8 @@
     Header set Expires "0"
   </FilesMatch>
 </IfModule>
+
+Options -Indexes
+<FilesMatch "(?i)(^\.|\.(sql|bak|log|ini|env|toml)$)">
+  Require all denied
+</FilesMatch>

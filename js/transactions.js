@@ -4,21 +4,19 @@
     .then(data => {
       if (!data.loggedIn) { window.location.href = 'admin-login.html'; return; }
       const name = data.username || 'Admin';
+      document.querySelector('.account-role').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
     })
     .catch(() => {});
 
-  document.querySelectorAll('[data-soon]').forEach(el => {
-    el.addEventListener('click', () => alert(`${el.dataset.soon} isn't wired up yet — coming soon.`));
-  });
 
   let allTx = [];
 
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDate(mysqlDatetime) {
