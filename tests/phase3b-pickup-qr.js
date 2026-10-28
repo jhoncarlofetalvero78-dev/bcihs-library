@@ -93,6 +93,11 @@ async function main(){
   verify(link.href===url && canvas.attributes['aria-label']==='Pickup QR for '+request.title,'QR link and accessible label preserve correct values');
   verify(student.calls.every(([endpoint])=>!/^https?:/.test(endpoint)),'QR rendering contacts no remote QR service');
   verify(JSON.parse(student.calls[1][1].body).id===request.id && student.calls[1][1].headers['X-CSRF-Token']==='owner-csrf','owner QR issuance uses exact request and CSRF');
+  const qrLibrary=student.context.qrcodegen;vm.runInContext('qrcodegen=undefined',student.context);
+  await card.children[2].listeners.click();
+  verify(card.children[4].children.length===1 && card.children[4].children[0].href===url,'missing local renderer preserves staff verification fallback');
+  verify(card.children[3].textContent.includes('QR image could not load') && !card.children[2].disabled,'missing library produces usable feedback and retry control');
+  student.context.qrcodegen=qrLibrary;
   student.context.respond=async()=>response({error:'No longer awaiting pickup'},409);
   await card.children[2].listeners.click();
   verify(card.children[4].children.length===0 && card.children[3].textContent==='No longer awaiting pickup','used request removes displayed QR on recheck');

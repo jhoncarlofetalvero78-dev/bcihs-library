@@ -14,4 +14,5 @@ Options -Indexes
 <FilesMatch "^composer\.(json|lock)$">
   Require all denied
 </FilesMatch>
-RedirectMatch 403 (^|/)vendor/
+# Keep Composer/private dependencies blocked; js/vendor contains public QR assets.
+RedirectMatch 403 (?<!/js)/vendor/
