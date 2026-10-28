@@ -10,6 +10,10 @@ function verify(bool $ok, string $message): void {
 class SmsMemoryPDO extends PDO {
     public array $rows = [];
     public bool $transaction = false, $fail = false, $lockAvailable = true, $failUpdate = false;
+    public mixed $permission = ['allow_notifications'=>'1','version'=>'1'];
+    public function query(string $query, ?int $fetchMode = null, mixed ...$fetchModeArgs): PDOStatement|false {
+        $statement=$this->prepare($query);$statement->execute();return $statement;
+    }
     public string $due = '2026-11-11 10:30:00';
     public function __construct() {}
     public function inTransaction(): bool {return $this->transaction;}
@@ -24,7 +28,10 @@ class SmsMemoryStatement extends PDOStatement {
     public function __construct(private SmsMemoryPDO $db, private string $sql) {}
     public function execute(?array $params = null): bool {
         $params = $params ?? [];
-        if (str_contains($this->sql, 'GET_LOCK')) $this->result = $this->db->lockAvailable ? 1 : 0;
+        if ($this->sql==='SELECT DATABASE()') $this->result='mock_sms_database';
+        elseif ($this->sql==='SELECT id FROM sms_notification_audit LIMIT 0') $this->result=false;
+        elseif (str_contains($this->sql,'FROM sms_notification_settings')) $this->result=$this->db->permission;
+        elseif (str_contains($this->sql, 'GET_LOCK')) $this->result = $this->db->lockAvailable ? 1 : 0;
         elseif (str_contains($this->sql, 'RELEASE_LOCK')) $this->result = 1;
         elseif (str_contains($this->sql, 'JSON_VALID')) {
             $this->result = false;
@@ -120,6 +127,16 @@ try {
         $source=file_get_contents(__DIR__.'/../'.$file);$commit=strpos($source,'$pdo->commit();');$notify=strpos($source,'notifyLibraryEvent(');
         verify($commit!==false && $notify>$commit,'actual endpoint notification hook follows transaction commit: '.$file);
     }
+    foreach ([false,['allow_notifications'=>'2','version'=>'1'],['allow_notifications'=>'1','version'=>'bad']] as $permission) {
+        $db->permission=$permission;
+        verify(!smsPermissionState($db)['allowed'],'missing/corrupt permission fails closed');
+    }
+    $db->permission=['allow_notifications'=>'0','version'=>'2'];
+    send_sms($db,1,'09123456789','Message','account_approved','off-test');
+    verify(smsLogMetadata(end($db->rows))['reason']==='notifications_disabled' && end($db->rows)['phone']==='(suppressed)','OFF is safely logged without retaining a phone');
+    $db->permission=['allow_notifications'=>'1','version'=>'3'];
+    $before=count($db->rows);send_sms($db,1,'09123456789','Message','account_approved','off-test');
+    verify(count($db->rows)===$before,'disabled event key cannot be replayed');
     $logs=file_get_contents(__DIR__.'/../backend/sms-logs-data.php');
     verify(str_contains($logs,'requireBookAccess($pdo, true)') && str_contains($logs,"!== 'GET'"),'staff logs use current database permissions and GET-only access');
     verify(str_contains($logs,'smsPublicLog($row)') && !str_contains($logs,"'response' =>"),'actual staff API uses tested privacy projection');

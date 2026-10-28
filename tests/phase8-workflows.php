@@ -36,6 +36,9 @@ try {
     $pdo->prepare('INSERT INTO admins(username,password_hash) VALUES("phase8-admin",:hash)')->execute(['hash'=>password_hash($password,PASSWORD_DEFAULT)]);
     $student=user('student','PH8-STUDENT');$librarian=user('librarian','PH8-LIB');$visitor=user('visitor','phase8@example.invalid');
     $staff=login('phase8-admin');
+    [$status,$permission]=http('sms-settings','GET',null,$staff);
+    check($status===200 && !$permission['permission']['allowed'] && $permission['delivery_mode']==='Disabled','new SMS permission defaults OFF');
+    post('sms-settings',['allowed'=>true,'version'=>$permission['permission']['version'],'confirm_enable'=>true],$staff);
     $teacherRegistration=session();[$status,$teacherForm]=http('registration-token','GET',null,$teacherRegistration);
     check($status===200,'teacher registration acquires CSRF token');
     [$status]=http('register-process','POST',['role'=>'teacher','full_name'=>'Phase8 teacher','id_number'=>'PH8-TEACHER','department'=>'Faculty','phone'=>'09170000004','password'=>$password,'confirm_password'=>$password,'csrf_token'=>$teacherForm['csrfToken']],$teacherRegistration);
@@ -187,7 +190,10 @@ try {
     [$status,$notices]=http('announcements-data');check($status===200 && count($notices['announcements'])===1,'published announcement visible');
     post('announcement-delete',['id'=>$notice['id']],$staff);
     require __DIR__.'/client-workflows.php';
-    if (getenv('BCIHS_SMS_ACCEPTANCE_ROOT')) require __DIR__.'/sms-acceptance-workflows.php';
+    if (getenv('BCIHS_SMS_ACCEPTANCE_ROOT')) {
+        require __DIR__.'/sms-permission-workflows.php';
+        require __DIR__.'/sms-acceptance-workflows.php';
+    }
     $profile=post('profile-update',['full_name'=>'Phase8 teacher changed','phone'=>'09170000002','department'=>'Science','email'=>'discarded@example.invalid'],$teacherSession);
     check($profile['success']===true && $pdo->query('SELECT department FROM users WHERE id='.$teacher)->fetchColumn()==='Science','teacher profile persists permitted fields');
     [$status,$visitorUpdate]=http('profile-update','POST',['full_name'=>'Visitor','phone'=>'09170000003','email'=>'phase8-admin'],$visitorSession);
@@ -198,16 +204,11 @@ try {
     check($status===302,'registration redirects');$pending=(int)$pdo->query('SELECT id FROM users WHERE student_id="PH8-NEW"')->fetchColumn();
     check($pending>0 && $pdo->query('SELECT account_status FROM users WHERE id='.$pending)->fetchColumn()==='pending','registration remains pending');
     post('user-approval-action',['id'=>$pending,'status'=>'accepted'],$staff);post('user-approval-action',['id'=>$pending,'status'=>'accepted'],$staff,409);
-    // Recovery: simulated log contains no transport; test reads its isolated code only in memory.
-    post('forgot-password-request',['phone'=>'+63 917 000 0000','role'=>'student'],$studentSession);
-    $message=$pdo->query('SELECT message FROM sms_logs WHERE user_id='.$student.' ORDER BY id DESC LIMIT 1')->fetchColumn();
-    check(str_contains($message,'[redacted]') && !str_contains($message,'123456'),'OTP never appears in SMS logs');
-    $matches=[1=>'123456']; // Only the copied isolated endpoint has deterministic code generation.
-    $marker=$pdo->query('SELECT reset_code FROM users WHERE id='.$student)->fetchColumn();check(strlen($marker)===10 && $marker!==$matches[1],'database stores challenge ID, not plaintext OTP');
-    post('reset-password-process',['phone'=>'09170000000','role'=>'student','code'=>'999999','password'=>'New-Phase8-Password'],$studentSession,422);
-    post('reset-password-process',['phone'=>'09170000000','role'=>'student','code'=>$matches[1],'password'=>'New-Phase8-Password'],$studentSession);
-    post('reset-password-process',['phone'=>'09170000000','role'=>'student','code'=>$matches[1],'password'=>'Another-Password'],$studentSession,422);
-    check(password_verify('New-Phase8-Password',$pdo->query('SELECT password_hash FROM users WHERE id='.$student)->fetchColumn()),'canonical recovery changes isolated password');
+    // Simulation never issues an undeliverable challenge. Live recovery is exercised with isolated mocks.
+    $recoveryBefore=$pdo->query('SELECT reset_code FROM users WHERE id='.$student)->fetchColumn();
+    post('forgot-password-request',['phone'=>'+63 917 000 0000','role'=>'student'],$studentSession,503);
+    check($pdo->query('SELECT reset_code FROM users WHERE id='.$student)->fetchColumn()===$recoveryBefore,'unavailable recovery leaves account challenge unchanged');
+    post('reset-password-process',['phone'=>'09170000000','role'=>'student','code'=>'123456','password'=>'New-Phase8-Password'],$studentSession,422);
     $pdo->prepare('UPDATE users SET password_hash=:hash WHERE id=:id')->execute(['hash'=>password_hash('Changed-by-test',PASSWORD_DEFAULT),'id'=>$teacher]);
     [$status]=http('books-data','GET',null,$teacherSession);check($status===401,'credential change rejects an already-bound session');
     $pdo->prepare('INSERT INTO admins(username,password_hash) VALUES("PH8-LIB",:hash)')->execute(['hash'=>password_hash($password,PASSWORD_DEFAULT)]);

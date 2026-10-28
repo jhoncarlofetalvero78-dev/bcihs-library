@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/sms-core.php';
+require_once __DIR__ . '/sms-permission.php';
 
 function smsSettings(): array
 {
@@ -70,9 +71,12 @@ function smsStorageState(string $state): string
 function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, string $event = 'legacy', ?string $eventKey = null): bool
 {
     $lock = null;
+    $permissionLock = null;
     try {
         // Notifications run only after the business transaction has committed.
         if ($pdo->inTransaction()) return false;
+        $permissionLock = smsPermissionLock($pdo);
+        $permission = smsPermissionState($pdo);
         $eventKey = $eventKey ?? bin2hex(random_bytes(16));
         $key = hash('sha256', $event . ':' . $eventKey);
         $lock = 'bcihs-sms-' . substr($key, 0, 48);
@@ -90,11 +94,13 @@ function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, strin
         $loggedMessage = $event === 'password_reset' ? 'BCIHS Library: Password reset code [redacted].' : $message;
         $query = $pdo->prepare('INSERT INTO sms_logs(user_id,phone,message,status,response)
             VALUES(:user,:phone,:message,"skipped",:response)');
-        $query->execute(['user' => $userId, 'phone' => smsPhone($phone) ?? '(missing/invalid)',
+        $query->execute(['user' => $userId, 'phone' => $permission['allowed'] ? (smsPhone($phone) ?? '(missing/invalid)') : '(suppressed)',
             'message' => $loggedMessage, 'response' => json_encode($metadata, JSON_THROW_ON_ERROR)]);
         $id = (int)$pdo->lastInsertId();
         $attempted = false;
-        $result = smsDispatch($config, $phone, $message, static function (array $payload) use (&$attempted): array {
+        $result = !$permission['allowed']
+            ? smsResult('skipped', $permission['available'] ? 'notifications_disabled' : 'notification_permission_unavailable')
+            : smsDispatch($config, $phone, $message, static function (array $payload) use (&$attempted): array {
             $attempted = true;
             return smsTransport($payload);
         }, ['event' => $event, 'event_id' => $eventKey, 'user_id' => $userId]);
@@ -107,6 +113,7 @@ function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, strin
         error_log('Library notification could not be completed; review SMS logs.');
         return false;
     } finally {
+        smsPermissionUnlock($pdo, $permissionLock);
         if ($lock !== null) {
             try {$query = $pdo->prepare('SELECT RELEASE_LOCK(:key)');$query->execute(['key' => $lock]);}
             catch (Throwable $exception) {error_log('Could not release notification lock.');}

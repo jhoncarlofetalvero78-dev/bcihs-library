@@ -17,6 +17,7 @@ function smsTransport(array $payload): array
     if (!$root || realpath($root) !== dirname(__DIR__)) throw new RuntimeException('Isolation mismatch.');
     file_put_contents($root.'/mock-calls.jsonl', json_encode($payload)."\n", FILE_APPEND | LOCK_EX);
     $fault = @file_get_contents($root.'/mock-fault');
+    if ($fault === 'delay') {file_put_contents($root.'/mock-inflight','started');usleep(1500000);}
     if ($fault === 'timeout') return ['error'=>true];
     if ($fault === 'malformed') return ['http'=>200,'body'=>'not JSON'];
     if ($fault === 'exit') exit;
@@ -38,3 +39,14 @@ $code = str_replace(['function smsReserveLiveTest(', 'function smsRestoreLiveTes
     ['function acceptanceUnusedReserve(', 'function acceptanceUnusedRestore('], $code, $count);
 if ($count !== 2) throw new RuntimeException('Guard-copy injection did not match.');
 file_put_contents($path, $code."\nfunction smsReserveLiveTest(array \$config, string \$phone, string \$message, array \$context): ?string { return null; }\nfunction smsRestoreLiveTest(array \$config): bool { return true; }\n");
+// CLI-only submission probe in the disposable copy, for permission/race integration tests.
+file_put_contents($directory.'/qa-sms-send.php', <<<'PROBE'
+<?php
+if (PHP_SAPI !== 'cli' || getenv('BCIHS_PHASE8_ISOLATED') !== '1'
+    || realpath(getenv('BCIHS_SMS_ACCEPTANCE_ROOT') ?: '') !== __DIR__
+    || !preg_match('/^bcihs_phase8_test_[a-f0-9]{12}$/D', getenv('BCIHS_DB_NAME') ?: '')) exit(1);
+require __DIR__.'/includes/db_connect.php';
+require __DIR__.'/includes/sms.php';
+$input=json_decode($argv[1]??'',true,512,JSON_THROW_ON_ERROR);
+echo json_encode(['success'=>send_sms($pdo,null,$input['phone'],$input['message'],$input['event'],$input['event_id'])]);
+PROBE);

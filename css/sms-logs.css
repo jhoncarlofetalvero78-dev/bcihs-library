@@ -40,7 +40,7 @@
     .topbar-logo img{width:100%; height:100%; object-fit:cover;}
     .topbar-title{font-weight:800; font-size:1.05rem; letter-spacing:0.4px;}
     .topbar-subtitle{font-size:0.75rem; color:#f0d8d8;}
-    .topbar-account{display:flex; align-items:center; gap:10px; color:#fff;}
+    .topbar-account{display:flex; align-items:center; gap:10px; color:inherit;}
     .account-avatar{width:38px; height:38px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--maroon); font-weight:800; font-size:0.9rem; flex-shrink:0;}
     .account-name{font-weight:700; font-size:0.88rem; line-height:1.2; text-align:right;}
     .account-role{font-size:0.68rem; color:#f0d8d8; letter-spacing:0.5px; text-align:right;}
@@ -100,3 +100,18 @@
 .sms-logs-page .main-wrap,.sms-logs-page main{min-width:0}
 @media(max-width:900px){.sms-logs-page .controls input{flex:1 1 100%;width:100%}}
 @media(max-width:600px){.controls input,.controls select{min-width:0;width:100%;flex-basis:100%}.refresh-btn{width:100%}.sms-logs-page .panel{padding:14px}}
+
+.sms-settings{margin-bottom:24px}
+.sms-settings h2{font-size:1.2rem;margin-bottom:12px}
+.sms-settings p{font-size:.9rem;line-height:1.7;margin:12px 0;color:#62666f}
+.sms-settings-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}
+.sms-settings-summary>div{background:#f7f2f0;border:1px solid #e1d8d4;border-radius:10px;padding:16px}
+.sms-settings-summary dt{font-size:.8rem;color:#62666f;margin-bottom:6px}
+.sms-settings-summary dd{margin:0;color:#64131b;font-weight:650}
+.sms-permission-toggle{display:flex;align-items:center;gap:12px;font-weight:600;min-height:44px}
+.sms-permission-toggle input{width:22px;height:22px;accent-color:#64131b}
+.sms-settings-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.sms-settings #smsSettingsFeedback{color:#64131b}
+.sms-settings details{border-top:1px solid #e1d8d4;margin-top:16px;padding-top:16px}
+.sms-settings details ul{padding-left:20px;font-size:.85rem;line-height:1.8;overflow-wrap:anywhere}
+@media(max-width:760px){.sms-settings-summary{grid-template-columns:1fr}}

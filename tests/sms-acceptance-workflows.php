@@ -78,10 +78,22 @@ foreach(['simulation','unisms','semaphore'] as $index=>$provider) {
     $due=$pdo->query('SELECT due_date FROM reservations WHERE id='.(int)$id)->fetchColumn();
     $assertNotification($provider,$uid,$phone,'checkout','reservation:'.$id,smsEventMessage('checkout',['title'=>'Phase8 book','due_date'=>$due]),$before);
     post('reservation-action',['id'=>$id,'action'=>'fulfill'],$staff,409);check(count($calls())===$before+($provider==='simulation'?0:1),'repeat reservation handover sends no SMS');
-    $before=count($calls());$reset=session();post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset);
-    $marker=$pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn();
-    $assertNotification($provider,$uid,$phone,'password_reset','reset:'.$uid.':'.$marker,"BCIHS Library: Your password reset code is 123456. It expires in 15 minutes. If you didn't request this, ignore this message.",$before);
-    post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset,429);check(count($calls())===$before+($provider==='simulation'?0:1),'recovery rate limit prevents repeat submission');
+    $before=count($calls());$reset=session();
+    if ($provider==='semaphore') {
+        post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset);
+        $marker=$pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn();
+        $assertNotification($provider,$uid,$phone,'password_reset','reset:'.$uid.':'.$marker,"BCIHS Library: Your password reset code is 123456. It expires in 15 minutes. If you didn't request this, ignore this message.",$before);
+        post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset,429);
+        check(count($calls())===$before+1,'recovery rate limit prevents repeat submission');
+        post('reset-password-process',['phone'=>$phone,'role'=>'teacher','code'=>'999999','password'=>'New-Phase8-Password'],$reset,422);
+        post('reset-password-process',['phone'=>$phone,'role'=>'teacher','code'=>'123456','password'=>'New-Phase8-Password'],$reset);
+        post('reset-password-process',['phone'=>$phone,'role'=>'teacher','code'=>'123456','password'=>'Another-Password'],$reset,422);
+        check(password_verify('New-Phase8-Password',$pdo->query('SELECT password_hash FROM users WHERE id='.$uid)->fetchColumn()),'canonical mocked recovery changes isolated password once');
+    } else {
+        $marker=$pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn();
+        post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset,503);
+        check($pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn()===$marker && count($calls())===$before,'simulation or approval-only UniSMS guard never issues an undeliverable reset code');
+    }
 }
 // Interrupted transports reserve their log before transport; switching provider
 // and repeating the same business action must never create a second attempt.

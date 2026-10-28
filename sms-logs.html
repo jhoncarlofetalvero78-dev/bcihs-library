@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SMS Logs | BCIHS Library</title>
-  <link rel="stylesheet" href="css/sms-logs.css?v=20261028-phase7b3">
+  <link rel="stylesheet" href="css/sms-logs.css?v=20261028-permission">
   <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
 <link rel="stylesheet" href="css/library-ui.css?v=phase8">
@@ -47,8 +47,31 @@
   <main>
     <div class="page-head">
       <div class="page-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg></div>
-      <div><h1>SMS Logs</h1><p>Recent notification attempts. Provider acceptance does not confirm handset delivery.</p></div>
+      <div><h1>SMS Logs &amp; Settings</h1><p>Recent notification attempts. Provider acceptance does not confirm handset delivery.</p></div>
     </div>
+    <section class="panel sms-settings" aria-labelledby="smsSettingsTitle">
+      <h2 id="smsSettingsTitle">SMS notification permission</h2>
+      <p id="smsPermissionRole">Checking administrator access…</p>
+      <dl class="sms-settings-summary">
+        <div><dt>Allow SMS Notifications</dt><dd id="smsPermissionLabel">Checking…</dd></div>
+        <div><dt>Selected provider</dt><dd id="smsSelectedProvider">Checking…</dd></div>
+        <div><dt>Effective delivery mode</dt><dd id="smsEffectiveMode">Checking…</dd></div>
+      </dl>
+      <p id="smsConfigReadiness" role="status">Checking configuration readiness…</p>
+      <form id="smsPermissionForm">
+        <label class="sms-permission-toggle"><input type="checkbox" id="allowSmsNotifications" disabled aria-describedby="smsPermissionHelp"> Allow SMS Notifications</label>
+        <p id="smsPermissionHelp">OFF blocks all automatic SMS and SMS password recovery without affecting library operations. ON permits only the existing configured mode; it cannot activate live delivery by itself.</p>
+        <p>Enabling notifications may use paid provider credits only when live sending has been separately authorized. OFF events are recorded as skipped; they are never queued for later delivery.</p>
+        <div class="sms-settings-actions">
+          <button class="refresh-btn" id="saveSmsPermission" type="submit" disabled hidden>Save permission</button>
+          <button class="refresh-btn" id="refreshSmsSettings" type="button">Refresh settings</button>
+        </div>
+      </form>
+      <p id="smsSettingsFeedback" role="status" aria-live="polite"></p>
+      <details id="smsAuditDetails" hidden><summary>Recent administrator changes</summary>
+        <p id="smsAuditEmpty">No administrator changes recorded.</p><ul id="smsSettingsAudit"></ul>
+      </details>
+    </section>
     <div class="panel">
       <p id="smsMode" role="status">Checking notification mode…</p>
       <p class="status-note">Refresh reloads local records only; it does not check provider delivery.</p>
@@ -81,7 +104,8 @@
   </main>
 </div>
 <script src="js/library-ui.js?v=phase8"></script>
-<script src="js/sms-logs.js?v=20261028-phase7b3"></script>
+<script src="js/sms-logs.js?v=20261028-permission"></script>
+<script src="js/sms-settings.js?v=20261028-permission"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

@@ -33,6 +33,8 @@
   const eventLabels = {account_approved:'Account approval',borrow_ready:'Borrowing ready for pickup',borrow_rejected:'Borrowing rejection',
     checkout:'Checkout with due date',reservation_ready:'Reservation ready',password_reset:'Password reset',legacy:'Historical / other'};
   const reasonLabels = {
+    notifications_disabled:'Administrator notification permission is OFF. No API request, queue or later replay.',
+    notification_permission_unavailable:'Notification permission storage is missing or invalid. Sending blocked.',
     live_test_wrong_provider:'Live-test authorization cannot be used with another provider.',
     live_test_authorization_invalid:'Live-test authorization is missing, invalid or expired.',
     live_test_event_or_recipient_mismatch:'This notification is outside the authorized test scope.',
@@ -112,10 +114,16 @@
       document.getElementById('smsMode').textContent = data.mode === 'simulate'
         ? 'Simulation mode: no provider requests or SMS credits. Recipient numbers are masked. Selected provider: ' + (providerLabels[data.provider] || 'Semaphore') + '.'
         : 'Live/disabled configuration: review staff configuration. No delivery confirmation is implied.';
+      if (data.notification_status) {
+        const status = data.notification_status;
+        document.getElementById('smsMode').textContent = 'Effective mode: ' + status.delivery_mode + '. Selected provider: '
+          + (providerLabels[status.provider] || 'Unavailable') + '. ' + status.configuration_message;
+      }
       loading.hidden = true;
       table.hidden = false;
       renderLogs();
     } catch (error) {
+      document.getElementById('smsMode').textContent = 'Current notification status could not be verified. Refresh local logs to check again.';
       loading.className = 'error-msg';
       loading.textContent = error.message || 'Could not reach the server. Please try again.';
     } finally {

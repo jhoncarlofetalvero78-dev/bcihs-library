@@ -20,6 +20,11 @@ try {
         $test->exec($ddl);
     }
     $test->exec('SET FOREIGN_KEY_CHECKS=1');
+    // Schema-only setup for the administrator permission feature; never applied to source DB.
+    if (!$test->query("SHOW TABLES LIKE 'sms_notification_settings'")->fetch())
+        $test->exec(file_get_contents(__DIR__.'/../sql/sms-notification-settings.sql'));
+    elseif (!$test->query('SELECT id FROM sms_notification_settings WHERE id=1')->fetch())
+        $test->exec('INSERT INTO sms_notification_settings(id,allow_notifications,version) VALUES(1,0,0)');
     if ((int)$test->query('SELECT COUNT(*) FROM users')->fetchColumn() !== 0) throw new RuntimeException('Isolation failed.');
     mkdir($directory, 0700);
     $directory = realpath($directory);
@@ -78,7 +83,7 @@ ROUTER);
     $process = proc_open([$php,$root.'/tests/phase8-workflows.php','http://127.0.0.1:8898'],
         [0=>['pipe','r'],1=>STDOUT,2=>STDERR],$testPipes,null,$env);
     fclose($testPipes[0]); $exit=proc_close($process);
-    if ($exit===0 && ($argv[2]??'')==='--browser') {
+    if ($exit===0 && in_array('--browser',$argv,true)) {
         $access=sys_get_temp_dir().'/'.$name.'-browser-access.json';
         file_put_contents($access,json_encode(['base'=>'http://127.0.0.1:8898','identifier'=>'phase8-admin','password'=>$env['BCIHS_PHASE8_PASSWORD']]));chmod($access,0600);
         echo "Private disposable access file: ".$access."\n";

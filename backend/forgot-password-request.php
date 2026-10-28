@@ -12,6 +12,12 @@ try {
     $role = $input['role'] ?? '';
     if (!is_string($role) || !in_array($role, ['', 'student', 'teacher', 'librarian', 'staff', 'employee', 'visitor'], true)
         || !$phone) throw new DomainException('Enter the Philippine mobile number registered to your account.', 422);
+    // Check before creating a code or changing account recovery fields.
+    $delivery = smsDeliveryStatus(smsPermissionState($pdo), smsConfig());
+    if ($delivery['delivery_mode'] !== 'Live' || $delivery['provider'] === 'unisms') {
+        unset($_SESSION['password_recovery']);
+        throw new DomainException('SMS password recovery is currently unavailable. Contact library staff for identity-verified assistance. No recovery code was issued.', 503);
+    }
     if (!securityBudget('reset-ip', $_SERVER['REMOTE_ADDR'] ?? 'local', 10, 3600)
         || !securityBudget('reset-phone-hour', $phone, 3, 3600)
         || !securityBudget('reset-phone-minute', $phone, 1, 60)) {
@@ -38,9 +44,16 @@ try {
         // The existing short database column holds a challenge ID, never the SMS code.
         $_SESSION['password_recovery'] = ['id'=>(int)$user['id'], 'phone'=>$phone, 'role'=>$role,
             'marker'=>$marker, 'hash'=>password_hash($code, PASSWORD_DEFAULT), 'expires'=>$expires];
-        send_sms($pdo, (int)$user['id'], $user['phone'],
+        $sent = send_sms($pdo, (int)$user['id'], $user['phone'],
             "BCIHS Library: Your password reset code is {$code}. It expires in 15 minutes. If you didn't request this, ignore this message.",
             'password_reset', 'reset:'.$user['id'].':'.$marker);
+        if (!$sent) {
+            // Permission may have been disabled after the initial readiness check.
+            unset($_SESSION['password_recovery']);
+            $pdo->prepare('UPDATE users SET reset_code=NULL,reset_code_expires=NULL WHERE id=:id AND reset_code=:marker')
+                ->execute(['id'=>$user['id'], 'marker'=>$marker]);
+            throw new DomainException('The recovery SMS could not be submitted. Contact library staff for identity-verified assistance; do not keep requesting codes.', 503);
+        }
     }
     echo json_encode(['success'=>true, 'message'=>'If one eligible account matches, a reset notification is requested. Delivery is not confirmed. Simulation mode sends no SMS. Use this same browser to enter the code.']);
 } catch (Throwable $exception) {
