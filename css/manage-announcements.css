@@ -167,3 +167,7 @@
   }
 
 .extracted-style-1 { display:none; }
+[hidden]{display:none!important}
+.card-title-row h3,.card-body{overflow-wrap:anywhere;white-space:pre-wrap}
+#deleteConfirmation{padding:18px;margin:18px 0;background:#fff4de;border-radius:10px;line-height:1.6}
+#deleteConfirmation button{margin-top:12px}

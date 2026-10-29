@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Users | BCIHS Library</title>
-<link rel="stylesheet" href="css/manage-users.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/manage-users.css?v=20261027-phase7a">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="admin-page manage-users-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -110,8 +114,9 @@
           <div class="stat-value" id="countVisitor">…</div>
         </div>
         <div class="stat-card extracted-style-1">
-          <div class="stat-top"><span class="stat-label">Active Users</span><span class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span></div>
+          <div class="stat-top"><span class="stat-label">Approved Users</span><span class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span></div>
           <div class="stat-value" id="countActive">…</div>
+          <p class="metric-help">Accounts approved to sign in</p>
         </div>
       </div>
 
@@ -128,8 +133,8 @@
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by name or user ID…">
-      <select id="roleFilter">
+      <input type="text" id="searchInput" aria-label="Search users" placeholder="Search name, student ID, staff ID or email…">
+      <select id="roleFilter" aria-label="Account role">
         <option value="">All</option>
         <option value="student">Students</option>
         <option value="teacher">Teachers</option>
@@ -138,6 +143,9 @@
       </select>
     </div>
 
+    <div class="controls"><label for="statusFilter">Approval status</label><select id="statusFilter"><option value="">All statuses</option><option value="pending">Pending</option><option value="accepted">Approved</option><option value="rejected">Rejected</option></select></div>
+    <p>Approval permits access; it does not mean the user is currently online. Approved accounts cannot be rejected through pending-account review. Rejected accounts may be reconsidered for approval.</p>
+    <dialog id="accountConfirmation" class="panel" hidden data-managed-confirmation="Confirm account action"><p id="accountActionPrompt"></p><button type="button" class="modal-close-btn" id="confirmAccountAction">Confirm account action</button> <button type="button" class="modal-close-btn" id="cancelAccountAction">Cancel</button></dialog>
     <p class="count-badge" id="countBadge"></p>
 
     <div class="panel">
@@ -162,7 +170,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/manage-users.js"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/manage-users.js?v=20261027-phase7a"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>
 </body>
 </html>

@@ -121,7 +121,6 @@
   }
   .action-btn:hover{ filter:brightness(1.1); }
   .action-btn svg{ width:14px; height:14px; }
-  .action-btn.qr{ background:#2fb84a; }
   .action-btn.edit{ background:#2f8fe0; }
   .action-btn.delete{ background:#e0303a; }
   .action-btn.ready{ background:#2f8fe0; }
@@ -184,8 +183,52 @@
   }
 
 .extracted-style-1 { display:none; }
-.extracted-style-2 { text-align:center; }
-.extracted-style-3 { font-size:0.85rem; color:#666; margin-bottom:18px; }
-.extracted-style-4 { width:220px; height:220px; margin:0 auto 18px; display:block; border-radius:12px; border:1px solid #eee; }
-.extracted-style-5 { font-size:0.8rem; color:#999; margin-bottom:18px; word-break:break-all; }
-.extracted-style-6 { text-decoration:none; display:flex; align-items:center; justify-content:center; }
+
+  .controls .filter-label{ display:flex; flex-direction:column; gap:4px; color:#665454; font-size:0.75rem; font-weight:700; }
+  .controls select, .pagination select{ background:#fff; border:1.5px solid #ddd3d1; border-radius:9px; padding:10px; font:inherit; color:var(--ink); max-width:230px; }
+  .clear-btn{ padding:10px 14px; background:#fff; color:var(--maroon); border:1px solid #cbbbbb; border-radius:9px; cursor:pointer; font-weight:600; }
+  .clear-btn:hover{ background:#f7eeee; }
+  button:disabled{ cursor:not-allowed; opacity:0.5; }
+  button:focus-visible, select:focus-visible, a:focus-visible{ outline:3px solid #ad7474; outline-offset:2px; }
+  .panel{ overflow:hidden; padding:14px 18px; }
+  .table-scroll{ overflow-x:auto; }
+  table{ min-width:930px; }
+  tbody td{ vertical-align:top; overflow-wrap:anywhere; }
+  .book-summary{ min-width:150px; max-width:230px; }
+  .book-summary strong, .book-summary span, .book-summary small, .book-identifiers span, .inventory-cell span{ display:block; }
+  .book-summary span, .book-summary small{ margin-top:5px; color:#6c6060; }
+  .book-identifiers{ min-width:130px; font-size:0.76rem; }
+  .book-identifiers span + span, .inventory-cell span + span{ margin-top:5px; }
+  .call-number-cell{ min-width:115px; max-width:180px; }
+  .inventory-cell{ min-width:100px; font-size:0.76rem; white-space:nowrap; }
+  .actions-column{ position:sticky; right:0; background:#fff; width:176px; min-width:176px; box-shadow:-3px 0 6px rgba(60,10,10,0.05); }
+  tbody tr:hover .actions-column{ background:#fdfaf9; }
+  .book-actions{ display:flex; gap:5px; white-space:nowrap; }
+  .book-actions .action-btn{ width:auto; height:34px; min-width:44px; padding:0 9px; margin:0; font-weight:700; font-size:0.76rem; }
+  .pagination{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:16px; color:#665454; font-size:0.8rem; flex-wrap:wrap; }
+  .pagination[hidden], [hidden]{ display:none !important; }
+  .page-buttons{ display:flex; align-items:center; gap:10px; }
+  .modal{ max-width:1000px; }
+  .modal .field select{ width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid #ddd3d1; background:#fff; font:inherit; font-size:0.9rem; }
+  #newCategoryField{ margin-top:10px; }
+  #legacyMetadataNote{ padding:10px; background:#fff7e8; border-radius:8px; }
+  .photo-preview{ object-fit:contain; }
+  .toast{ max-width:calc(100vw - 32px); width:max-content; text-align:center; }
+
+  @media (max-width:760px){
+    .controls input{ min-width:0; flex-basis:100%; }
+    .controls .filter-label{ flex:1; min-width:130px; }
+    .controls select{ width:100%; max-width:none; }
+    .controls .add-btn, .controls .export-btn{ min-width:130px; flex:1; }
+    .panel{ padding:10px; }
+    table{ min-width:850px; }
+    .modal{ padding:20px 16px; }
+    .book-form-grid{ grid-template-columns:1fr; grid-template-areas:"details" "photo"; }
+    .modal .field-row{ flex-wrap:wrap; }
+    .modal .field-row .field{ flex:1 1 180px; }
+    .actions-column{ min-width:170px; width:170px; }
+    .book-actions .action-btn{ padding:0 7px; min-width:40px; }
+    .page-buttons{ width:100%; justify-content:space-between; }
+  }
+
+.inventory-cell small{ display:block; margin-top:5px; color:#6b6060; font-size:0.72rem; }

@@ -1,22 +1,17 @@
 <?php
-require_once __DIR__ . '/../includes/db_connect.php';
 header('Content-Type: application/json');
+header('Cache-Control: no-store');
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/borrowing.php';
 
-function ensureCutterNumberColumn(PDO $pdo): void {
-    $columns = $pdo->query('SHOW COLUMNS FROM books')->fetchAll(PDO::FETCH_COLUMN);
-    if (!in_array('cutter_number', $columns, true)) {
-        $pdo->exec('ALTER TABLE books ADD COLUMN cutter_number VARCHAR(50) NULL AFTER call_number');
-    }
+try {
+    $stmt = $pdo->query(
+        'SELECT b.title, b.author, b.category, b.genre, b.image_path, b.ddc, b.cutter_number, b.year_of_publication,
+                b.call_number, b.total_copies, b.borrowed_copies, (' . BOOK_HOLDS_SQL . ') AS held_copies
+         FROM books b WHERE b.total_copies - b.borrowed_copies > (' . BOOK_HOLDS_SQL . ')
+         ORDER BY b.created_at DESC, b.id DESC LIMIT 4'
+    );
+    echo json_encode(['books' => addBookAvailability($stmt->fetchAll())]);
+} catch (Throwable $exception) {
+    borrowingFailure($pdo, $exception);
 }
-
-ensureCutterNumberColumn($pdo);
-
-$stmt = $pdo->query(
-    'SELECT title, author, genre, image_path, ddc, cutter_number, year_of_publication, call_number
-     FROM books
-     WHERE total_copies > borrowed_copies
-     ORDER BY created_at DESC
-     LIMIT 4'
-);
-
-echo json_encode(['books' => $stmt->fetchAll()]);

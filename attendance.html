@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Attendance | BCIHS Library</title>
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
-<link rel="stylesheet" href="css/attendance.css?v=20261022-shell-fix">
+<link rel="stylesheet" href="css/attendance.css?v=20261029-time-in">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="admin-page attendance-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -41,62 +45,57 @@
   </header>
 
   <main>
-    <div class="page-head">
-      <div>
-        <h1>Student Attendance</h1>
-        <p>Enter a student's name, year level, and section to record a time-in.</p>
-      </div>
+    <div class="page-head"><div><h1>Library Attendance</h1><p>Record each library arrival. All times are Philippine time.</p></div></div>
+    <div class="attendance-summary" aria-live="polite">
+      <div class="panel"><span>Visits on selected date</span><strong id="visitTotal">—</strong></div>
+      <div class="panel"><span>Registered people on date</span><strong id="studentTotal">—</strong></div>
+      <div class="panel"><span>Walk-in visits on date</span><strong id="walkInTotal">—</strong></div>
     </div>
-
+    <p id="capacitySummary" role="status">Loading attendance policy…</p>
     <section class="panel check-in-panel" aria-labelledby="recordHeading">
-      <div class="panel-heading">
-        <div>
-          <h2 id="recordHeading">Record Time In</h2>
-          <p>Enter the student's details to record a new time-in using the server's current time.</p>
-        </div>
+      <div class="panel-heading"><div><h2 id="recordHeading">Record Time In</h2><p>Select the correct account, or enter a walk-in visitor. Confirm only when the visitor arrives.</p></div></div>
+      <div class="attendance-lookup">
+        <div class="form-field"><label for="visitorType">Visitor type</label><select id="visitorType"><option value="registered">Registered student / teacher</option><option value="manual">Add Walk-in Visitor</option></select></div>
+        <form id="studentLookup" class="attendance-lookup"><div class="form-field"><label for="studentSearch">Search students / teachers by name or school ID</label><input id="studentSearch" type="search" minlength="2" maxlength="100" placeholder="At least 2 characters" required></div><button class="primary-btn" type="submit" id="searchButton">Search accounts</button></form>
       </div>
+      <p id="lookupMessage" role="status" aria-live="polite"></p>
       <form id="attendanceForm">
-        <div class="form-field">
-          <label for="studentName">Name</label>
-          <input id="studentName" name="student_name" type="text" maxlength="150" autocomplete="off" placeholder="Enter name" required>
+        <div class="form-field" id="registeredFields"><label for="studentAccount">Select school account</label><select id="studentAccount" required><option value="">Search for a school account first</option></select><small id="selectedStudent" aria-live="polite"></small></div>
+        <div id="manualFields" class="attendance-manual" hidden>
+          <div class="form-field"><label for="studentName">Visitor name</label><input id="studentName" maxlength="150" autocomplete="off"></div>
+          <div class="form-field"><label for="yearLevel">Walk-in visitor type</label><select id="yearLevel"><option value="External visitor">External visitor</option><option value="BCIHS student">BCIHS student without account</option><option value="Teacher / faculty">Teacher / faculty without account</option><option value="Other visitor">Other visitor</option></select></div>
+          <div class="form-field"><label for="studentSection">Purpose of visit (optional, up to 25 characters)</label><input id="studentSection" maxlength="25" placeholder="e.g., Research"></div>
+        <div class="form-field"><label for="visitorOrganization">School / Organization (optional)</label><input id="visitorOrganization" maxlength="50" placeholder="External visitors only; BCIHS need not repeat the school name"></div>
         </div>
-        <div class="form-field">
-          <label for="yearLevel">Year Level</label>
-          <input id="yearLevel" name="year_level" type="text" maxlength="20" placeholder="e.g., Grade 7 or Grade 11" required>
-        </div>
-        <div class="form-field">
-          <label for="studentSection">Section</label>
-          <input id="studentSection" name="section" type="text" maxlength="25" placeholder="Enter section" required>
-        </div>
-        <button class="primary-btn" id="recordButton" type="submit">Record Time In</button>
+        <label id="repeatLabel" class="attendance-repeat" hidden><input id="confirmRepeat" type="checkbox"> I confirm this is a separate return visit today.</label>
+        <button class="primary-btn" id="recordButton" type="submit" disabled>Record Attendance</button>
       </form>
       <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
     </section>
-
     <section class="panel attendance-panel" aria-labelledby="recordsHeading">
-      <div class="panel-heading records-heading">
-        <div>
-          <h2 id="recordsHeading">Attendance Records</h2>
-          <p id="recordCount">Loading records…</p>
-        </div>
-        <div class="form-field date-filter">
-          <label for="attendanceDate">Date</label>
-          <input type="date" id="attendanceDate">
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Year Level</th><th>Section</th><th>Time In</th></tr>
-          </thead>
-          <tbody id="attendanceBody"><tr><td colspan="4" class="empty-msg">Loading records…</td></tr></tbody>
-        </table>
-      </div>
+      <div class="panel-heading"><div><h2 id="recordsHeading">Attendance Records</h2><p id="recordCount">Loading records…</p></div></div>
+      <form id="historyFilters" class="attendance-filters">
+        <div class="form-field"><label for="attendanceDate">Visit date</label><input type="date" id="attendanceDate" min="1000-01-01" max="9999-12-30" required></div>
+        <div class="form-field"><label for="historySearch">Name or school ID</label><input type="search" id="historySearch" maxlength="100" placeholder="Search attendance"></div>
+        <button class="primary-btn" type="submit">Apply filters</button><button class="primary-btn" id="exportAttendance" type="button" disabled>Export CSV</button>
+      </form>
+      <p class="form-message" id="historyMessage" role="status" aria-live="polite"></p>
+      <p class="attendance-table-hint">On smaller screens, scroll the table sideways to see all visitor details.</p>
+      <div class="table-wrap"><table><thead><tr><th>Visit / visitor</th><th>Year / section, department or visitor details</th><th>Time In (PHT)</th></tr></thead><tbody id="attendanceBody"><tr><td colspan="3" class="empty-msg">Loading records…</td></tr></tbody></table></div>
     </section>
+    <details id="attendancePolicy" class="panel attendance-settings"><summary>Daily attendance limit</summary>
+      <p>Leave the daily limit blank for unlimited visits. Each arrival, including a confirmed return visit or walk-in, counts as one visit.</p>
+      <form id="settingsForm" class="attendance-filters">
+        <div class="form-field"><label for="dailyLimit">Daily visit limit</label><input id="dailyLimit" type="number" min="1" max="65535" step="1" placeholder="Unlimited"></div>
+        <button class="primary-btn" type="submit" id="saveSettings" disabled>Save attendance settings</button>
+      </form><p class="form-message" id="settingsMessage" role="status" aria-live="polite"></p>
+      <p>Attendance records arrivals only. Confirm a separate same-day return visit before recording it again.</p>
+    </details>
   </main>
 </div>
 
-<script src="js/attendance.js?v=20261024-year-section"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/attendance.js?v=20261029-time-in"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

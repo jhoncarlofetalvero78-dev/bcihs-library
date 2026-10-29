@@ -69,8 +69,8 @@
         });
         
         // Logout button
-        logoutBtn.addEventListener('click', () => {
-          if (confirm('Are you sure you want to log out?')) {
+        logoutBtn.addEventListener('click', async () => {
+          if (await window.libraryUI.confirm('Sign out of your library account?', {title:'Sign out', confirmLabel:'Sign out'})) {
             window.location.href = 'backend/logout.php';
           }
         });
@@ -111,6 +111,8 @@
   });
 
   function callNumberFor(book) {
+    if (String(book.call_number || '').trim()) return book.call_number;
+    if (!String(book.cutter_number || '').trim()) return '';
     const classification = String(book.ddc || '').trim();
     const cutter = String(book.cutter_number || '').trim();
     const year = String(book.year_of_publication || '').trim();
@@ -129,7 +131,7 @@
           <h4>${escapeHtml(book.title)}</h4>
           <div class="author">${escapeHtml(book.author)}</div>
           ${callNumberFor(book) ? `<div class="call-number">Call No.: ${escapeHtml(callNumberFor(book))}</div>` : ''}
-          <div class="genre">${escapeHtml(book.genre || 'General')}</div>
+          <div class="genre">${escapeHtml(book.category || book.genre || 'General')}</div>
           <span class="status-pill Available">Available</span>
         </div>
       </div>
@@ -161,37 +163,17 @@
   loadFeaturedBooks();
 
   // Announcements: load real data from server with a safe fallback for local file preview.
-  const fallbackAnnouncements = [
-    {
-      title: 'Library Hours Update',
-      category: 'Notice',
-      body: 'The library will remain open during the extended study period from 7:00 AM to 5:00 PM from Monday to Friday.',
-      created_at: '2026-10-01 09:00:00'
-    },
-    {
-      title: 'New Book Arrival',
-      category: 'General',
-      body: 'Fresh titles on science, literature, and leadership are now available for student borrowing.',
-      created_at: '2026-10-03 13:30:00'
-    },
-    {
-      title: 'Reading Challenge Week',
-      category: 'Event',
-      body: 'Join the schoolwide reading challenge and win exciting prizes for the most pages logged this month.',
-      created_at: '2026-10-06 11:15:00'
-    }
-  ];
-
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    // These values are used in both text and quoted HTML attributes.
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = new Date(mysqlDatetime.replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
   function renderAnnouncements(list = []) {
     const holder = document.getElementById('announceList');
@@ -202,11 +184,12 @@
       return;
     }
 
-    holder.innerHTML = list.slice(0, 3).map(a => `
+    holder.innerHTML = list.slice(0, 2).map(a => `
       <div class="announcement-item">
         <div class="top-row"><h4>${escapeHtml(a.title)}</h4><span class="badge ${escapeHtml(a.category)}">${escapeHtml(a.category)}</span></div>
         ${a.image_path ? `<img class="announcement-photo" src="${escapeHtml(a.image_path)}" alt="Photo for ${escapeHtml(a.title)}">` : ''}
-        <p>${escapeHtml(a.body)}</p>
+        <p class="announcement-preview">${escapeHtml(a.body)}</p>
+        <button class="announcement-more" type="button" aria-expanded="false">Read more</button>
         <span class="date">&#128276; ${formatDate(a.created_at)}</span>
       </div>
     `).join('');
@@ -214,20 +197,25 @@
     document.querySelectorAll('.announcement-item').forEach(item => {
       item.addEventListener('click', () => {
         const paragraph = item.querySelector('p');
-        if (paragraph) paragraph.classList.toggle('expanded');
+        if (paragraph) {
+          const expanded = paragraph.classList.toggle('expanded');
+          const button = item.querySelector('.announcement-more');
+          button.setAttribute('aria-expanded', String(expanded));
+          button.textContent = expanded ? 'Show less' : 'Read more';
+        }
       });
     });
   }
 
   function loadAnnouncements() {
-    fetch('backend/announcements-data.php', { credentials: 'same-origin' })
+    fetch('backend/announcements-data.php?latest=2', { credentials: 'same-origin', cache: 'no-store' })
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
-        const list = Array.isArray(data.announcements) ? data.announcements : fallbackAnnouncements;
+        const list = Array.isArray(data.announcements) ? data.announcements : [];
         renderAnnouncements(list);
       })
       .catch(() => {
-        renderAnnouncements(fallbackAnnouncements);
+        document.getElementById('announceList').innerHTML='<p role="alert">Could not load announcements. Reload to retry.</p>';
       });
   }
   loadAnnouncements();

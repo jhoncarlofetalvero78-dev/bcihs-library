@@ -1,0 +1,70 @@
+  .pickup-dialog{
+    width:min(520px, calc(100% - 28px)); max-height:90vh; overflow:auto; border:none; border-radius:16px;
+    padding:22px; color:var(--ink); box-shadow:0 18px 50px rgba(0,0,0,0.28);
+  }
+  .pickup-dialog::backdrop{ background:rgba(28,10,10,0.55); }
+  .pickup-dialog h2{ color:var(--red-maroon); font-size:1.15rem; margin-bottom:4px; }
+  .pickup-help{ color:#666; font-size:0.86rem; margin-bottom:16px; }
+  .pickup-calendar-heading{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+  .pickup-calendar-heading button{
+    border:1px solid #ddd3d1; background:#fff; border-radius:8px; padding:6px 11px; color:var(--red-maroon);
+    cursor:pointer; font-weight:700;
+  }
+  .pickup-month{ font-weight:700; }
+  .pickup-calendar{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:5px; }
+  .pickup-weekday{ color:#888; text-align:center; font-size:0.72rem; font-weight:700; padding:4px 0; }
+  .pickup-day{
+    min-height:38px; border:1px solid #eee8e6; border-radius:8px; background:#fff; color:var(--ink); cursor:pointer;
+  }
+  .pickup-day:hover:not(:disabled), .pickup-day.selected{ border-color:var(--red-maroon); background:var(--red-maroon); color:#fff; }
+  .pickup-day:disabled{ color:#bbb; background:#f8f7f6; cursor:not-allowed; }
+  .pickup-time-label{ display:block; margin-top:16px; font-weight:700; font-size:0.86rem; }
+  .pickup-time{
+    width:100%; margin-top:6px; padding:10px 12px; border:1px solid #ddd3d1; border-radius:9px; font:inherit;
+  }
+  .pickup-error{ min-height:1.3em; color:#b42318; font-size:0.82rem; margin-top:8px; }
+  .pickup-dialog-actions{ display:flex; justify-content:flex-end; gap:9px; margin-top:14px; }
+  .pickup-dialog-actions button{ border:0; border-radius:9px; padding:10px 15px; font:inherit; font-weight:700; cursor:pointer; }
+  .pickup-cancel{ background:#f0eeec; color:var(--ink); }
+  .pickup-save{ background:var(--red-maroon); color:#fff; }
+  .pickup-save:disabled{ opacity:0.6; cursor:wait; }
+.pickup-dialog{ --red-maroon:#7a1414; margin:auto; font-family:inherit; }
+.pickup-dialog button, .pickup-dialog select{ font:inherit; }
+.pickup-dialog :is(button,select):focus-visible{ outline:3px solid #956326; outline-offset:2px; }
+.pickup-dialog [hidden]{ display:none; }
+.reservation-cancel-btn{ padding:9px 12px; border:1px solid #b32936; color:#9a2632; background:#fff; border-radius:8px; cursor:pointer; }
+.reservation-cancel-btn:disabled{ opacity:.6; cursor:wait; }
+.pickup-policy{ margin-bottom:18px; }
+.pickup-policy summary{ color:#5c0f14; font-weight:700; cursor:pointer; }
+.pickup-policy p{ margin:12px 0; color:#665b5b; font-size:.85rem; }
+.pickup-settings-form{ display:flex; align-items:flex-end; flex-wrap:wrap; gap:14px; }
+.pickup-settings-form label{ display:grid; gap:6px; font-size:.85rem; font-weight:600; }
+.pickup-settings-form input{ width:180px; max-width:100%; padding:10px 12px; border:1px solid #cbbdbb; border-radius:8px; font:inherit; }
+.pickup-settings-form button{ background:#5c0f14; color:#fff; border:0; border-radius:8px; padding:11px 16px; font:inherit; cursor:pointer; }
+.pickup-policy .policy-message{ min-height:1.5em; }
+.calendar-options{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; color:#665b5b; font-size:.85rem; }
+.calendar-options select{ padding:8px 10px; border:1px solid #cbbdbb; border-radius:8px; background:#fff; font:inherit; }
+.calendar-day.closed{ background:#f3efee; }
+.calendar-day.full{ border-color:#9a2632; }
+.calendar-help{ color:#665b5b; font-size:.8rem; margin:10px 0; }
+.reservation-actions{ display:flex; gap:6px; flex-wrap:wrap; min-width:230px; }
+.admin-page .reservation-actions .action-btn{ width:auto; height:auto; padding:7px 10px; margin:0; font:inherit; font-size:.75rem; font-weight:600; }
+.reservation-meta{ display:block; margin-top:5px; color:#665b5b; font-size:.75rem; }
+.reservation-detail-list{ display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:.9rem; margin:16px 0; }
+.reservation-detail-list dt{ color:#665b5b; }
+.reservation-detail-list dd{ margin:0; overflow-wrap:anywhere; }
+.reservations-page .pickup-dialog{ color:#332828; }
+.reservations-page #reservationDetailsDialog{ width:min(560px,calc(100% - 32px)); }
+#reservationsTable{ min-width:1040px; }
+.profile-page .status-badge.waiting{ background:#fff0ce; color:#76500a; }
+.profile-page .status-badge.ready{ background:#e5eff9; color:#24577f; }
+.profile-page .status-badge.fulfilled{ background:#e4f1e7; color:#25623a; }
+.profile-page .status-badge.cancelled{ background:#eeeaea; color:#625757; }
+.profile-page .reservation-history-note{ color:#665b5b; font-size:.85rem; margin:12px 0; }
+.profile-page .reservation-history-link{ color:#5c0f14; text-decoration:underline; }
+@media(max-width:760px){
+  .pickup-dialog{ padding:20px 16px; max-height:calc(100dvh - 32px); }
+  .pickup-settings-form label, .pickup-settings-form input{ width:100%; }
+}
+.pickup-weekday, .reservations-page .calendar-weekday{ color:#665b5b; }
+.reservations-page .calendar-day-count{ color:#665b5b; }

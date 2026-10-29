@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Verify Book Pickup | BCIHS Library</title>
+  <link rel="stylesheet" href="css/pickup-qr.css?v=20261027-phase3b">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
+<link rel="stylesheet" href="css/checkout-due.css?v=20261029">
+</head>
+<body class="pickup-verification">
+  <header><h1>BCIHS Library</h1><p>Book pickup verification · Library staff only</p></header>
+  <main>
+    <p id="pickupMessage" role="status">Checking pickup QR…</p>
+    <section id="pickupDetails" hidden>
+      <h2>Verify before handover</h2>
+      <dl id="pickupFields"></dl>
+      <p id="pickupEligibility"></p>
+      <button id="checkoutButton" type="button" hidden>Confirm Checkout</button>
+
+    </section>
+    <button id="refreshPickup" type="button" class="secondary">Recheck status</button>
+    <p><a id="staffSignin" href="admin-login.html" hidden>Sign in as library staff</a></p>
+    <p><a href="borrow-requests.html">Open Borrow Requests / manual checkout</a></p>
+    <p>Opening a QR never checks out a book. The loan starts only after confirmed handover. Staff review and confirm its exact due date before checkout.</p>
+  </main>
+  <script src="js/library-ui.js?v=phase8"></script>
+<script src="js/checkout-due.js?v=20261029"></script>
+<script src="js/pickup-verification.js?v=20261029-due"></script>
+</body>
+</html>

@@ -1,6 +1,9 @@
 
   let allBooks = [];
-  let myRequestByBook = {};  // book_id -> status ('pending' | 'approved' | 'rejected' | 'returned')
+  let csrfToken = '';
+  let canBorrow = true;
+  const submittingRequests = new Set();
+  let myRequestByBook = {};  // Active request/loan status by book ID.
   let myReservationsByBook = {};  // book_id -> active reservation
   const urlParams = new URLSearchParams(window.location.search);
   const hasScannedBook = urlParams.has('book');
@@ -8,16 +11,11 @@
   const scannedBookId = /^\d+$/.test(scannedBookValue || '')
     ? Number(scannedBookValue)
     : null;
-  let pickupBookId = null;
-  let pickupReservation = null;
-  let pickupMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  let pickupDate = '';
-  let pickupTime = '';
 
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function showBanner(message, kind) {
@@ -28,22 +26,30 @@
   }
 
   function buttonFor(book) {
-    const available = book.total_copies - book.borrowed_copies;
+    if (!canBorrow) return '<p class="pickup-info">Catalog viewing only. Ask library staff about borrower eligibility. Walk-in attendance does not authorize borrowing.</p>';
+    if (submittingRequests.has(book.id)) return '<button class="borrow-btn" disabled>Submitting request…</button>';
+    const available = borrowing.requestable(book);
     const myStatus = myRequestByBook[book.id];
     const myReservation = myReservationsByBook[book.id];
 
     if (myStatus === 'pending') {
       return `<button class="borrow-btn pending" disabled>Request Pending</button>`;
     }
-    if (myStatus === 'approved') {
+    if (myStatus === 'awaiting_pickup') {
+      return '<button class="borrow-btn approved" disabled>Approved — Awaiting Pickup</button><p class="pickup-info">A copy is held. The loan starts when staff confirms handover.</p>';
+    }
+    if (borrowing.isCheckedOut(myStatus)) {
       return `<button class="borrow-btn approved" disabled>Already Borrowed</button>`;
     }
     if (myReservation && myReservation.status === 'waiting') {
       const actionLabel = myReservation.pickup_at ? 'Change Preferred Pickup' : 'Choose Pickup Time';
-      return `<button class="borrow-btn available" onclick="openPickupDialog(${book.id}, 'schedule')">${actionLabel}</button><p class="pickup-info">Schedule can be changed while waiting. It is final once ready.</p>${pickupInfo(myReservation)}`;
+      return `<button class="borrow-btn available" onclick="openPickupDialog(${book.id}, 'schedule')">${actionLabel}</button><p class="pickup-info">Schedule can be changed while waiting. It is final once ready.</p>${pickupInfo(myReservation)}${cancelReservationButton(myReservation)}`;
+    }
+    if (myReservation && myReservation.status === 'fulfilled') {
+      return '<button class="borrow-btn approved" disabled>Checked Out</button>';
     }
     if (myReservation && myReservation.status === 'ready') {
-      return `<button class="borrow-btn approved" disabled>Ready to Pick Up</button><p class="pickup-info">Pickup time is confirmed and cannot be changed.</p>${pickupInfo(myReservation)}`;
+      return `<button class="borrow-btn approved" disabled>Ready to Pick Up</button><p class="pickup-info">A copy is held. Bring your library identification; staff confirms physical checkout. Contact staff if you cannot attend.</p>${pickupInfo(myReservation)}${cancelReservationButton(myReservation)}`;
     }
     if (available <= 0) {
       return `<button class="borrow-btn available" onclick="reserveBook(${book.id})">Reserve</button>`;
@@ -53,15 +59,14 @@
 
   function pickupInfo(reservation) {
     if (!reservation.pickup_at) return '<p class="pickup-info">No pickup time selected.</p>';
-    const date = new Date(reservation.pickup_at.replace(' ', 'T'));
-    const formatted = isNaN(date)
-      ? reservation.pickup_at
-      : date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    const formatted = reservationScheduling.format(reservation.pickup_at);
     const label = reservation.status === 'waiting' ? 'Preferred pickup' : 'Confirmed pickup';
     return `<p class="pickup-info">${label}: ${escapeHtml(formatted)}</p>`;
   }
 
   function callNumberFor(book) {
+    if (String(book.call_number || '').trim()) return book.call_number;
+    if (!String(book.cutter_number || '').trim()) return '';
     const classification = String(book.ddc || '').trim();
     const cutter = String(book.cutter_number || '').trim();
     const year = String(book.year_of_publication || '').trim();
@@ -79,7 +84,7 @@
       return;
     }
     grid.innerHTML = books.map(b => {
-      const available = b.total_copies - b.borrowed_copies;
+      const available = borrowing.requestable(b);
       const availClass = available <= 0 ? 'zero' : (available <= 2 ? 'low' : 'ok');
       const isScannedBook = Number(b.id) === scannedBookId;
       return `
@@ -93,7 +98,7 @@
           <div class="author">${escapeHtml(b.author)}</div>
           ${callNumberFor(b) ? `<div class="call-number">Call No.: ${escapeHtml(callNumberFor(b))}</div>` : ''}
           ${b.isbn ? `<div class="isbn">${escapeHtml(b.isbn)}</div>` : ''}
-          <div class="genre">${escapeHtml(b.genre) || 'Uncategorized'}</div>
+          <div class="genre">Category: ${escapeHtml(b.category || b.genre) || 'Uncategorized'}</div>
           ${isScannedBook ? `
             <div class="book-details">
               ${b.edition ? `<p><strong>Edition:</strong> ${escapeHtml(b.edition)}</p>` : ''}
@@ -104,7 +109,8 @@
             </div>
           ` : ''}
           <div class="avail-row">
-            <span class="avail-count ${availClass}">${available} of ${b.total_copies} available</span>
+            <span class="avail-count ${availClass}">${available} available for new requests</span>
+            <small class="availability-detail"><span>Physical copies available: ${Number(b.total_copies) - Number(b.borrowed_copies)}</span><span>Held for pickup: ${Number(b.held_copies) || 0}</span></small>
           </div>
           ${buttonFor(b)}
         </div>
@@ -123,16 +129,20 @@
       ? allBooks.filter(book => Number(book.id) === scannedBookId)
       : allBooks;
     const filtered = !q ? books : books.filter(b =>
-      [b.title, b.author, b.isbn, b.genre, b.ddc, b.cutter_number, b.year_of_publication, b.call_number]
+      [b.title, b.author, b.isbn, b.category, b.genre, b.ddc, b.cutter_number, b.year_of_publication, b.call_number]
         .filter(Boolean).join(' ').toLowerCase().includes(q)
     );
     render(filtered);
   }
 
   window.requestBook = function(bookId) {
+    if (!canBorrow || submittingRequests.has(bookId)) return;
+    submittingRequests.add(bookId);
+    applyFilter();
+
     fetch('backend/borrow-request-process.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
       body: JSON.stringify({ book_id: bookId })
     })
@@ -145,173 +155,61 @@
         showBanner('Request submitted! Library librarian will review it soon.', 'success');
         loadEverything();
       })
-      .catch(err => showBanner(err.message, 'error'));
+      .catch(err => showBanner(err.message, 'error'))
+      .finally(() => { submittingRequests.delete(bookId); applyFilter(); });
   };
 
-  window.reserveBook = function(bookId) {
-    openPickupDialog(bookId, 'reserve');
-  };
-
-  function pickupSlots() {
-    const slots = [];
-    for (let minutes = 7 * 60; minutes <= 16 * 60; minutes += 30) {
-      slots.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`);
-    }
-    return slots;
-  }
-
-  function pickupSlotIsFuture(dateKey, time) {
-    const selected = new Date(`${dateKey}T${time}:00`);
-    return selected.getTime() > Date.now();
-  }
-
-  function renderPickupTimes() {
-    const select = document.getElementById('pickupTime');
-    select.disabled = !pickupDate;
-    select.innerHTML = `<option value="">${pickupDate ? 'Select a time' : 'Select a date first'}</option>`;
-    if (!pickupDate) {
-      pickupTime = '';
-      return;
-    }
-    pickupSlots().forEach(time => {
-      if (!pickupSlotIsFuture(pickupDate, time)) return;
-      const option = document.createElement('option');
-      option.value = time;
-      option.textContent = new Date(`2000-01-01T${time}:00`).toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      option.selected = time === pickupTime;
-      select.appendChild(option);
+  const pickupPicker = reservationScheduling.createPicker(async (target, pickupAt) => {
+    const reservation = target.reservation;
+    const response = await fetch(reservation ? 'backend/reservation-action.php' : 'backend/reservation-process.php', {
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json', 'X-CSRF-Token':csrfToken},
+      body:JSON.stringify(reservation
+        ? {id:reservation.id, action:'schedule', pickup_at:pickupAt}
+        : {book_id:target.bookId, pickup_at:pickupAt})
     });
-    if (!Array.from(select.options).some(option => option.value === pickupTime)) pickupTime = '';
-    select.value = pickupTime;
-  }
-
-  function renderPickupCalendar() {
-    const grid = document.getElementById('pickupCalendar');
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const year = pickupMonth.getFullYear();
-    const month = pickupMonth.getMonth();
-    const firstWeekday = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const now = new Date();
-    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    document.getElementById('pickupMonth').textContent = pickupMonth.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long'
-    });
-    grid.innerHTML = weekdays.map(day => `<span class="pickup-weekday" aria-hidden="true">${day}</span>`).join('');
-
-    for (let blank = 0; blank < firstWeekday; blank += 1) {
-      grid.insertAdjacentHTML('beforeend', '<button type="button" class="pickup-day" disabled aria-hidden="true"></button>');
+    const data = await response.json();
+    if (!response.ok) {
+      loadEverything();
+      throw new Error(data.error || 'Could not save that reservation.');
     }
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      const date = new Date(year, month, day);
-      const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const isWeekday = date.getDay() >= 1 && date.getDay() <= 5;
-      const hasFutureSlot = pickupSlots().some(time => pickupSlotIsFuture(key, time));
-      const disabled = key < todayKey || !isWeekday || !hasFutureSlot;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `pickup-day${key === pickupDate ? ' selected' : ''}`;
-      button.textContent = day;
-      button.dataset.date = key;
-      button.disabled = disabled;
-      button.setAttribute('aria-pressed', String(key === pickupDate));
-      button.setAttribute('aria-label', `${date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })}${disabled ? ', unavailable' : ', available'}`);
-      grid.appendChild(button);
-    }
-
-    grid.querySelectorAll('[data-date]:not(:disabled)').forEach(button => {
-      button.addEventListener('click', () => {
-        pickupDate = button.dataset.date;
-        pickupTime = '';
-        renderPickupCalendar();
-        renderPickupTimes();
-      });
-    });
-  }
+    showBanner(reservation ? 'Preferred pickup updated. Wait for library confirmation.'
+      : 'Added to the waitlist. Your preferred time does not guarantee a copy; wait for Ready for Pickup.', 'success');
+    loadEverything();
+  });
 
   function openPickupDialog(bookId, mode) {
-    pickupBookId = bookId;
-    pickupReservation = mode === 'schedule' ? myReservationsByBook[bookId] : null;
-    pickupDate = pickupReservation && pickupReservation.pickup_at
-      ? pickupReservation.pickup_at.slice(0, 10)
-      : '';
-    pickupTime = pickupReservation && pickupReservation.pickup_at
-      ? pickupReservation.pickup_at.slice(11, 16)
-      : '';
-    pickupMonth = pickupDate
-      ? new Date(`${pickupDate}T00:00:00`)
-      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    document.getElementById('pickupDialogTitle').textContent =
-      mode === 'reserve' ? 'Choose your preferred pickup time' : 'Change your preferred pickup time';
-    document.getElementById('pickupSave').textContent = mode === 'reserve' ? 'Reserve book' : 'Save preferred time';
-    document.getElementById('pickupError').textContent = '';
-    renderPickupCalendar();
-    renderPickupTimes();
-    document.getElementById('pickupDialog').showModal();
+    const reservation = mode === 'schedule' ? myReservationsByBook[bookId] : null;
+    pickupPicker.open({bookId, reservation}, reservation ? 'Change preferred pickup' : 'Choose preferred pickup',
+      reservation ? 'Save preferred time' : 'Join waitlist');
+  }
+  window.reserveBook = bookId => openPickupDialog(bookId, 'reserve');
+
+  const cancellingReservations = new Set();
+  window.cancelReservation = async function(id, button) {
+    if (cancellingReservations.has(id) || !await window.libraryUI.confirm('Cancel this reservation and release any pickup hold?', {title:'Cancel reservation',confirmLabel:'Cancel reservation',danger:true})) return;
+    cancellingReservations.add(id);
+    button.disabled = true;
+    try {
+      const response = await fetch('backend/reservation-action.php', {method:'POST', credentials:'same-origin',
+        headers:{'Content-Type':'application/json', 'X-CSRF-Token':csrfToken}, body:JSON.stringify({id, action:'cancel'})});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not cancel that reservation.');
+      showBanner('Reservation cancelled. Any pickup hold has been released.', 'success');
+      loadEverything();
+    } catch (exception) { showBanner(exception.message, 'error'); }
+    finally { cancellingReservations.delete(id); button.disabled = false; }
+  };
+
+  function cancelReservationButton(reservation) {
+    return `<button type="button" class="reservation-cancel-btn" onclick="cancelReservation(${reservation.id}, this)">Cancel reservation</button>`;
   }
 
-  document.getElementById('pickupPreviousMonth').addEventListener('click', () => {
-    pickupMonth = new Date(pickupMonth.getFullYear(), pickupMonth.getMonth() - 1, 1);
-    renderPickupCalendar();
-  });
-  document.getElementById('pickupNextMonth').addEventListener('click', () => {
-    pickupMonth = new Date(pickupMonth.getFullYear(), pickupMonth.getMonth() + 1, 1);
-    renderPickupCalendar();
-  });
-  document.getElementById('pickupTime').addEventListener('change', event => {
-    pickupTime = event.target.value;
-  });
-  document.getElementById('pickupCancel').addEventListener('click', () => {
-    document.getElementById('pickupDialog').close();
-  });
-  document.getElementById('pickupForm').addEventListener('submit', async event => {
-    event.preventDefault();
-    const error = document.getElementById('pickupError');
-    if (!pickupDate || !pickupTime) {
-      error.textContent = 'Choose an available date and pickup time.';
-      return;
-    }
-
-    const mode = pickupReservation ? 'schedule' : 'reserve';
-    const endpoint = mode === 'reserve' ? 'backend/reservation-process.php' : 'backend/reservation-action.php';
-    const payload = mode === 'reserve'
-      ? { book_id: pickupBookId, pickup_at: `${pickupDate}T${pickupTime}` }
-      : { id: pickupReservation.id, action: 'schedule', pickup_at: `${pickupDate}T${pickupTime}` };
-    const saveButton = document.getElementById('pickupSave');
-    saveButton.disabled = true;
-    error.textContent = '';
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not save the pickup time.');
-      document.getElementById('pickupDialog').close();
-      showBanner(
-        mode === 'reserve'
-          ? 'Book reserved! Your preferred pickup time has been saved.'
-          : 'Preferred pickup time updated. It will be final once the reservation is ready.',
-        'success'
-      );
-      loadEverything();
-    } catch (err) {
-      error.textContent = err.message;
-    } finally {
-      saveButton.disabled = false;
-    }
-  });
+  function readCatalogResponse(response) {
+    if (response.status === 401) throw new Error('not_logged_in');
+    if (!response.ok) throw new Error('failed');
+    return response.json();
+  }
 
   function loadEverything() {
     Promise.all([
@@ -320,20 +218,23 @@
         if (!res.ok) throw new Error('failed');
         return res.json();
       }),
-      fetch('backend/my-requests-data.php', { credentials: 'same-origin' }).then(res => res.ok ? res.json() : { requests: [] }),
-      fetch('backend/my-reservations-data.php', { credentials: 'same-origin' }).then(res => res.ok ? res.json() : { reservations: [] })
+      fetch('backend/my-requests-data.php', { credentials: 'same-origin' }).then(readCatalogResponse),
+      fetch('backend/my-reservations-data.php', { credentials: 'same-origin' }).then(readCatalogResponse)
     ])
       .then(([booksData, requestsData, reservationsData]) => {
-        allBooks = booksData.books || [];
+        if (!Array.isArray(booksData.books) || !Array.isArray(requestsData.requests) || !Array.isArray(reservationsData.reservations)) throw new Error('invalid_response');
+        allBooks = booksData.books;
+        canBorrow = booksData.canBorrow !== false;
+        csrfToken = booksData.csrfToken || '';
         myRequestByBook = {};
         (requestsData.requests || []).forEach(r => {
-          if (r.status === 'pending' || r.status === 'approved') {
+          if (['pending','awaiting_pickup','checked_out','approved'].includes(r.status)) {
             myRequestByBook[r.book_id] = r.status;
           }
         });
         myReservationsByBook = {};
         (reservationsData.reservations || []).forEach(r => {
-          if (r.status === 'waiting' || r.status === 'ready') {
+          if (['waiting','ready','fulfilled'].includes(r.status)) {
             myReservationsByBook[r.book_id] = r;
           }
         });
@@ -349,7 +250,9 @@
           window.location.href = `login.html${returnUrl}`;
           return;
         }
-        document.getElementById('loadingMsg').textContent = 'Something went wrong loading books.';
+        document.getElementById('bookGrid').style.display = 'none';
+        document.getElementById('loadingMsg').style.display = 'block';
+        document.getElementById('loadingMsg').textContent = 'Could not load books and your request/reservation status. Reload to try again.';
       });
   }
 

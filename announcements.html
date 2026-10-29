@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Announcements | BCIHS Library</title>
-<link rel="stylesheet" href="css/announcements.css?v=20261022-photo">
+<link rel="stylesheet" href="css/announcements.css?v=20261029-demo">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="public-page announcements-page">
 
 <header>
   <div class="brand">
@@ -68,8 +71,8 @@
   </div>
 
   <div class="controls">
-    <input type="text" id="searchInput" placeholder="Search announcements…">
-    <select id="categoryFilter">
+    <input type="text" id="searchInput" aria-label="Search announcements" placeholder="Search announcements…">
+    <select id="categoryFilter" aria-label="Announcement category">
       <option value="">All categories</option>
       <option value="General">General</option>
       <option value="Event">Event</option>
@@ -81,7 +84,8 @@
   <div class="announce-list extracted-style-2" id="announceList"></div>
 </main>
 
-<script src="js/announcements.js?v=20261022-photo"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/announcements.js?v=20261027-phase7a"></script>
 
 </body>
 </html>

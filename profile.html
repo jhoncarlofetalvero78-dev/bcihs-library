@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Profile | BCIHS Library</title>
 <link rel="stylesheet" href="css/profile.css">
+<link rel="stylesheet" href="css/pickup-qr.css?v=20261027-phase3b">
+<link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/reservation-scheduling.css?v=20261027-phase4">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="profile-page">
 
 <!-- ===== PAGE WRAPPER ===== -->
 <div class="page-wrapper">
@@ -48,18 +55,18 @@
         <div class="stats-grid">
           <div class="stat-item borrowed">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg>
-            <strong id="statBorrowed">2</strong>
+            <strong id="statBorrowed">—</strong>
             <span>Currently Borrowed</span>
           </div>
           <div class="stat-item returned">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
-            <strong id="statReturned">3</strong>
+            <strong id="statReturned">—</strong>
             <span>Books Returned</span>
           </div>
           <div class="stat-item total">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5c2.2-1 4.6-1 7 0v13.5c-2.4-1-4.8-1-7 0V5z"/><path d="M22 5c-2.2-1-4.6-1-7 0v13.5c2.4-1 4.8-1 7 0V5z"/></svg>
-            <strong id="statTotal">5</strong>
-            <span>Total Books Read</span>
+            <strong id="statTotal">—</strong>
+            <span>Borrowing Records</span>
           </div>
         </div>
       </div>
@@ -72,6 +79,7 @@
       <nav class="tab-bar" role="tablist" aria-label="Profile sections">
         <button class="tab-btn active" role="tab" aria-selected="true" data-tab="personalInfo" id="tabPersonalInfo">Personal Info</button>
         <button class="tab-btn" role="tab" aria-selected="false" data-tab="borrowingHistory" id="tabBorrowingHistory">Borrowing History</button>
+        <button class="tab-btn" role="tab" aria-selected="false" data-tab="reservationHistory" id="tabReservationHistory">Reservations</button>
       </nav>
 
       <!-- Personal Info Panel -->
@@ -80,7 +88,7 @@
           <div class="details-header">
             <h2>Account Details</h2>
             <div class="extracted-style-1">
-              <button class="edit-btn" type="button" id="editProfileBtn">
+              <button class="edit-btn" type="button" id="editProfileBtn" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
                 Edit Profile
               </button>
@@ -96,42 +104,42 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Full Name
               </span>
-              <span class="detail-value" id="detailName">Maria Santos</span>
+              <span class="detail-value" id="detailName">—</span>
             </div>
             <div class="detail-field">
               <span class="detail-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                 Student ID
               </span>
-              <span class="detail-value" id="detailStudentId">2026-00142</span>
+              <span class="detail-value" id="detailStudentId">—</span>
             </div>
             <div class="detail-field">
               <span class="detail-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                 Grade Level
               </span>
-              <span class="detail-value" id="detailGrade">Grade 10</span>
+              <span class="detail-value" id="detailGrade">—</span>
             </div>
             <div class="detail-field">
               <span class="detail-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21v-6h6v6"/></svg>
                 Section
               </span>
-              <span class="detail-value" id="detailSection">Rizal</span>
+              <span class="detail-value" id="detailSection">—</span>
             </div>
             <div class="detail-field">
               <span class="detail-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
                 Email Address
               </span>
-              <span class="detail-value" id="detailEmail">maria.santos@bcihs.edu.ph</span>
+              <span class="detail-value" id="detailEmail">—</span>
             </div>
             <div class="detail-field">
               <span class="detail-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9a1.6 1.6 0 0 0-1.1-1.5c-.4-.2-.9-.1-1.2.2l-1.2 1a12 12 0 0 1-6.5-6.5l1-1.2a1.5 1.5 0 0 0 .2-1.2c-.3-.4-.7-.7-1.2-.9A1.6 1.6 0 0 0 7 4c-3.5 0-6.5 3-6.5 6.5 0 7.2 7.3 14.5 14.5 14.5 3.5 0 6.5-3 6.5-6.5z"/></svg>
                 Phone Number
               </span>
-              <span class="detail-value" id="detailPhone">+63 912 345 6789</span>
+              <span class="detail-value" id="detailPhone">—</span>
             </div>
             <div class="detail-field extracted-style-3">
               <span class="detail-label">
@@ -148,12 +156,22 @@
       <section class="tab-panel" id="panelBorrowingHistory" role="tabpanel" aria-labelledby="tabBorrowingHistory">
         <div class="history-card">
           <h2>Borrowing History</h2>
+          <p class="lifecycle-note">Pending → Ready for pickup → Checked out → Returned. Your loan and due date begin only after staff confirm checkout.</p>
+          <h3>Approved requests ready for pickup</h3>
+          <div id="pickupCodes"><p role="status">Loading pickup requests…</p></div>
           <div id="historyContent">
             <p class="loading-msg">Loading borrowing history…</p>
           </div>
         </div>
       </section>
 
+      <section class="tab-panel" id="panelReservationHistory" role="tabpanel" aria-labelledby="tabReservationHistory">
+        <div class="history-card">
+          <h2>Reservation history</h2>
+          <p class="reservation-history-note">Waiting is a request for a preferred time, not a stock guarantee. Ready for Pickup means a copy is held. There is no automatic expiry; cancel in the catalog or contact staff if you cannot attend. All times are Philippine time.</p>
+          <div id="reservationHistoryContent"><p class="loading-msg">Loading reservations…</p></div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -166,8 +184,13 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<script src="js/library-ui.js?v=phase8"></script>
 <script src="js/philippine-phone.js"></script>
-<script src="js/profile.js"></script>
+<script src="js/borrowing-status.js?v=20261027-phase2b"></script>
+<script src="js/reservation-scheduling.js?v=20261027-phase4"></script>
+<script src="js/profile.js?v=20261027-phase3b-refresh"></script>
+<script src="js/vendor/qrcodegen.js?v=phase9-local"></script>
+<script src="js/pickup-qr.js?v=20261028-phase9-refresh"></script>
 
 </body>
 </html>

@@ -1,53 +1,25 @@
 <?php
-session_start();
-require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
-
-$isLibraryStaff = isset($_SESSION['admin_id']) || (
-    isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'librarian'
-);
-if (!$isLibraryStaff) {
-    http_response_code(401);
-    echo json_encode(['error' => 'not_logged_in']);
-    exit;
-}
-
-$now = new DateTime('first day of this month');
-$months = [];
-$totalArr = [];
-$borrowedArr = [];
-
-for ($i = 5; $i >= 0; $i--) {
-    $d = (clone $now)->modify("-{$i} months");
-    $monthKey = $d->format('Y-m');
-    $monthLabel = $d->format('M');
-
-    $totalStmt = $pdo->query("
-        SELECT COALESCE(SUM(total_copies), 0) as total
-        FROM books
-        WHERE DATE_FORMAT(created_at, '%Y-%m') <= '$monthKey'
-    ");
-    $total = (int)$totalStmt->fetch()['total'];
-
-    $borrowedStmt = $pdo->query("
-        SELECT COUNT(*) as borrowed
-        FROM borrow_requests
-        WHERE status IN ('approved', 'returned')
-        AND approved_at IS NOT NULL
-        AND DATE_FORMAT(approved_at, '%Y-%m') <= '$monthKey'
-    ");
-    $borrowed = (int)$borrowedStmt->fetch()['borrowed'];
-
-    $months[] = $monthLabel;
-    $totalArr[] = $total;
-    $borrowedArr[] = $borrowed;
-}
-
-$availableArr = array_map(fn($t, $b) => max(0, $t - $b), $totalArr, $borrowedArr);
-
-echo json_encode([
-    'months' => $months,
-    'total' => $totalArr,
-    'borrowed' => $borrowedArr,
-    'available' => $availableArr,
-]);
+header('Cache-Control: no-store');
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/reporting.php';
+try {
+    requireBookAccess($pdo,true);
+    if ($_SERVER['REQUEST_METHOD']!=='GET') bookError(405,'method_not_allowed');
+    $rows=reportTransactions($pdo);$months=$borrowed=$checkouts=$returns=[];
+    $now=new DateTimeImmutable();$month=$now->modify('first day of this month')->setTime(0,0);
+    for ($i=5;$i>=0;$i--) {
+        $start=$month->modify('-'.$i.' months');$end=$start->modify('+1 month');
+        $cutoff=min($end->format('Y-m-d H:i:s'),$now->format('Y-m-d H:i:s'));
+        $out=$checked=$returned=0;
+        foreach ($rows as $row) {
+            if ($row['is_loan'] && $row['borrowed_at']<$end->format('Y-m-d H:i:s') && $row['borrowed_at']<=$cutoff && ($row['returned_at']===null || $row['returned_at']>=$end->format('Y-m-d H:i:s') || $row['returned_at']>$cutoff)) $out++;
+            if ($row['is_loan'] && $row['borrowed_at']>=$start->format('Y-m-d H:i:s') && $row['borrowed_at']<$end->format('Y-m-d H:i:s') && $row['borrowed_at']<=$cutoff) $checked++;
+            if ($row['status']==='returned' && $row['returned_at']!==null && $row['returned_at']>=$start->format('Y-m-d H:i:s') && $row['returned_at']<$end->format('Y-m-d H:i:s') && $row['returned_at']<=$cutoff) $returned++;
+        }
+        $months[]=$start->format('M Y');$borrowed[]=$out;$checkouts[]=$checked;$returns[]=$returned;
+    }
+    echo json_encode(['months'=>$months,'borrowed'=>$borrowed,'checkouts'=>$checkouts,'returns'=>$returns,
+        'scope'=>'Circulation events and outstanding loans at period end (current month: now). Historical physical inventory is unavailable.', 'timezone'=>'Asia/Manila']);
+} catch (Throwable $exception) { borrowingFailure($pdo,$exception); }

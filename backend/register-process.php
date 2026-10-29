@@ -1,215 +1,52 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 require_once __DIR__ . '/../includes/db_connect.php';
-
-$allowedRoles = ['student', 'teacher', 'librarian', 'visitor'];
-
-function backToRegister(string $role, string $error) {
-    $qs = http_build_query(array_filter(['role' => $role, 'error' => $error]));
-    header('Location: ../select-role.html' . ($qs ? '?' . $qs : ''));
-    exit;
+require_once __DIR__ . '/../includes/account-management.php';
+function backToRegister(string $role,string $error): void {
+    header('Location: ../select-role.html?'.http_build_query(['role'=>$role,'error'=>$error]));exit;
 }
-
-function normalizePhilippineMobileNumber(string $phone): ?string
-{
-    $phone = preg_replace('/[\s().-]/', '', trim($phone));
-
-    if (preg_match('/^09\d{9}$/', $phone)) {
-        return $phone;
+$role=is_string($_POST['role']??null)?$_POST['role']:'';
+try {
+    if ($_SERVER['REQUEST_METHOD']!=='POST') {header('Location: ../select-role.html');exit;}
+    if (!in_array($role,['student','teacher','librarian','visitor'],true)) throw new DomainException('Choose a supported registration role.',422);
+    $token=$_POST['csrf_token']??null;
+    if (!is_string($token) || !isset($_SESSION['book_csrf_token']) || !hash_equals($_SESSION['book_csrf_token'],$token)) throw new DomainException('Reload registration and try again; your form session expired.',403);
+    $name=accountText($_POST['full_name']??null,150);
+    $password=$_POST['password']??null;$confirm=$_POST['confirm_password']??null;
+    if (!is_string($password) || strlen($password)<8 || strlen($password)>72) throw new DomainException('Password must be 8 to 72 bytes long.',422);
+    if (!is_string($confirm) || $password!==$confirm) throw new DomainException('Passwords do not match.',422);
+    $phone=accountPhone($_POST['phone']??null);
+    if ($phone===null) throw new DomainException('Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.',422);
+    $student=$employee=$email=$year=$department=null;
+    if ($role==='student') {
+        $student=accountText($_POST['student_id']??null,50);
+        $grade=accountText($_POST['grade_level']??'',30,false);$section=accountText($_POST['section']??'',30,false);
+        $year=accountText($grade!=='' && $section!==''?$grade.' — '.$section:($_POST['year_section']??''),50);
+        $identifier=$student;
+    } elseif ($role==='visitor') {
+        $email=accountText($_POST['email']??null,190);
+        if (!filter_var($email,FILTER_VALIDATE_EMAIL)) throw new DomainException('Enter a valid email address.',422);
+        $identifier=$email;
+    } else {
+        $employee=accountText($_POST['id_number']??null,50);
+        $department=accountText($_POST['department']??'',150,false)?:null;$identifier=$employee;
     }
-    if (preg_match('/^\+639\d{9}$/', $phone)) {
-        return '0' . substr($phone, 3);
-    }
-
-    return null;
+    if ((int)$pdo->query("SELECT GET_LOCK('bcihs_registration_identifier',5)")->fetchColumn()!==1) throw new DomainException('Registration is busy. Please try again.',409);
+    // Identifiers are used by the same sign-in field, so prevent cross-column collisions too.
+    $stmt=$pdo->prepare('SELECT id FROM users WHERE student_id=:student OR id_number=:employee OR email=:email LIMIT 1');
+    $stmt->execute(['student'=>$identifier,'employee'=>$identifier,'email'=>$identifier]);
+    $adminCheck=$pdo->prepare('SELECT id FROM admins WHERE username=:identifier LIMIT 1');
+    $adminCheck->execute(['identifier'=>$identifier]);
+    if ($adminCheck->fetch() || $stmt->fetch()) throw new DomainException('An account with that identifier already exists.',409);
+    $pdo->prepare('INSERT INTO users(full_name,student_id,id_number,email,year_section,department,phone,password_hash,role,account_status)
+        VALUES(:name,:student,:employee,:email,:year,:department,:phone,:hash,:role,"pending")')
+        ->execute(['name'=>$name,'student'=>$student,'employee'=>$employee,'email'=>$email,'year'=>$year,'department'=>$department,
+            'phone'=>$phone,'hash'=>password_hash($password,PASSWORD_DEFAULT),'role'=>$role]);
+    $pdo->query("SELECT RELEASE_LOCK('bcihs_registration_identifier')");
+    header('Location: ../login.html?registered=1');exit;
+} catch (Throwable $exception) {
+    $pdo->query("SELECT RELEASE_LOCK('bcihs_registration_identifier')");
+    if ($exception instanceof PDOException && $exception->getCode()==='23000') backToRegister($role,'An account with that identifier already exists.');
+    if ($exception instanceof DomainException) backToRegister(in_array($role,['student','teacher','librarian','visitor'],true)?$role:'student',$exception->getMessage());
+    error_log('Registration failed.');backToRegister('student','Registration could not be completed. Please try again later.');
 }
-
-function executeRegistrationQuery(PDO $pdo, string $sql, array $parameters, string $role): PDOStatement
-{
-    try {
-        $statement = $pdo->prepare($sql);
-        $statement->execute($parameters);
-        return $statement;
-    } catch (PDOException $e) {
-        error_log('Registration database operation failed: ' . $e->getMessage());
-        backToRegister($role, 'Registration could not be completed. Please try again later.');
-    }
-}
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../select-role.html');
-    exit;
-}
-
-$role = isset($_POST['role']) ? preg_replace('/[^a-z]/', '', strtolower($_POST['role'])) : '';
-if (!in_array($role, $allowedRoles, true)) {
-    $role = 'student';
-}
-
-$fullName = trim($_POST['full_name'] ?? '');
-$password = $_POST['password'] ?? '';
-$confirm  = $_POST['confirm_password'] ?? '';
-
-if ($role === 'student') {
-
-    $studentId   = trim($_POST['student_id'] ?? '');
-    $gradeLevel  = trim($_POST['grade_level'] ?? '');
-    $section     = trim($_POST['section'] ?? '');
-    $yearSection = $gradeLevel !== '' && $section !== ''
-        ? $gradeLevel . ' — ' . $section
-        : trim($_POST['year_section'] ?? '');
-    $phone       = normalizePhilippineMobileNumber($_POST['phone'] ?? '');
-
-    if ($studentId === '' || $fullName === '' || $yearSection === '' || $phone === null || $password === '' || $confirm === '') {
-        if ($phone === null && trim($_POST['phone'] ?? '') !== '') {
-            backToRegister($role, 'Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.');
-        }
-        backToRegister($role, 'Please fill in every field.');
-    }
-    $yearSectionLength = preg_match_all('/./us', $yearSection);
-    if ($yearSectionLength === false || $yearSectionLength > 50) {
-        backToRegister($role, 'Grade level and section must be 50 characters or fewer combined.');
-    }
-    if (strlen($password) < 8) {
-        backToRegister($role, 'Password must be at least 8 characters.');
-    }
-    if ($password !== $confirm) {
-        backToRegister($role, 'Passwords do not match.');
-    }
-
-    // Make sure the Student ID isn't already registered.
-    $check = executeRegistrationQuery(
-        $pdo,
-        'SELECT id FROM users WHERE student_id = :student_id LIMIT 1',
-        ['student_id' => $studentId],
-        $role
-    );
-    if ($check->fetch()) {
-        backToRegister($role, 'An account with that Student ID already exists.');
-    }
-
-    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-    executeRegistrationQuery(
-        $pdo,
-        'INSERT INTO users (full_name, student_id, year_section, phone, password_hash, role)
-         VALUES (:full_name, :student_id, :year_section, :phone, :password_hash, :role)',
-        [
-            'full_name'     => $fullName,
-            'student_id'    => $studentId,
-            'year_section'  => $yearSection,
-            'phone'         => $phone,
-            'password_hash' => $passwordHash,
-            'role'          => $role,
-        ],
-        $role
-    );
-
-    header('Location: ../login.html?registered=1');
-    exit;
-}
-
-// ---- Teacher, Librarian, and Staff: ID Number-based registration ----
-
-if ($role === 'teacher' || $role === 'librarian') {
-
-    $idNumber = trim($_POST['id_number'] ?? '');
-    $phone    = normalizePhilippineMobileNumber($_POST['phone'] ?? '');
-    $department = trim($_POST['department'] ?? '');
-
-    if ($idNumber === '' || $fullName === '' || $phone === null || $password === '' || $confirm === '') {
-        if ($phone === null && trim($_POST['phone'] ?? '') !== '') {
-            backToRegister($role, 'Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.');
-        }
-        backToRegister($role, 'Please fill in every field.');
-    }
-    if (strlen($password) < 8) {
-        backToRegister($role, 'Password must be at least 8 characters.');
-    }
-    if ($password !== $confirm) {
-        backToRegister($role, 'Passwords do not match.');
-    }
-
-    // Make sure the ID Number isn't already registered.
-    $check = executeRegistrationQuery(
-        $pdo,
-        'SELECT id FROM users WHERE id_number = :id_number LIMIT 1',
-        ['id_number' => $idNumber],
-        $role
-    );
-    if ($check->fetch()) {
-        backToRegister($role, 'An account with that ID Number already exists.');
-    }
-
-    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-    executeRegistrationQuery(
-        $pdo,
-        'INSERT INTO users (full_name, id_number, phone, department, password_hash, role)
-         VALUES (:full_name, :id_number, :phone, :department, :password_hash, :role)',
-        [
-            'full_name'     => $fullName,
-            'id_number'     => $idNumber,
-            'phone'         => $phone,
-            'department'    => $department ?: null,
-            'password_hash' => $passwordHash,
-            'role'          => $role,
-        ],
-        $role
-    );
-
-    // Accounts require approval before signing in.
-    header('Location: ../login.html?registered=1');
-    exit;
-}
-
-// ---- Visitor: email-based registration ----
-
-$email = trim($_POST['email'] ?? '');
-$phone = normalizePhilippineMobileNumber($_POST['phone'] ?? '');
-
-if ($fullName === '' || $email === '' || $phone === null || $password === '' || $confirm === '') {
-    if ($phone === null && trim($_POST['phone'] ?? '') !== '') {
-        backToRegister($role, 'Enter a valid Philippine mobile number: 09XXXXXXXXX or +639XXXXXXXXX.');
-    }
-    backToRegister($role, 'Please fill in every field.');
-}
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    backToRegister($role, 'Please enter a valid email address.');
-}
-if (strlen($password) < 8) {
-    backToRegister($role, 'Password must be at least 8 characters.');
-}
-if ($password !== $confirm) {
-    backToRegister($role, 'Passwords do not match.');
-}
-
-// Make sure the email isn't already registered.
-$check = executeRegistrationQuery(
-    $pdo,
-    'SELECT id FROM users WHERE email = :email LIMIT 1',
-    ['email' => $email],
-    $role
-);
-if ($check->fetch()) {
-    backToRegister($role, 'An account with that email already exists.');
-}
-
-$passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-executeRegistrationQuery(
-    $pdo,
-    'INSERT INTO users (full_name, email, phone, password_hash, role)
-     VALUES (:full_name, :email, :phone, :password_hash, :role)',
-    [
-        'full_name'      => $fullName,
-        'email'          => $email,
-        'phone'          => $phone,
-        'password_hash'  => $passwordHash,
-        'role'           => $role,
-    ],
-    $role
-);
-
-header('Location: ../login.html?registered=1');
-exit;

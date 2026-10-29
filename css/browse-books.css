@@ -138,36 +138,7 @@
   .borrow-btn.approved{ background:#e2f8ea; color:#1a7a3d; cursor:default; }
   .borrow-btn.unavailable{ background:#eee; color:#999; cursor:not-allowed; }
   .pickup-info{ color:#666; font-size:0.8rem; }
-  .pickup-dialog{
-    width:min(520px, calc(100% - 28px)); max-height:90vh; overflow:auto; border:none; border-radius:16px;
-    padding:22px; color:var(--ink); box-shadow:0 18px 50px rgba(0,0,0,0.28);
-  }
-  .pickup-dialog::backdrop{ background:rgba(28,10,10,0.55); }
-  .pickup-dialog h2{ color:var(--red-maroon); font-size:1.15rem; margin-bottom:4px; }
-  .pickup-help{ color:#666; font-size:0.86rem; margin-bottom:16px; }
-  .pickup-calendar-heading{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
-  .pickup-calendar-heading button{
-    border:1px solid #ddd3d1; background:#fff; border-radius:8px; padding:6px 11px; color:var(--red-maroon);
-    cursor:pointer; font-weight:700;
-  }
-  .pickup-month{ font-weight:700; }
-  .pickup-calendar{ display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:5px; }
-  .pickup-weekday{ color:#888; text-align:center; font-size:0.72rem; font-weight:700; padding:4px 0; }
-  .pickup-day{
-    min-height:38px; border:1px solid #eee8e6; border-radius:8px; background:#fff; color:var(--ink); cursor:pointer;
-  }
-  .pickup-day:hover:not(:disabled), .pickup-day.selected{ border-color:var(--red-maroon); background:var(--red-maroon); color:#fff; }
-  .pickup-day:disabled{ color:#bbb; background:#f8f7f6; cursor:not-allowed; }
-  .pickup-time-label{ display:block; margin-top:16px; font-weight:700; font-size:0.86rem; }
-  .pickup-time{
-    width:100%; margin-top:6px; padding:10px 12px; border:1px solid #ddd3d1; border-radius:9px; font:inherit;
-  }
-  .pickup-error{ min-height:1.3em; color:#b42318; font-size:0.82rem; margin-top:8px; }
-  .pickup-dialog-actions{ display:flex; justify-content:flex-end; gap:9px; margin-top:14px; }
-  .pickup-dialog-actions button{ border:0; border-radius:9px; padding:10px 15px; font:inherit; font-weight:700; cursor:pointer; }
-  .pickup-cancel{ background:#f0eeec; color:var(--ink); }
-  .pickup-save{ background:var(--red-maroon); color:#fff; }
-  .pickup-save:disabled{ opacity:0.6; cursor:wait; }
+
 
   .empty-msg, .loading-msg{ text-align:center; padding:50px 20px; color:#888; }
 

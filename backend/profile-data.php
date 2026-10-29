@@ -1,34 +1,17 @@
 <?php
-session_start();
-require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/../includes/approved-user-session.php';
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
-
-if (!requireApprovedUserSession($pdo)) {
-    http_response_code(401);
-    echo json_encode(['loggedIn' => false]);
-    exit;
-}
-
-$accountId = $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? null;
-if (!$accountId || !is_numeric($accountId)) {
-    http_response_code(401);
-    echo json_encode(['loggedIn' => false]);
-    exit;
-}
-
-$stmt = $pdo->prepare(
-    'SELECT full_name, email, student_id, year_section, id_number, department, phone, role, created_at
-     FROM users WHERE id = :id LIMIT 1'
-);
-$stmt->execute(['id' => (int) $accountId]);
-$user = $stmt->fetch();
-
-if (!$user) {
-    // The session points at an account that no longer exists — treat as logged out.
-    http_response_code(401);
-    echo json_encode(['loggedIn' => false]);
-    exit;
-}
-
-echo json_encode(array_merge(['loggedIn' => true], $user));
+header('Cache-Control: no-store');
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/account-management.php';
+try {
+    $role=requireBookAccess($pdo);
+    if ($_SERVER['REQUEST_METHOD']!=='GET') bookError(405,'method_not_allowed');
+    if ($role==='admin') {
+        $stmt=$pdo->prepare('SELECT username AS full_name,created_at FROM admins WHERE id=:id');$stmt->execute(['id'=>$_SESSION['admin_id']]);
+        echo json_encode(array_merge($stmt->fetch(),['loggedIn'=>true,'role'=>'admin','readOnly'=>true,'csrfToken'=>bookCsrfToken()]));exit;
+    }
+    $stmt=$pdo->prepare('SELECT full_name,email,student_id,year_section,id_number,department,phone,role,account_status,created_at FROM users WHERE id=:id');
+    $stmt->execute(['id'=>$_SESSION['user_id']]);
+    echo json_encode(array_merge($stmt->fetch(),['loggedIn'=>true,'csrfToken'=>bookCsrfToken()]));
+} catch(Throwable $exception){borrowingFailure($pdo,$exception);}

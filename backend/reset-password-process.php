@@ -1,68 +1,45 @@
 <?php
-/**
- * Step 2 of the Forgot Password flow — verifies the 6-digit SMS code and
- * sets a new password.
- */
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 require_once __DIR__ . '/../includes/db_connect.php';
 header('Content-Type: application/json');
-
-function fail(int $code, string $message) {
-    http_response_code($code);
-    echo json_encode(['error' => $message]);
-    exit;
+header('Cache-Control: no-store');
+try {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') throw new DomainException('method_not_allowed', 405);
+    $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+    if (!is_array($input)) throw new DomainException('Enter a valid recovery form.', 422);
+    $recovery = $_SESSION['password_recovery'] ?? null;
+    $code = $input['code'] ?? '';
+    $password = $input['password'] ?? '';
+    if (!is_array($recovery) || $recovery['expires'] < time()
+        || securityPhone($input['phone'] ?? null) !== $recovery['phone']
+        || ($input['role'] ?? '') !== $recovery['role']) throw new DomainException('Request a new code in this browser.', 422);
+    if (!is_string($code) || !preg_match('/^\d{6}$/D', $code)
+        || !is_string($password) || strlen($password) < 8 || strlen($password) > 72) {
+        throw new DomainException('Enter a six-digit code and a password of 8 to 72 bytes.', 422);
+    }
+    if (!securityBudget('reset-code', $recovery['marker'], 5, 900)
+        || !securityBudget('reset-verify-ip', $_SERVER['REMOTE_ADDR'] ?? 'local', 30, 900)) {
+        unset($_SESSION['password_recovery']);
+        throw new DomainException('Too many attempts. Request a new code after the cooldown.', 429);
+    }
+    if (!password_verify($code, $recovery['hash'])) throw new DomainException('That code is invalid or expired.', 422);
+    $pdo->exec("SET time_zone='+08:00'");
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare('SELECT reset_code FROM users WHERE id=:id AND reset_code_expires>NOW() FOR UPDATE');
+    $stmt->execute(['id'=>$recovery['id']]);
+    $marker = $stmt->fetchColumn();
+    if (!$marker || !hash_equals($recovery['marker'], $marker)) throw new DomainException('That code is invalid or expired.', 422);
+    $pdo->prepare('UPDATE users SET password_hash=:hash,reset_code=NULL,reset_code_expires=NULL WHERE id=:id')
+        ->execute(['hash'=>password_hash($password, PASSWORD_DEFAULT), 'id'=>$recovery['id']]);
+    $pdo->commit();
+    unset($_SESSION['password_recovery']);
+    // Remove this browser's authenticated identity; other initialized sessions fail their hash check.
+    foreach (['user_id','admin_id','role','password_fingerprint'] as $key) unset($_SESSION[$key]);
+    session_regenerate_id(true);
+    echo json_encode(['success'=>true]);
+} catch (Throwable $exception) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    $expected = $exception instanceof DomainException;
+    http_response_code($expected ? $exception->getCode() : 503);
+    echo json_encode(['error'=>$expected ? $exception->getMessage() : 'Recovery is temporarily unavailable. Please try again later.']);
 }
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    fail(405, 'method_not_allowed');
-}
-
-$input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-
-$role        = isset($input['role']) ? preg_replace('/[^a-z]/', '', strtolower($input['role'])) : '';
-$identifier  = trim($input['identifier'] ?? '');
-$phone       = trim($input['phone'] ?? '');
-$code        = trim($input['code'] ?? '');
-$newPassword = $input['password'] ?? '';
-
-$allowedRoles = ['student', 'teacher', 'staff', 'employee', 'visitor'];
-if ($role !== '' && !in_array($role, $allowedRoles, true)) {
-    fail(422, 'Please choose your account type again from the role screen.');
-}
-if (($identifier === '' && $phone === '') || $code === '' || $newPassword === '') {
-    fail(422, 'Please fill in every field.');
-}
-if (strlen($newPassword) < 8) {
-    fail(422, 'Your new password must be at least 8 characters.');
-}
-
-if ($phone !== '') {
-    $stmt = $pdo->prepare('SELECT id, reset_code, reset_code_expires FROM users WHERE phone = :v LIMIT 1');
-    $stmt->execute(['v' => $phone]);
-} elseif ($role === 'student') {
-    $stmt = $pdo->prepare('SELECT id, reset_code, reset_code_expires FROM users WHERE student_id = :v AND role = "student" LIMIT 1');
-    $stmt->execute(['v' => $identifier]);
-} elseif ($role === 'teacher' || $role === 'staff') {
-    $stmt = $pdo->prepare('SELECT id, reset_code, reset_code_expires FROM users WHERE id_number = :v AND role = :role LIMIT 1');
-    $stmt->execute(['v' => $identifier, 'role' => $role]);
-} else {
-    $stmt = $pdo->prepare('SELECT id, reset_code, reset_code_expires FROM users WHERE email = :v AND role = :role LIMIT 1');
-    $stmt->execute(['v' => $identifier, 'role' => $role]);
-}
-$user = $stmt->fetch();
-
-if (!$user || $user['reset_code'] === null) {
-    fail(422, 'That code is invalid. Please request a new one.');
-}
-if (strtotime($user['reset_code_expires']) < time()) {
-    fail(422, 'That code has expired. Please request a new one.');
-}
-if (!hash_equals((string) $user['reset_code'], $code)) {
-    fail(422, 'That code is incorrect. Please check the SMS and try again.');
-}
-
-$hash = password_hash($newPassword, PASSWORD_DEFAULT);
-$pdo->prepare('UPDATE users SET password_hash = :hash, reset_code = NULL, reset_code_expires = NULL WHERE id = :id')
-    ->execute(['hash' => $hash, 'id' => $user['id']]);
-
-echo json_encode(['success' => true]);

@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reservations | BCIHS Library</title>
   <link rel="stylesheet" href="css/reservations.css?v=20261026-visible-tables">
   <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/reservation-scheduling.css?v=20261027-phase4">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
+<link rel="stylesheet" href="css/checkout-due.css?v=20261029">
 </head>
-<body>
+<body class="admin-page reservations-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -83,8 +90,19 @@
   <main>
     <div class="page-head">
       <h1>Reservations</h1>
-      <p>The waitlist for books that currently have zero copies available.</p>
+      <p>Review waitlisted titles, allocate pickup holds, and confirm physical checkout and return.</p>
     </div>
+
+    <details class="panel pickup-policy">
+      <summary>Pickup capacity settings</summary>
+      <p>Leave blank for unlimited. Limits count scheduled Waiting and Ready reservations across all titles; they do not create book copies. No automatic expiry applies. Staff must cancel unclaimed Waiting/Ready reservations to release holds.</p>
+      <form id="pickupSettingsForm" class="pickup-settings-form">
+        <label>Maximum per pickup date<input id="dailyLimit" type="number" min="1" max="65535" step="1" placeholder="Unlimited"></label>
+        <label>Maximum per half-hour<input id="slotLimit" type="number" min="1" max="65535" step="1" placeholder="Unlimited"></label>
+        <button id="savePickupSettings" type="submit">Save capacity</button>
+      </form>
+      <p id="pickupSettingsMessage" class="policy-message" role="status"></p>
+    </details>
 
     <section class="calendar-panel" aria-labelledby="calendarTitle">
       <div class="calendar-heading">
@@ -95,20 +113,24 @@
           <button type="button" id="nextMonth" aria-label="Next month">&rsaquo;</button>
         </div>
       </div>
+      <div class="calendar-options"><label for="calendarBasis">Calendar shows</label>
+        <select id="calendarBasis"><option value="pickup_at">Pickup dates</option><option value="reserved_at">Submission dates</option></select>
+      </div>
+      <p class="calendar-help">Philippine time · Monday–Friday, 7:00 AM–4:00 PM. Select a date to review it. Closed/past dates remain viewable for historical records; they cannot be newly booked. A preferred time is not a stock guarantee.</p>
       <div class="calendar-grid" id="calendarGrid" role="group" aria-label="Select a reservation date"></div>
       <div class="calendar-footer">
-        <p class="calendar-selection" id="calendarSelection" aria-live="polite">Showing reservations from all dates.</p>
+        <p class="calendar-selection" id="calendarSelection" aria-live="polite">Showing reservations for all pickup dates.</p>
         <button type="button" class="calendar-clear" id="clearCalendarDate" hidden>Clear date</button>
       </div>
     </section>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by student or book title…">
-      <select id="statusFilter">
+      <input type="text" id="searchInput" aria-label="Search reservations" placeholder="Search by student or book title…">
+      <select id="statusFilter" aria-label="Filter by status">
         <option value="">All statuses</option>
         <option value="waiting">Waiting</option>
-        <option value="ready">Ready</option>
-        <option value="fulfilled">Fulfilled</option>
+        <option value="ready">Ready for Pickup</option>
+        <option value="fulfilled">Checked Out</option>
         <option value="returned">Returned</option>
         <option value="cancelled">Cancelled</option>
       </select>
@@ -121,7 +143,7 @@
       <button type="button" class="retry-btn" id="retryReservations" hidden>Try again</button>
       <table id="reservationsTable">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Queue #</th><th>Reserved Date &amp; Time</th><th>Pickup Date &amp; Time</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>Borrower Name</th><th>Book Title</th><th>Queue #</th><th>Reserved Date &amp; Time</th><th>Pickup Date &amp; Time</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody id="reservationsBody"></tbody>
       </table>
@@ -129,9 +151,41 @@
   </main>
 </div>
 
+<dialog class="pickup-dialog" id="pickupDialog" aria-labelledby="pickupDialogTitle">
+  <form id="pickupForm">
+    <h2 id="pickupDialogTitle">Choose a pickup time</h2>
+    <p class="pickup-help">Available pickup dates are Monday to Friday, 7:00 AM–4:00 PM, in 30-minute intervals. All times are Philippine time. Closed dates and full slots cannot be selected.</p>
+    <p class="pickup-help" id="pickupCapacityNote"></p>
+    <div class="pickup-calendar-heading">
+      <button type="button" id="pickupPreviousMonth" aria-label="Previous month">&lsaquo;</button>
+      <span class="pickup-month" id="pickupMonth" aria-live="polite"></span>
+      <button type="button" id="pickupNextMonth" aria-label="Next month">&rsaquo;</button>
+    </div>
+    <div class="pickup-calendar" id="pickupCalendar" role="group" aria-label="Available pickup dates"></div>
+    <label class="pickup-time-label" for="pickupTime">Pickup time</label>
+    <select class="pickup-time" id="pickupTime" required>
+      <option value="">Select a time</option>
+    </select>
+    <p class="pickup-error" id="pickupError" role="alert"></p>
+    <button type="button" id="pickupRetry" class="pickup-cancel" hidden>Try again</button>
+    <div class="pickup-dialog-actions">
+      <button type="button" class="pickup-cancel" id="pickupCancel">Cancel</button>
+      <button type="submit" class="pickup-save" id="pickupSave">Confirm</button>
+    </div>
+  </form>
+</dialog>
+<dialog class="pickup-dialog" id="reservationDetailsDialog" aria-labelledby="reservationDetailsTitle">
+  <h2 id="reservationDetailsTitle">Reservation details</h2>
+  <dl id="reservationDetailsBody" class="reservation-detail-list"></dl>
+  <button type="button" id="closeReservationDetails" class="pickup-cancel">Close</button>
+</dialog>
 <div class="toast" id="toast"></div>
 
-<script src="js/reservations.js"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/borrowing-status.js?v=20261027-phase2b"></script>
+<script src="js/reservation-scheduling.js?v=20261027-phase4"></script>
+<script src="js/checkout-due.js?v=20261029"></script>
+<script src="js/reservations.js?v=20261029-due"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>
 </body>
 </html>

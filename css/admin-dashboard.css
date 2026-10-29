@@ -338,3 +338,5 @@
 .extracted-style-6 { display:block; text-align:center; }
 .extracted-style-7 { grid-column: 1 / -1; }
 .extracted-style-8 { height:300px; position:relative; }
+#dashboardScope,.dashboard-circulation{line-height:1.65;margin:0 0 16px;color:#615858;overflow-wrap:anywhere}
+#dashboardWarning{padding:14px;background:#fff4de;border:1px solid #dac6ac;border-radius:8px;margin-bottom:16px}

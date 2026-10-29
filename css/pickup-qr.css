@@ -1,0 +1,22 @@
+[hidden]{display:none!important}
+.pickup-verification{margin:0;background:#f5f2f2;color:#302424;font:16px/1.6 Arial,sans-serif}
+.pickup-verification header{padding:22px;background:#65191c;color:#fff}
+.pickup-verification h1{margin:0;font-size:25px}
+.pickup-verification header p{margin:5px 0 0}
+.pickup-verification main{max-width:720px;margin:24px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 3px 14px #0001}
+.pickup-verification h2{font-size:22px;color:#65191c}
+.pickup-verification dl{display:grid;grid-template-columns:minmax(110px,1fr) minmax(0,2fr);gap:10px 18px}
+.pickup-verification dt{font-weight:bold}
+.pickup-verification dd{margin:0;overflow-wrap:anywhere}
+.pickup-verification button,.pickup-qr-card button{font:inherit;padding:12px 18px;background:#65191c;color:#fff;border:1px solid #65191c;border-radius:8px;cursor:pointer}
+.pickup-verification button{margin:8px 4px 8px 0;max-width:100%;white-space:normal}
+.pickup-verification .secondary{background:#fff;color:#65191c}
+.pickup-verification button:disabled,.pickup-qr-card button:disabled{opacity:.6;cursor:wait}
+.pickup-verification a{color:#65191c;overflow-wrap:anywhere}
+#checkoutConfirmation{padding:16px;background:#fff4df;border:1px solid #d6b16c;border-radius:8px;margin:14px 0}
+.pickup-qr-card{padding:18px;margin:18px 0;border:1px solid #dfd4d4;border-radius:10px;overflow-wrap:anywhere}
+.pickup-qr-card h3{font-size:18px;margin:0 0 12px;color:#65191c}
+.pickup-qr-card canvas{display:block;max-width:100%;height:auto;margin:18px auto;background:#fff;image-rendering:pixelated}
+.pickup-qr-card a{color:#65191c;display:block;overflow-wrap:anywhere}
+.pickup-qr-card [role=status]{line-height:1.6}
+@media(max-width:600px){.pickup-verification main{margin:12px;padding:18px}.pickup-verification dl{grid-template-columns:1fr;gap:4px}.pickup-verification dd{margin-bottom:10px}}

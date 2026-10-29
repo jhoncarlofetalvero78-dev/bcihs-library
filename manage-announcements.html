@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Announcements | BCIHS Library</title>
-<link rel="stylesheet" href="css/manage-announcements.css?v=20261022-photo">
+<link rel="stylesheet" href="css/manage-announcements.css?v=20261027-phase7a">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="admin-page manage-announcements-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -91,15 +95,15 @@
           <p>Post updates that appear on the library's public homepage.</p>
         </div>
       </div>
-      <button class="add-btn" id="addBtn">
+      <button class="add-btn" id="addBtn" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
         Post New Announcement
       </button>
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by title or description…">
-      <select id="categoryFilter">
+      <input type="text" id="searchInput" aria-label="Search announcements" placeholder="Search by title or description…">
+      <select id="categoryFilter" aria-label="Filter by category">
         <option value="">All categories</option>
         <option value="General">General</option>
         <option value="Event">Event</option>
@@ -107,6 +111,8 @@
       </select>
     </div>
 
+    <p>Saving publishes immediately to the public homepage and Announcements page. Editing keeps the original publication date. To withdraw a notice, remove it; there are no drafts or hidden notices.</p>
+    <dialog class="panel" id="deleteConfirmation" hidden data-managed-confirmation="Remove announcement"><p id="deletePrompt"></p><button type="button" class="modal-btn save" id="confirmDelete">Remove announcement</button> <button type="button" class="modal-btn cancel" id="cancelDelete">Cancel</button></dialog>
     <p class="count-badge extracted-style-1" id="countBadge"></p>
 
     <p class="loading-msg" id="loadingMsg">Loading announcements…</p>
@@ -121,7 +127,7 @@
       <input type="hidden" id="announcementId">
       <div class="field">
         <label for="titleInput">Title</label>
-        <input type="text" id="titleInput" placeholder="e.g. Library Hours Extended" required>
+        <input type="text" id="titleInput" maxlength="200" placeholder="e.g. Library Hours Extended" required>
       </div>
       <div class="field">
         <label for="categoryInput">Category</label>
@@ -144,7 +150,7 @@
       <p class="modal-error" id="modalError"></p>
       <div class="modal-btn-row">
         <button type="button" class="modal-btn cancel" id="cancelBtn">Cancel</button>
-        <button type="submit" class="modal-btn save" id="saveBtn">Save</button>
+        <button type="submit" class="modal-btn save" id="saveBtn">Save and Publish</button>
       </div>
     </form>
   </div>
@@ -152,7 +158,8 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/manage-announcements.js?v=20261022-photo"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/manage-announcements.js?v=20261027-phase7a"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

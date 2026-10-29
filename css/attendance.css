@@ -296,3 +296,32 @@ td{font-size:.88rem}
   .date-filter{flex:1;width:100%}
   th,td{padding:11px 9px}
 }
+
+/* Phase 5 attendance controls use the shared admin panels and buttons. */
+.attendance-page .attendance-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.attendance-summary .panel{margin:0;padding:18px;display:flex;flex-direction:column;gap:10px}
+.attendance-summary span{font-size:14px;color:#615858}
+.attendance-summary strong{font-size:26px;color:#7b1919}
+.attendance-page select{max-width:100%;min-width:0;min-height:44px;border:1px solid #d8cccc;border-radius:8px;background:#fff;padding:10px;font:inherit;color:inherit}
+.attendance-page .attendance-lookup,.attendance-page .attendance-filters,.attendance-page .attendance-manual{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.attendance-page .attendance-lookup{margin-bottom:12px}
+.attendance-page #studentLookup{flex:1;margin:0}
+.attendance-page .attendance-filters{margin-bottom:18px}
+.attendance-page .form-field{min-width:0;flex:1 1 180px}
+.attendance-page #attendanceForm{flex-wrap:wrap}
+.attendance-page #registeredFields{flex:1 1 320px}
+.attendance-page .attendance-manual{flex:1 1 100%}
+.attendance-page .attendance-repeat{flex:1 1 100%;padding:12px;background:#fff4de;border-radius:8px}
+.attendance-page input[type="checkbox"]{width:18px;height:18px;min-height:18px;accent-color:#7b1919;vertical-align:middle}
+.attendance-page [hidden]{display:none!important}
+.attendance-page .attendance-settings{padding:22px;margin-top:24px}
+.attendance-settings summary{font-weight:700;color:#7b1919;cursor:pointer}
+.attendance-settings p{line-height:1.6}
+.attendance-page td small{display:block;color:#6b6060;margin-top:5px}
+.attendance-page .table-wrap table{min-width:620px}
+.attendance-page #capacitySummary{line-height:1.6;margin-bottom:20px}
+.attendance-page .primary-btn:disabled{opacity:.6;cursor:wait}
+@media(max-width:1000px){.attendance-page .attendance-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.attendance-page .attendance-summary{gap:10px}.attendance-summary .panel{padding:14px}.attendance-summary strong{font-size:22px}.attendance-page .attendance-filters>*,.attendance-page #attendanceForm>.primary-btn,.attendance-page .attendance-lookup>.form-field{width:100%;flex-basis:100%}.attendance-page .attendance-settings{padding:16px}}
+@media(max-width:760px){.attendance-page #attendanceForm{flex-direction:row}.attendance-page #registeredFields{flex-basis:100%}}
+.attendance-page #selectedStudent{overflow-wrap:anywhere;line-height:1.5;color:#615858}

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
@@ -9,7 +9,7 @@ require_once __DIR__ . '/../includes/db_connect.php';
 require_once __DIR__ . '/../includes/approved-user-session.php';
 
 $adminId = $_SESSION['admin_id'] ?? null;
-if ($adminId && is_numeric($adminId)) {
+if ($adminId && is_numeric($adminId) && requireApprovedUserSession($pdo)) {
     $stmt = $pdo->prepare('SELECT username FROM admins WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => (int) $adminId]);
     $admin = $stmt->fetch();

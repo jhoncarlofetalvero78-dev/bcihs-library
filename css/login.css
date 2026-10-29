@@ -59,7 +59,7 @@
     min-height:calc(100vh - 88px);
     background:
       linear-gradient(180deg, rgba(255, 245, 242, 0.384), rgba(255, 245, 242, 0.384)),
-      url('../images/school.jpeg');
+      url('../images/school-entrance.png');
     background-size:cover;
     background-position:center;
     display:flex;

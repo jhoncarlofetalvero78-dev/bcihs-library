@@ -36,6 +36,18 @@
     }
   }
 
+  const sectionNames = {'manage-books.html':'Manage Books','borrow-requests.html':'Borrow Requests','transactions.html':'Transactions'};
+  sidebar.querySelectorAll('.nav-list a').forEach(link => {
+    const name = sectionNames[link.getAttribute('href')];
+    if (name) {
+      Array.from(link.childNodes).filter(node => node.nodeType === 3).forEach(node => {
+        if (node.textContent.trim()) node.textContent = ' ' + name;
+      });
+      link.setAttribute('aria-label', name);
+    }
+    if (link.getAttribute('href') === window.location.pathname.split('/').pop()) link.setAttribute('aria-current','page');
+  });
+
   const navigationLinks = Array.from(sidebar.querySelectorAll('.nav-list li a'));
   const navigationTitles = new Map(
     navigationLinks.map((link) => [link, link.getAttribute('title')])
@@ -77,7 +89,8 @@
     topbar.append(account);
     if (mobileLayout.matches) {
       sidebar.classList.remove('is-collapsed');
-      setToggleState(false);
+      sidebar.classList.add('is-collapsed');
+      setToggleState(true);
       topbar.insertBefore(brand, account);
       header.append(toggle);
     } else {

@@ -1,51 +1,36 @@
 <?php
-session_start();
-require_once __DIR__ . '/../includes/db_connect.php';
-require_once __DIR__ . '/../includes/approved-user-session.php';
+require_once __DIR__ . '/../includes/session.php';
 header('Content-Type: application/json');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-
-function fail(int $code, string $message): void
-{
-    http_response_code($code);
-    echo json_encode(['error' => $message]);
-    exit;
-}
-
-if (!requireApprovedUserSession($pdo)) {
-    fail(401, 'not_logged_in');
-}
-
-$isLibraryStaff = isset($_SESSION['admin_id']) || (
-    isset($_SESSION['user_id']) && ($_SESSION['role'] ?? '') === 'librarian'
-);
-if (!$isLibraryStaff) {
-    fail(403, 'forbidden');
-}
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    fail(405, 'method_not_allowed');
-}
-
-$date = trim((string) ($_GET['date'] ?? date('Y-m-d')));
-$parsedDate = DateTime::createFromFormat('!Y-m-d', $date);
-if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) {
-    fail(422, 'Enter a valid attendance date.');
-}
-
+header('Cache-Control: no-store');
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/attendance.php';
 try {
-    $recordsQuery = $pdo->prepare(
-        'SELECT id, student_name, year_level, section, time_in
-         FROM attendance
-         WHERE time_in >= :start_time AND time_in < :end_time
-         ORDER BY time_in DESC, id DESC'
-    );
-    $recordsQuery->execute([
-        'start_time' => $date . ' 00:00:00',
-        'end_time' => (new DateTime($date))->modify('+1 day')->format('Y-m-d') . ' 00:00:00',
-    ]);
-
-    echo json_encode(['records' => $recordsQuery->fetchAll()]);
-} catch (PDOException $exception) {
-    error_log('Could not load attendance records: ' . $exception->getMessage());
-    fail(500, 'Could not load attendance records. Please try again.');
-}
+    attendanceAccess($pdo, 'GET');
+    $today = $pdo->query('SELECT CURDATE()')->fetchColumn();
+    $date = attendanceText($_GET['date'] ?? $today, 10);
+    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+    if (!$parsed || $parsed->format('Y-m-d') !== $date || $date < '1000-01-01' || $date > '9999-12-30') throw new DomainException('Enter a valid attendance date.', 422);
+    $search = attendanceText($_GET['search'] ?? '', 100, false);
+    $view = $_GET['view'] ?? 'all';
+    if ($view !== 'all') throw new DomainException('Attendance is Time In only. Reload the page to use date and name filters.', 422);
+    $where = 'time_in >= :start AND time_in < :end';
+    $params = ['start'=>$date . ' 00:00:00','end'=>$parsed->modify('+1 day')->format('Y-m-d') . ' 00:00:00'];
+    if ($search !== '') {
+        $like = '%' . str_replace(['!','%','_'], ['!!','!%','!_'], $search) . '%';
+        $where .= " AND (student_name LIKE :name ESCAPE '!' OR student_identifier LIKE :identifier ESCAPE '!')";
+        $params['name']=$like; $params['identifier']=$like;
+    }
+    // Read one consistent snapshot so summary, policy and records agree.
+    $pdo->beginTransaction();
+    $settings = attendanceSettings($pdo);
+    $stmt = $pdo->prepare('SELECT id,user_id,student_name,year_level,section,student_identifier,year_section_snapshot,
+        time_in
+        FROM attendance WHERE ' . $where . ' ORDER BY time_in DESC,id DESC');
+    $stmt->execute($params);
+    $records = $stmt->fetchAll();
+    $summary = attendanceCounts($pdo,$date);
+    $todaySummary = attendanceCounts($pdo,$today);
+    $pdo->commit();
+    echo json_encode(['records'=>$records,'date'=>$date,'serverToday'=>$today,'timezone'=>'Asia/Manila','summary'=>$summary,
+        'today'=>$todaySummary,'settings'=>$settings,'csrfToken'=>bookCsrfToken(),'formToken'=>attendanceFormToken()]);
+} catch (Throwable $exception) { attendanceFailure($pdo, $exception); }

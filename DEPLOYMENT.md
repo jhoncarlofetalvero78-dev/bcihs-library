@@ -1,5 +1,8 @@
 # InfinityFree deployment
 
+For MAMP/XAMPP development, use [LOCAL_SETUP.md](LOCAL_SETUP.md). Do not upload
+the development `includes/db-local.php` file or the local `scripts/` directory.
+
 InfinityFree cannot connect to the MySQL server inside your local XAMPP
 installation. Export the local database and import it into the MySQL database
 created in the InfinityFree control panel.
@@ -16,18 +19,21 @@ Apache rather than opening the HTML files directly.
    `if0_43204300`. Verify they still match the panel if the database is
    recreated or renamed.
 2. Set `BCIHS_DB_HOST`, `BCIHS_DB_NAME`, `BCIHS_DB_USER`, and `BCIHS_DB_PASS`
-   to the live database credentials in the PHP environment. If the host does
-   not support environment variables, replace the local fallback values in
-   `includes/db_connect.php` privately before uploading; do not commit or share
-   the password. The connection defaults in that file are for local XAMPP
+   to the live database credentials in the PHP environment. `BCIHS_DB_PORT`
+   can optionally select a non-default MySQL port. If the host does not
+   support environment variables, create a separate private deployment copy
+   of `includes/db-local.php` using the example's format and the hosting panel's
+   values. Never upload development credentials or commit the private file.
+   Environment variables override the private file. The defaults are for local XAMPP
    (`localhost`, `bcihs_library`, `root`, and an empty password).
 3. In phpMyAdmin, select the database created by InfinityFree. Import a copy of
    `sql/schema (2).sql` after removing its `CREATE DATABASE` and
    `USE bcihs_library` statements; InfinityFree supplies the database and uses
    its assigned, prefixed name.
 4. The supplied schema already defines account approval and reservation return
-   fields. Run `sql/password-reset-migration.sql` against the selected database
-   (remove its `USE bcihs_library` statement first). For an older existing
+   fields. Review the password-reset flow and column findings in `LOCAL_SETUP.md`
+   before considering `sql/password-reset-migration.sql`; it belongs to the older
+   OTP flow and is not required for admin login. For an older existing
    database, check its columns before applying
    `sql/account-approval-migration.sql`,
    `sql/reservation-return-migration.sql`, or
@@ -47,10 +53,12 @@ Apache rather than opening the HTML files directly.
 5. Confirm the PHP account has access to the selected database and that the
    `users` table exists. Registration requires `student_id`, `year_section`,
    `id_number`, `department`, `phone`, `password_hash`, and `role` columns.
-6. Select the target database and run `sql/admin-account.sql` to create or
-   update the `libraryadmin` login. The script stores a password hash; running
-   it again resets that account's password. Change the seeded password before
-   exposing a public deployment.
+6. Do not run `sql/admin-account.sql` for a new administrator: it contains a
+   predefined hash and resets an existing `libraryadmin` account when rerun.
+   A production administrator needs a unique, privately chosen password stored
+   using PHP's `password_hash()`; arrange secure provisioning for the hosting
+   environment separately. The CLI procedure in `LOCAL_SETUP.md` is for local
+   development only and deliberately refuses remote database hosts.
 
 ## Configure Semaphore SMS
 
@@ -71,10 +79,11 @@ form, and inspect the `backend/register-process.php` response and status. A redi
 back to the form with “Registration could not be completed” means the SQL
 operation failed. Check the InfinityFree account's PHP error log for the
 corresponding `Registration database operation failed` or `Database connection
-failed` entry. The full PDO error is logged server-side and is deliberately not
-shown to visitors.
+failed` entry. Connection failures log a generic message; verify the private
+settings and service in that case. Registration query failures still use the
+existing server-side diagnostics and are deliberately not shown to visitors.
 
-Common log messages:
+Common registration query log messages (connection logs are generic):
 
 - **Access denied**: the database username or password is wrong, or the user
   was not granted access to that database.

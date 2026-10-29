@@ -6,12 +6,14 @@
       const name = data.username || 'Admin';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
+      document.querySelector('.account-role').textContent=data.role==='librarian'?'LIBRARIAN':'ADMINISTRATOR';
     })
     .catch(() => {});
 
   const toast = document.getElementById('toast');
   let toastTimer;
   function showToast(msg) {
+    window.libraryUI?.dialogFeedback?.(msg);
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
@@ -22,6 +24,8 @@
   });
 
   let allUsers = [];
+  let csrfToken = '';
+  let serverDate = '', currentUserId=null, busy=false, pendingAction=null;
 
   function findUser(id) {
     return allUsers.find(user => String(user.id) === String(id));
@@ -30,7 +34,7 @@
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function roleGroup(role) {
@@ -61,21 +65,23 @@
       const userId = (u.student_id || '') + (u.id_number || '');
       return `
         <tr>
-          <td>${userId || '—'}</td>
+          <td>${escapeHtml(userId || '—')}</td>
           <td>${escapeHtml(u.full_name)}</td>
           <td><span class="type-pill ${escapeHtml(u.role)}">${escapeHtml(roleLabels[group] || u.role)}</span></td>
           <td>${escapeHtml(detailsFor(u))}</td>
           <td>${escapeHtml(u.phone) || '—'}</td>
           <td><span class="status-pill ${escapeHtml(u.account_status)}">${escapeHtml(accountStatusLabel(u.account_status).toUpperCase())}</span></td>
-          <td>
+          <td><div class="user-actions" role="group" aria-label="Account actions">
             ${u.account_status !== 'accepted' ? `<button class="action-btn approve" title="Approve account" onclick="setAccountStatus(${u.id}, 'accepted')">Approve</button>` : ''}
-            <button class="action-btn reject" title="Reject account" onclick="setAccountStatus(${u.id}, 'rejected')" ${u.account_status === 'accepted' || u.account_status === 'rejected' ? 'disabled' : ''}>Reject</button>
-            <button class="action-btn view" title="View" onclick="viewUser(${u.id})">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            ${u.account_status === 'pending' ? `<button class="action-btn reject" title="Reject pending account" onclick="setAccountStatus(${u.id}, 'rejected')">Reject</button>` : ''}
+            <button class="action-btn view" aria-label="View account details" title="View account details" onclick="viewUser(${u.id})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>View
             </button>
-            <button class="action-btn delete" title="Delete" onclick="deleteUser(${u.id})">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+            <button class="action-btn delete" title="Delete" onclick="deleteUser(${u.id})" ${Number(u.has_history) || String(u.id)===String(currentUserId) ? 'disabled aria-label="Deletion unavailable: linked history or your own account"' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>Delete
             </button>
+            </div>
+            ${Number(u.has_history)?'<small class="history-note">History linked — deletion unavailable</small>':''}
           </td>
         </tr>
       `;
@@ -87,8 +93,10 @@
     const role = document.getElementById('roleFilter').value;
     const filtered = allUsers.filter(u => {
       if (role && roleGroup(u.role) !== role) return false;
+      const status=document.getElementById('statusFilter').value;
+      if(status && u.account_status!==status)return false;
       if (!q) return true;
-      const haystack = [u.full_name, (u.student_id || '') + (u.id_number || '')]
+      const haystack = [u.full_name,u.student_id,u.id_number,u.email]
         .filter(Boolean).join(' ').toLowerCase();
       return haystack.includes(q);
     });
@@ -98,16 +106,16 @@
   }
 
   function formatDateTime(mysqlDatetime) {
-    if (!mysqlDatetime) return 'Never';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    if (!mysqlDatetime) return 'Not recorded';
+    const d = new Date(mysqlDatetime.replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone:'Asia/Manila' });
   }
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = new Date(mysqlDatetime.replace(' ', 'T')+'+08:00');
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
 
   window.viewUser = function(id) {
@@ -150,55 +158,43 @@
     if (e.target.id === 'modalOverlay') e.target.classList.remove('show');
   });
 
-  window.deleteUser = function(id) {
-    const u = findUser(id);
-    if (!u) return;
-    if (!confirm(`Delete "${u.full_name}"? This also removes their borrow request history and can't be undone.`)) return;
-
-    fetch('backend/user-delete.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ id })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) { showToast('User deleted.'); loadUsers(); }
-        else { showToast(data.error || 'Could not delete that user.'); }
-      })
-      .catch(() => showToast('Could not reach the server.'));
-  };
-
-  window.setAccountStatus = function(id, status) {
-    const user = findUser(id);
-    if (!user || !['accepted', 'rejected'].includes(status)) return;
-    if (status === 'rejected' && !confirm(`Reject ${user.full_name}'s account? They will not be able to sign in.`)) return;
-
-    fetch('backend/user-approval-action.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ id, status })
-    })
-      .then(async res => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not update the account.');
-        return data;
-      })
-      .then(data => {
-        if (!data.success) throw new Error(data.error || 'Could not update the account.');
-        if (data.status !== status) throw new Error('Account status was not updated.');
-        showToast(`Account ${status === 'accepted' ? 'approved' : status}.`);
-        loadUsers();
-      })
-      .catch(err => showToast(err.message || 'Could not reach the server.'));
-  };
+  function askAction(id,status) {
+    const user=findUser(id);if(!user || busy)return;
+    pendingAction={id,status};
+    const confirmButton=document.getElementById('confirmAccountAction');
+    confirmButton.classList.toggle('ui-danger',status!=='accepted');
+    confirmButton.textContent=status==='accepted'?'Approve account':status==='rejected'?'Reject account':'Delete account';
+    document.getElementById('accountActionPrompt').textContent=status
+      ? `${status==='accepted'?'Approve':'Reject'} ${user.full_name}'s account? ${status==='accepted'?'This permits portal access.':'This prevents portal access.'}`
+      : `Permanently delete ${user.full_name}'s account? Only accounts without linked library or audit history can be removed.`;
+    document.getElementById('accountConfirmation').hidden=false;
+    document.getElementById('confirmAccountAction').focus();
+  }
+  window.deleteUser=id=>askAction(id,null);
+  window.setAccountStatus=(id,status)=>{if(['accepted','rejected'].includes(status))askAction(id,status);};
+  document.getElementById('cancelAccountAction').addEventListener('click',()=>{pendingAction=null;document.getElementById('accountConfirmation').hidden=true;});
+  document.getElementById('confirmAccountAction').addEventListener('click',async()=>{
+    if(!pendingAction || busy)return;
+    const {id,status}=pendingAction;busy=true;
+    document.getElementById('confirmAccountAction').disabled=true;
+    document.getElementById('cancelAccountAction').disabled=true;
+    try {
+      const response=await fetch(`backend/${status?'user-approval-action':'user-delete'}.php`,{
+        method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:JSON.stringify(status?{id,status}:{id})
+      });
+      const data=await response.json();if(!response.ok)throw new Error(data.error || 'Could not save account action.');
+      document.getElementById('accountConfirmation').hidden=true;pendingAction=null;
+      showToast(status?`Account ${status==='accepted'?'approved':'rejected'}.`:'Account deleted.');
+      await loadUsers();
+    }catch(error){showToast(error.message || 'Could not reach the server.');}
+    finally{busy=false;document.getElementById('confirmAccountAction').disabled=false;document.getElementById('cancelAccountAction').disabled=false;}
+  });
 
   // ---- SVG bar chart: new registrations per month, grouped by role ----
   function renderChart(users) {
     const colors = { student: '#2f8fe0', teacher: '#e8792f', librarian: '#6b2fd0', visitor: '#a52fe0' };
     const months = [];
-    const now = new Date();
+    const now = new Date((serverDate || '2000-01-01')+'T12:00:00');
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({ key: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'), label: d.toLocaleDateString(undefined, { month: 'short' }) });
@@ -213,7 +209,8 @@
       if (idx !== -1) counts[group][idx]++;
     });
 
-    const maxVal = Math.max(1, ...Object.values(counts).flat());
+    const highestCount = Math.max(0, ...Object.values(counts).flat());
+    const maxVal = Math.max(4, Math.ceil(highestCount / 4) * 4);
     const roles = Object.keys(counts);
 
     const svgW = 460, svgH = 210;
@@ -286,19 +283,20 @@
       })
       .then(data => {
         allUsers = data.users || [];
+        csrfToken = data.csrfToken || '';serverDate=data.serverDate;currentUserId=data.currentUserId;
 
         const group = { student: 0, teacher: 0, librarian: 0, visitor: 0 };
-        let active = 0;
+        let approved = 0;
         allUsers.forEach(u => {
           const g = roleGroup(u.role);
           if (group[g] !== undefined) group[g]++;
-          if (u.last_login) active++;
+          if (u.account_status === 'accepted') approved++;
         });
         document.getElementById('countStudent').textContent = group.student;
         document.getElementById('countTeacher').textContent = group.teacher;
         document.getElementById('countLibrarian').textContent = group.librarian;
         document.getElementById('countVisitor').textContent = group.visitor;
-        document.getElementById('countActive').textContent = active;
+        document.getElementById('countActive').textContent = approved;
 
         renderChart(allUsers);
 
@@ -309,11 +307,16 @@
       })
       .catch(err => {
         if (err.message === 'not_logged_in') { window.location.href = 'admin-login.html'; return; }
-        document.getElementById('loadingMsg').textContent = 'Something went wrong loading users.';
+        allUsers=[];document.getElementById('usersBody').innerHTML='';
+        document.getElementById('countBadge').style.display='none';
+        document.getElementById('usersTable').style.display='none';
+        document.getElementById('loadingMsg').style.display='block';
+        document.getElementById('loadingMsg').textContent = 'Could not load users. Reload to retry.';
       });
   }
 
   document.getElementById('searchInput').addEventListener('input', applyFilters);
   document.getElementById('roleFilter').addEventListener('change', applyFilters);
+  document.getElementById('statusFilter').addEventListener('change',applyFilters);
 
 loadUsers();

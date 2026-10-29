@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports | BCIHS Library</title>
-<link rel="stylesheet" href="css/reports.css?v=20261024-borrowing-table-spacing">
+<link rel="stylesheet" href="css/reports.css?v=20261029-client">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
+<link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
+<link rel="stylesheet" href="css/statistical-report.css">
 </head>
-<body>
+<body class="admin-page reports-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -81,138 +87,55 @@
   </header>
 
   <main>
-    <div class="page-head">
-      <div class="page-head-left">
-        <div class="page-head-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></svg>
-        </div>
-        <div>
-          <h1>Reports</h1>
-          <p>A snapshot of book circulation, patrons, and borrowing activity.</p>
-        </div>
-      </div>
-      <button class="print-btn" id="printBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 14H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>
-        Print Report
-      </button>
+    <div class="page-head"><div><h1>Reports</h1><p>Library records and current statistics. Existing reports and separate official school statistical outputs.</p></div><div class="report-actions"><button class="print-btn" id="exportReport" disabled>Export CSV</button><button class="print-btn" id="printBtn" disabled>Print Report</button></div></div>
+    <form class="report-filters" id="reportFilters" aria-label="Report filters">
+      <div class="date-filter"><label for="reportType">Report</label><select id="reportType">
+        <option value="inventory">Book Inventory</option><option value="loans">Checkouts</option><option value="returns">Returns</option><option value="requests">Borrow Requests</option><option value="overdue">Overdue Loans</option><option value="reservations">Reservations</option><option value="attendance">Attendance</option><option value="users">User Statistics</option>
+      </select></div>
+      <div class="date-filter"><label for="reportPreset">Period</label><select id="reportPreset"><option value="today">Today</option><option value="week">This week (Mon–Sun)</option><option value="month" selected>This month</option><option value="custom">Custom range</option></select></div>
+      <div class="date-filter"><label for="reportDateFrom">From (PHT)</label><input type="date" id="reportDateFrom" min="1000-01-01" max="9999-12-30" disabled></div>
+      <div class="date-filter"><label for="reportDateTo">To (PHT)</label><input type="date" id="reportDateTo" min="1000-01-01" max="9999-12-30" disabled></div>
+      <div class="date-filter" id="reservationBasisField" hidden><label for="reportBasis">Reservation date basis</label><select id="reportBasis"><option value="created_at">Creation date</option><option value="pickup_at">Scheduled pickup date</option></select></div>
+      <div class="date-filter"><label for="reportStatus">Status</label><select id="reportStatus"><option value="all">All statuses</option></select></div>
+      <div class="date-filter"><label for="reportSearch">Search this report</label><input id="reportSearch" type="search" maxlength="100" placeholder="Title, name, ID or role"></div>
+      <button class="apply-filter-btn" id="applyFilterBtn" type="submit">Show Report</button>
+    </form>
+    <p id="filterError" class="filter-error" role="alert" hidden></p>
+    <p id="loadingMsg" class="loading-msg" role="status" aria-live="polite">Loading report…</p>
+    <div id="reportContent" hidden>
+      <div class="report-print-heading"><h2 id="reportTitle"></h2><p id="reportPeriod"></p><p id="reportScope"></p><p id="reportGenerated"></p></div>
+      <p id="reportWarning" role="status" hidden></p>
+      <div class="stat-grid" id="reportSummary"></div>
+      <div class="panel borrowing-panel"><p class="report-scroll-hint">On small screens, scroll the table sideways for more columns.</p><div class="borrowing-table-wrap"><table class="borrowing-table"><thead id="reportHead"></thead><tbody id="reportBody"></tbody></table></div></div>
+      <section class="panel borrowing-panel" id="topBooksPanel" hidden><h2>Most Borrowed Books</h2><p>Ranked by actual checkouts matching the displayed filters.</p><ol id="topBooksList"></ol></section>
+      <section class="panel" id="attendanceDaily" hidden><h2>Daily attendance totals</h2><p>Matching visits grouped by Philippine Time In date.</p><div id="dailyTotals"></div></section>
     </div>
-
-    <p class="loading-msg" id="loadingMsg">Loading report data...</p>
-
-    <section class="report-filters" id="reportFilters" aria-label="Report date range">
-      <div class="date-filter">
-        <label for="reportDateFrom">From</label>
-        <input type="date" id="reportDateFrom">
-      </div>
-      <div class="date-filter">
-        <label for="reportDateTo">To</label>
-        <input type="date" id="reportDateTo">
-      </div>
-      <button type="button" class="apply-filter-btn" id="applyFilterBtn">Show Report</button>
-      <p class="filter-error" id="filterError" role="alert" hidden></p>
-      <p class="report-period" id="reportPeriod" aria-live="polite"></p>
+  <section class="panel official-controls" aria-labelledby="officialHeading">
+      <h2 id="officialHeading">Official School Statistical Reports</h2>
+      <p>Monthly circulation counts actual checkout transactions, including reservation loans and returned books in their checkout month. It is not current inventory. School year is a report label; confirm it with the librarian.</p>
+      <form id="officialFilters" class="report-filters">
+        <div class="date-filter"><label for="officialMonth">Report month</label><input id="officialMonth" type="month" min="1001-01" max="9998-12" aria-describedby="officialMonthHelp" required><small id="officialMonthHelp">The table shows this month. The comparison chart ends with this month.</small></div>
+        <div class="date-filter"><label for="officialMonths">Months in comparison chart</label><input id="officialMonths" type="number" min="1" max="12" step="1" value="3" aria-describedby="officialMonthsHelp" required><small id="officialMonthsHelp">Include the report month and the months immediately before it (1–12 months).</small></div>
+        <div class="date-filter"><label for="officialYear">School year</label><input id="officialYear" pattern="[0-9]{4}-[0-9]{4}" placeholder="YYYY-YYYY" aria-describedby="officialYearHelp" required><small id="officialYearHelp">A report heading only. Confirm the school year with the librarian.</small></div>
+        <button type="submit" class="apply-filter-btn" id="officialLoad">Show official reports</button>
+      </form>
+      <p id="officialPeriodPreview" role="status" aria-live="polite"></p>
+      <p id="officialMessage" role="status" aria-live="polite"></p>
+      <div class="report-actions"><button type="button" class="print-btn" id="officialExcel" disabled>Export formatted Excel (.xlsx)</button><button type="button" class="print-btn" id="officialCsv" disabled>Raw circulation CSV</button><button type="button" class="print-btn" id="officialPrint" disabled>Print official table and chart</button></div>
+      <details><summary>Configure report signatories (staff only)</summary><p>Enter verified current names/titles. Blank is allowed; example officeholders are not prefilled. Settings apply to future exports only.</p><form id="signatoryForm" class="report-filters"></form><p id="signatoryMessage" role="status"></p></details>
     </section>
-
-    <div id="reportContent" class="extracted-style-1">
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 4.5c2.5-1.3 5-1.3 7.5 0v14c-2.5-1.3-5-1.3-7.5 0v-14z"/><path d="M19.5 4.5c-2.5-1.3-5-1.3-7.5 0v14c2.5-1.3 5-1.3 7.5 0v-14z"/></svg></div>
-          <div><div class="stat-label">Books Added</div><div class="stat-value" id="statBooks">...</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="17" cy="8" r="2.6"/><path d="M14.5 13.5c2.3.3 4 2.2 4 5.3"/></svg></div>
-          <div><div class="stat-label">Patrons Registered</div><div class="stat-value" id="statPatrons">...</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v3h8V3M8 10h8M8 14h5"/></svg></div>
-          <div><div class="stat-label">Borrow Requests</div><div class="stat-value" id="statTransactions">...</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
-          <div><div class="stat-label">Announcements Posted</div><div class="stat-value" id="statAnnouncements">...</div></div>
-        </div>
-      </div>
-
-      <div class="report-grid">
-        <div class="panel">
-          <h2>Most Borrowed Books</h2>
-          <p class="panel-sub">Ranked by checkouts recorded during the selected date range.</p>
-          <div id="topBooksHolder"></div>
-        </div>
-
-        <div class="panel">
-          <h2>Borrowing Activity</h2>
-          <p class="panel-sub">Current outcomes for requests submitted during the selected date range.</p>
-          <div class="summary-list" id="activitySummary"></div>
-        </div>
-      </div>
-
-      <div class="panel borrowing-panel">
-        <h2>List of Books Borrowed</h2>
-        <p class="panel-sub">Borrowing and return period for checkouts during the selected date range, including fulfilled reservations.</p>
-        <div class="borrowing-table-wrap">
-          <table class="borrowing-table">
-            <thead>
-              <tr><th>Borrower</th><th>Book Title</th><th>Borrowed On</th><th>Due Date</th><th>Returned On</th><th>Period</th><th>Status</th></tr>
-            </thead>
-            <tbody id="borrowingsBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel borrowing-panel">
-        <h2>List of Overdue Books</h2>
-        <p class="panel-sub">Books that are still borrowed and past their due date, based on the selected borrowing date range.</p>
-        <div class="borrowing-table-wrap">
-          <table class="borrowing-table">
-            <thead>
-              <tr><th>Borrower</th><th>Book Title</th><th>Borrowed On</th><th>Due Date</th><th>Days Overdue</th></tr>
-            </thead>
-            <tbody id="overdueBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="report-grid">
-        <div class="panel">
-          <h2>Users</h2>
-          <p class="panel-sub">Registered users in the selected date range.</p>
-          <div class="borrowing-table-wrap">
-            <table class="borrowing-table">
-              <thead>
-                <tr><th>Name</th><th>Role</th><th>Year / Section</th><th>Registered On</th></tr>
-              </thead>
-              <tbody id="usersBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel borrowing-panel">
-        <h2>Book Inventory</h2>
-        <p class="panel-sub">Current copy counts for all books in the library.</p>
-        <div class="borrowing-table-wrap">
-          <table class="borrowing-table">
-            <thead>
-              <tr><th>Book Title</th><th>Author</th><th>Total</th><th>Borrowed</th><th>Available</th></tr>
-            </thead>
-            <tbody id="inventoryBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Patrons by Role</h2>
-        <p class="panel-sub">Distribution of patrons registered during the selected date range.</p>
-        <div id="chartHolder"></div>
-        <div id="chartLegend" class="extracted-style-2"></div>
-      </div>
-
+    <div id="officialOutput" hidden>
+      <section class="official-page"><h2>STATISTICAL REPORT</h2><h3 id="officialTableMonth"></h3><h3 class="officialSchoolYear"></h3><p>Monthly circulated books · checkout transactions</p><div class="ui-table-scroll"><table class="official-table"><thead><tr><th>CLASSIFICATION</th><th>QUANTITY</th><th>RANK</th></tr></thead><tbody id="officialRows"></tbody><tfoot><tr><th>TOTAL</th><th id="officialTotal"></th><th></th></tr></tfoot></table></div><p id="officialRanking"></p><div class="official-signatories"></div></section>
+      <section class="official-page"><h2>STATISTICAL REPORT IN CHART</h2><h3 id="officialChartMonth"></h3><h3 class="officialSchoolYear"></h3><h3>CIRCULATED BOOKS</h3><div id="officialChart" class="ui-table-scroll"></div><div class="official-signatories"></div><p id="officialMetric"></p></section>
     </div>
   </main>
 </div>
 
-<script src="js/reports.js?v=20261026-report-sections"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/borrowing-status.js?v=20261027-phase2b"></script>
+<script src="js/reporting.js?v=20261029-client"></script>
+<script src="js/statistical-report.js?v=20261029-client"></script>
+<script src="js/reports.js?v=20261029-client"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

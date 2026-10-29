@@ -1,3 +1,4 @@
+let profileCsrfToken="";
 
   /* ===== DATA MODEL ===== */
   // Default profile data per role; replaced when backend responds
@@ -12,7 +13,7 @@
     department: '',
     email: '',
     phone: '',
-    address: 'Batangas City, Philippines'
+    address: ''
   };
 
   // Field definitions per role (matching register forms)
@@ -25,15 +26,13 @@
         { key: 'section', label: 'Section', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'grade_level', label: 'Grade Level', type: 'text' },
         { key: 'section', label: 'Section', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Grade Level',
       sectionLabel: 'Section'
@@ -45,14 +44,12 @@
         { key: 'department', label: 'Department / Faculty', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Department',
       sectionLabel: 'Section'
@@ -64,14 +61,12 @@
         { key: 'department', label: 'Department / Faculty', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Department',
       sectionLabel: 'Section'
@@ -83,14 +78,12 @@
         { key: 'department', label: 'Department / Faculty', icon: 'home' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'department', label: 'Department / Faculty', type: 'text' },
-        { key: 'email', label: 'Email Address', type: 'email' },
+
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Department',
       sectionLabel: 'Section'
@@ -100,13 +93,11 @@
         { key: 'full_name', label: 'Full Name', icon: 'user' },
         { key: 'email', label: 'Email Address', icon: 'mail' },
         { key: 'phone', label: 'Phone Number', icon: 'phone' },
-        { key: 'address', label: 'Address', icon: 'map' }
       ],
       editFields: [
         { key: 'full_name', label: 'Full Name', type: 'text', required: true },
         { key: 'email', label: 'Email Address', type: 'email', required: true },
         { key: 'phone', label: 'Phone Number', type: 'tel', required: true },
-        { key: 'address', label: 'Address', type: 'text' }
       ],
       gradeLabel: 'Email',
       sectionLabel: 'Address'
@@ -132,7 +123,7 @@
 function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str == null ? '' : String(str);
-  return d.innerHTML;
+  return d.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
 function showToast(msg){
@@ -154,6 +145,7 @@ tabBtns.forEach(btn => {
     btn.classList.add('active');
     btn.setAttribute('aria-selected','true');
     document.getElementById('panel' + target.charAt(0).toUpperCase() + target.slice(1)).classList.add('active');
+    if (target === 'borrowingHistory') loadBorrowingHistory();
   });
 });
 
@@ -183,7 +175,7 @@ function populateForm(){
       phoneInput.value = window.philippineMobilePhone.format(phoneInput.value);
     });
   }
-  document.getElementById('cancelEditBtn').addEventListener('click', () => editModal.classList.remove('show'));
+  document.getElementById('cancelEditBtn').addEventListener('click', () => { if (!document.getElementById('saveEditBtn')?.disabled) editModal.classList.remove('show'); });
   document.getElementById('editForm').addEventListener('submit', handleSave);
 }
 
@@ -242,6 +234,7 @@ const editBtn = document.getElementById('editProfileBtn');
 
 function handleSave(e){
   e.preventDefault();
+  if (document.getElementById('saveEditBtn').disabled) return;
   const phoneInput = document.getElementById('edit_phone');
   const normalizedPhone = phoneInput
     ? window.philippineMobilePhone.normalize(phoneInput.value)
@@ -254,8 +247,10 @@ function handleSave(e){
 
   const saveBtn = document.getElementById('saveEditBtn');
   saveBtn.disabled = true;
+  document.getElementById('cancelEditBtn').disabled = true;
   saveBtn.textContent = 'Saving…';
 
+  const originalProfile={...profileData};
   const fields = getRoleFields(profileData.role).editFields;
   fields.forEach(f => {
     profileData[f.key] = document.getElementById('edit_' + f.key).value.trim();
@@ -264,16 +259,13 @@ function handleSave(e){
     profileData.phone = window.philippineMobilePhone.format(normalizedPhone);
   }
 
-  renderDetails();
-  editModal.classList.remove('show');
-  showToast('Profile updated successfully.');
+  // Render saved values only after the server confirms success.
 
   // Persist to PHP backend if available
   const payload = new URLSearchParams();
   payload.append('full_name', profileData.full_name);
   payload.append('phone', normalizedPhone || profileData.phone);
   payload.append('email', profileData.email);
-  payload.append('address', profileData.address);
   if (profileData.role === 'student') {
     payload.append('year_section', (profileData.grade_level || '') + ' — ' + (profileData.section || ''));
    } else if (profileData.role === 'teacher' || profileData.role === 'librarian' || profileData.role === 'admin') {
@@ -283,37 +275,27 @@ function handleSave(e){
   fetch('backend/profile-update.php', {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token':profileCsrfToken },
     body: payload.toString()
   })
   .then(res => res.json())
   .then(data => {
-    if (data.success) showToast(data.message);
-    else showToast(data.message || 'Profile updated locally.');
+    if (!data.success) throw new Error(data.message || 'Could not save your profile.');
+    renderDetails();editModal.classList.remove('show');showToast(data.message);
   })
-  .catch(() => {
-    /* Backend unavailable — data persisted locally */
-  })
+  .catch(error => {Object.assign(profileData,originalProfile);showToast(error.message || 'Could not reach the server. Your profile was not saved.');})
   .finally(() => {
     saveBtn.disabled = false;
+    document.getElementById('cancelEditBtn').disabled = false;
     saveBtn.textContent = 'Save';
   });
 }
 
 editModal.addEventListener('click', (e) => {
-  if (e.target === editModal) editModal.classList.remove('show');
+  if (e.target === editModal && !document.getElementById('saveEditBtn')?.disabled) editModal.classList.remove('show');
 });
 
 /* ===== BORROWING HISTORY ===== */
-// Realistic sample library data
-const sampleBorrowingHistory = [
-  { book_title: 'To Kill a Mockingbird', author: 'Harper Lee', borrow_date: '2026-09-01', due_date: '2026-09-15', return_date: '2026-09-12', status: 'Returned' },
-  { book_title: '1984', author: 'George Orwell', borrow_date: '2026-09-10', due_date: '2026-09-24', return_date: '—', status: 'Borrowed' },
-  { book_title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', borrow_date: '2026-08-15', due_date: '2026-08-29', return_date: '2026-08-25', status: 'Returned' },
-  { book_title: 'Pride and Prejudice', author: 'Jane Austen', borrow_date: '2026-09-05', due_date: '2026-09-19', return_date: '—', status: 'Overdue' },
-  { book_title: 'Brave New World', author: 'Aldous Huxley', borrow_date: '2026-08-20', due_date: '2026-09-03', return_date: '2026-09-02', status: 'Returned' }
-];
-
 function renderBorrowingHistory(data){
   const container = document.getElementById('historyContent');
   if (!data || data.length === 0){
@@ -322,14 +304,14 @@ function renderBorrowingHistory(data){
     return;
   }
   const rows = data.map(row => {
-    const statusClass = row.status.toLowerCase();
+    const statusClass = row.status_code || row.status.toLowerCase();
     return `<tr>
-      <td><strong>${escapeHtml(row.book_title)}</strong></td>
-      <td>${escapeHtml(row.author)}</td>
-      <td>${escapeHtml(row.borrow_date)}</td>
-      <td>${escapeHtml(row.due_date)}</td>
-      <td>${escapeHtml(row.return_date)}</td>
-      <td><span class="status-badge ${statusClass}">${escapeHtml(row.status)}</span></td>
+      <td data-label="Book"><strong>${escapeHtml(row.book_title)}</strong></td>
+      <td data-label="Author">${escapeHtml(row.author)}</td>
+      <td data-label="Checked out">${escapeHtml(row.borrow_date)}</td>
+      <td data-label="Due">${escapeHtml(row.due_date)}</td>
+      <td data-label="Returned">${escapeHtml(row.return_date)}</td>
+      <td data-label="Status"><span class="status-badge ${statusClass}">${escapeHtml(row.status)}</span></td>
     </tr>`;
   }).join('');
   container.innerHTML = `
@@ -338,7 +320,7 @@ function renderBorrowingHistory(data){
         <tr>
           <th>Book Title</th>
           <th>Author</th>
-          <th>Borrow Date</th>
+          <th>Checked out</th>
           <th>Due Date</th>
           <th>Return Date</th>
           <th>Status</th>
@@ -355,9 +337,9 @@ function updateStats(data){
   if (data && data.length) {
     total = data.length;
     data.forEach(item => {
-      const s = (item.status || '').toLowerCase();
-      if (s === 'borrowed' || s === 'overdue' || s === 'pending' || s === 'approved') borrowed++;
-      else if (s === 'returned' || s === 'fulfilled') returned++;
+      const s = (item.status_code || item.status || '').toLowerCase();
+      if (borrowing.isCheckedOut(s)) borrowed++;
+      else if (s === 'returned') returned++;
     });
   }
   const statBorrowed = document.getElementById('statBorrowed');
@@ -369,6 +351,8 @@ function updateStats(data){
 }
 
 function loadBorrowingHistory(){
+  // Keep the pickup section current whenever this history is refreshed.
+  if (typeof loadPickupCodes === 'function') loadPickupCodes();
   fetch('backend/borrowing-history-data.php', { credentials: 'same-origin' })
     .then(res => {
       if (res.status === 401) throw new Error('not_logged_in');
@@ -381,16 +365,20 @@ function loadBorrowingHistory(){
       const mapped = requests.map(r => ({
         book_title: r.book_title || 'Unknown',
         author: r.author || '—',
-        borrow_date: r.requested_at || '—',
+        borrow_date: borrowing.loanStart(r) || '—',
         due_date: r.due_date || '—',
         return_date: r.returned_at || '—',
-        status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Unknown'
+        status_code: r.status,
+        status: borrowing.label(r.status)
       }));
       renderBorrowingHistory(mapped);
     })
     .catch(() => {
-      // Fallback to sample data when backend is unavailable
-      renderBorrowingHistory(sampleBorrowingHistory);
+      document.getElementById('historyContent').innerHTML = '<p class="empty-msg">Could not load your borrowing history. Please reload to try again.</p>';
+      ['statBorrowed','statReturned','statTotal'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = '—';
+      });
     });
 }
 
@@ -414,6 +402,7 @@ function loadBorrowingHistory(){
     .then(data => {
       if (data.loggedIn === false) throw new Error('not logged in');
       // Update profileData with backend values
+      profileCsrfToken=data.csrfToken || '';
       profileData.role = data.role || 'student';
       if (data.full_name) profileData.full_name = data.full_name;
       if (data.student_id) profileData.student_id = data.student_id;
@@ -432,20 +421,42 @@ function loadBorrowingHistory(){
           : data.phone;
       }
       renderDetails();
+      document.getElementById('editProfileBtn').disabled = !!data.readOnly;
+      if(data.readOnly)document.getElementById('editProfileBtn').title='Administrator credentials are managed separately.';
     })
     .catch(() => {
-      // Default to student role with sample data for display
-      profileData.role = 'student';
-      profileData.full_name = 'Maria Santos';
-      profileData.student_id = '2026-00142';
-      profileData.grade_level = 'Grade 10';
-      profileData.section = 'Rizal';
-      profileData.email = 'maria.santos@bcihs.edu.ph';
-      profileData.phone = '+63 912 345 6789';
-      profileData.address = 'Batangas City, Philippines';
-      renderDetails();
+      document.getElementById('profileName').textContent = 'Profile unavailable';
+      document.getElementById('profileGrade').textContent = 'Sign in or reload to try again.';
+      document.getElementById('profileId').textContent = '—';
+      document.getElementById('editProfileBtn').disabled = true;
+      document.getElementById('detailsGrid').innerHTML = '<p class="empty-msg" role="alert">Could not load your profile. Please sign in with your library account or reload to try again.</p>';
     });
 
   // Load borrowing history
   loadBorrowingHistory();
 })();
+
+
+function loadReservationHistory() {
+  const container = document.getElementById('reservationHistoryContent');
+  return fetch('backend/my-reservations-data.php', {credentials:'same-origin', cache:'no-store'})
+    .then(async response => {
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.reservations)) throw new Error('Could not load reservations.');
+      return data.reservations;
+    })
+    .then(rows => {
+      if (!rows.length) { container.innerHTML = '<p class="empty-msg">No reservation history yet.</p>'; return; }
+      const date = value => value ? escapeHtml(reservationScheduling.format(value)) : '—';
+      container.innerHTML = `<table class="history-table"><thead><tr><th>Book</th><th>Status</th><th>Preferred / confirmed pickup</th><th>Checked out</th><th>Due</th><th>Returned</th><th>Catalog</th></tr></thead><tbody>${rows.map(row => `
+        <tr><td><strong>${escapeHtml(row.book_title)}</strong></td>
+          <td><span class="status-badge ${escapeHtml(row.status)}">${escapeHtml(borrowing.label(row.status))}</span></td>
+          <td>${date(row.pickup_at)}</td><td>${date(row.fulfilled_at)}</td><td>${date(row.due_date)}</td><td>${date(row.returned_at)}</td>
+          <td><a class="reservation-history-link" href="browse-books.html?book=${Number(row.book_id)}">View book${['waiting','ready'].includes(row.status) ? ' / manage pickup' : ''}</a></td></tr>`).join('')}</tbody></table>`;
+    })
+    .catch(() => { container.innerHTML = '<p class="empty-msg" role="alert">Could not load reservation history. Reload to try again.</p>'; });
+}
+loadReservationHistory();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { loadBorrowingHistory(); loadReservationHistory(); }
+});

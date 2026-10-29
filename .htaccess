@@ -1,7 +1,18 @@
 <IfModule mod_headers.c>
-  <FilesMatch "^(admin-dashboard|attendance|borrow-requests|manage-announcements|manage-books|manage-users|reports|reservations|sms-logs|transactions)\.html$">
+  <FilesMatch "^(admin-login|pickup-verification|admin-dashboard|attendance|borrow-requests|manage-announcements|manage-books|manage-users|reports|reservations|sms-logs|transactions)\.html$">
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header set Pragma "no-cache"
     Header set Expires "0"
   </FilesMatch>
 </IfModule>
+
+Options -Indexes
+<FilesMatch "(?i)(^\.|\.(sql|bak|log|ini|env|toml)$)">
+  Require all denied
+</FilesMatch>
+
+<FilesMatch "^composer\.(json|lock)$">
+  Require all denied
+</FilesMatch>
+# Keep Composer/private dependencies blocked; js/vendor contains public QR assets.
+RedirectMatch 403 (?<!/js)/vendor/

@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Library Staff Login | BCIHS Library</title>
 <link rel="stylesheet" href="css/admin-login.css">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="auth-page">
 <header>
   <a class="brand" href="index.html">
     <div class="logo">
@@ -19,11 +23,11 @@
 <section class="login-hero">
   <form class="login-card" id="adminLoginForm" method="POST" action="backend/admin-login-process.php" novalidate>
     <h1>Staff Portal</h1>
-    <p class="subtitle">Sign in with your Library Admin credentials</p>
+    <p class="subtitle">Sign in with your authorized librarian or administrator account</p>
 
     <div class="field">
-      <label for="identifier">Username</label>
-      <input type="text" id="identifier" name="identifier" placeholder="Enter your username" autocomplete="username" required>
+      <label for="identifier">Staff ID, Username or Email</label>
+      <input type="text" id="identifier" name="identifier" placeholder="Staff ID, admin username, or registered email" autocomplete="username" required>
     </div>
 
     <div class="field">
@@ -58,6 +62,7 @@
   </form>
 </section>
 
-<script src="js/admin-login.js"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/admin-login.js?v=20261027-phase3b"></script>
 </body>
 </html>

@@ -4,37 +4,35 @@
     .then(data => {
       if (!data.loggedIn) { window.location.href = 'admin-login.html'; return; }
       const name = data.username || 'Admin';
+      document.querySelector('.account-role').textContent = data.role === 'librarian' ? 'LIBRARIAN' : 'ADMINISTRATOR';
       document.getElementById('adminName').textContent = name;
       document.getElementById('adminInitial').textContent = name.charAt(0).toUpperCase();
     })
     .catch(() => {});
 
-  document.querySelectorAll('[data-soon]').forEach(el => {
-    el.addEventListener('click', () => alert(`${el.dataset.soon} isn't wired up yet — coming soon.`));
-  });
 
   let allTx = [];
 
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str == null ? '' : str;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   }
 
   function formatDate(mysqlDatetime) {
     if (!mysqlDatetime) return '—';
-    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
 
   function durationFor(tx) {
-    if (tx.status === 'returned' && tx.approved_at && tx.returned_at) {
-      const days = Math.max(0, Math.round((new Date(tx.returned_at) - new Date(tx.approved_at)) / 86400000));
+    if (tx.status === 'returned' && borrowing.loanStart(tx) && tx.returned_at) {
+      const days = Math.max(0, Math.round((borrowing.date(tx.returned_at) - borrowing.date(borrowing.loanStart(tx))) / 86400000));
       return `<span class="duration-tag">${days} day${days === 1 ? '' : 's'}</span>`;
     }
-    if (tx.status === 'approved' && tx.approved_at) {
-      const days = Math.max(0, Math.round((Date.now() - new Date(tx.approved_at.replace(' ', 'T'))) / 86400000));
+    if (borrowing.isCheckedOut(tx.status) && borrowing.loanStart(tx)) {
+      const days = Math.max(0, Math.round((Date.now() - borrowing.date(borrowing.loanStart(tx))) / 86400000));
       return `<span class="duration-tag ongoing">${days} day${days === 1 ? '' : 's'} (ongoing)</span>`;
     }
     return '<span class="duration-tag">—</span>';
@@ -43,18 +41,19 @@
   function renderRows(rows) {
     const body = document.getElementById('txBody');
     if (rows.length === 0) {
-      body.innerHTML = '<tr><td colspan="8" class="empty-msg">No transactions match.</td></tr>';
+      body.innerHTML = '<tr><td colspan="9" class="empty-msg">No transactions match.</td></tr>';
       return;
     }
     body.innerHTML = rows.map(t => `
       <tr>
         <td>${escapeHtml(t.student_name)}</td>
-        <td>${escapeHtml(t.book_title)}</td>
+        <td>${escapeHtml(t.book_title)}${t.source === 'reservation' ? '<small class="availability-detail">Reservation</small>' : ''}</td>
         <td>${formatDate(t.requested_at)}</td>
         <td>${formatDate(t.approved_at)}</td>
+        <td>${formatDate(borrowing.loanStart(t))}</td>
         <td>${formatDate(t.due_date)}</td>
         <td>${formatDate(t.returned_at)}</td>
-        <td><span class="status-pill ${t.status}">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span></td>
+        <td><span class="status-pill ${t.status}">${borrowing.label(t.status)}</span></td>
         <td>${durationFor(t)}</td>
       </tr>
     `).join('');
@@ -67,7 +66,8 @@
     const to = document.getElementById('dateTo').value;
 
     const filtered = allTx.filter(t => {
-      if (status && t.status !== status) return false;
+      if (status === 'checked_out' && !borrowing.isCheckedOut(t.status)) return false;
+      if (status && status !== 'checked_out' && t.status !== status) return false;
       if (q && !([t.student_name, t.book_title].join(' ').toLowerCase().includes(q))) return false;
       const reqDate = (t.requested_at || '').slice(0, 10);
       if (from && reqDate < from) return false;
@@ -83,11 +83,15 @@
 
   function exportCsv() {
     const rows = applyFilters();
-    const header = ['Student Name', 'Book Title', 'Requested', 'Approved', 'Due Date', 'Returned', 'Status'];
+    const header = ['Student Name', 'Book Title', 'Requested', 'Approved', 'Checked Out', 'Due Date', 'Returned', 'Status'];
     const lines = [header.join(',')];
     rows.forEach(t => {
-      const cells = [t.student_name, t.book_title, t.requested_at || '', t.approved_at || '', t.due_date || '', t.returned_at || '', t.status]
-        .map(v => `"${String(v).replace(/"/g, '""')}"`);
+      const cells = [t.student_name, t.book_title, t.requested_at || '', t.approved_at || '', borrowing.loanStart(t) || '', t.due_date || '', t.returned_at || '', borrowing.label(t.status)]
+        .map(v => {
+          let text = String(v);
+          if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text) || /^[\t\r\n]/.test(text)) text = `'${text}`;
+          return `"${text.replace(/"/g, '""')}"`;
+        });
       lines.push(cells.join(','));
     });
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
@@ -100,7 +104,7 @@
   }
 
   function loadTransactions() {
-    return fetch('backend/borrow-requests-data.php', { credentials: 'same-origin' })
+    return fetch('backend/transactions-data.php', { credentials: 'same-origin' })
       .then(res => {
         if (res.status === 401) throw new Error('not_logged_in');
         if (!res.ok) throw new Error('failed');
@@ -110,7 +114,7 @@
         allTx = data.requests || [];
 
         document.getElementById('countTotal').textContent = allTx.length.toLocaleString();
-        document.getElementById('countBorrowed').textContent = allTx.filter(t => t.status === 'approved').length.toLocaleString();
+        document.getElementById('countBorrowed').textContent = allTx.filter(t => borrowing.isCheckedOut(t.status)).length.toLocaleString();
         document.getElementById('countReturned').textContent = allTx.filter(t => t.status === 'returned').length.toLocaleString();
         document.getElementById('countRejected').textContent = allTx.filter(t => t.status === 'rejected').length.toLocaleString();
 

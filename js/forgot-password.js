@@ -1,6 +1,6 @@
 
   const params = new URLSearchParams(window.location.search);
-  const allowedRoles = ['student', 'teacher', 'staff', 'employee', 'visitor'];
+  const allowedRoles = ['student', 'teacher', 'librarian', 'staff', 'employee', 'visitor'];
   let role = (params.get('role') || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!allowedRoles.includes(role)) role = '';
 
@@ -34,6 +34,8 @@
   const resetBtn     = document.getElementById('resetBtn');
 
   let lastPhone = '';
+  let requestingCode = false;
+  const resendBtn = document.getElementById('resendBtn');
 
   document.getElementById('phone').addEventListener('input', event => {
     const input = event.target;
@@ -75,8 +77,12 @@
   }
 
   function sendResetCode() {
-    requestMsg.className = 'msg';
-    requestMsg.textContent = '';
+    if (requestingCode || resetBtn.disabled) return;
+    requestingCode = true;
+    const feedback = resetForm.style.display === 'block' ? resetMsg : requestMsg;
+    feedback.className = 'msg';
+    feedback.textContent = 'Requesting a code…';
+    resendBtn.disabled = true;
     requestBtn.disabled = true;
     requestBtn.textContent = 'Sending…';
 
@@ -90,16 +96,18 @@
     })
       .then(parseJsonResponse)
       .then(data => {
-        requestMsg.className = 'msg success';
-        requestMsg.textContent = data.message;
+        resetMsg.className = 'msg success';
+        resetMsg.textContent = data.message;
         requestForm.style.display = 'none';
         resetForm.style.display = 'block';
       })
       .catch(err => {
-        requestMsg.className = 'msg error';
-        requestMsg.textContent = err.message;
+        feedback.className = 'msg error';
+        feedback.textContent = err.message;
       })
       .finally(() => {
+        requestingCode = false;
+        resendBtn.disabled = false;
         requestBtn.disabled = false;
         requestBtn.textContent = 'Send Reset Code';
       });
@@ -114,6 +122,7 @@
 
   resetForm.addEventListener('submit', e => {
     e.preventDefault();
+    if (resetBtn.disabled || requestingCode) return;
     resetMsg.className = 'msg';
     resetMsg.textContent = '';
 
@@ -128,6 +137,7 @@
     }
 
     resetBtn.disabled = true;
+    resendBtn.disabled = true;
     resetBtn.textContent = 'Resetting…';
 
     fetch('backend/reset-password-process.php', {
@@ -145,6 +155,7 @@
         resetMsg.className = 'msg error';
         resetMsg.textContent = err.message;
         resetBtn.disabled = false;
+        resendBtn.disabled = false;
         resetBtn.textContent = 'Reset Password';
       });
   });

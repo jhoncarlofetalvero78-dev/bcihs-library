@@ -25,8 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Student attendance records capture each manual time-in. Repeated entries
--- are permitted; the name and ID snapshot preserve history if a user is deleted.
+-- Attendance snapshots preserve visit details; departure tracking is optional.
 CREATE TABLE IF NOT EXISTS attendance (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id             INT UNSIGNED NULL,
@@ -35,6 +34,13 @@ CREATE TABLE IF NOT EXISTS attendance (
   section             VARCHAR(25)  NOT NULL,
   student_identifier  VARCHAR(50)  NULL,
   time_in             DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  year_section_snapshot VARCHAR(50) NULL,
+  tracks_departure TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  time_out DATETIME NULL,
+  submission_key CHAR(32) NULL,
+  submission_hash CHAR(64) NULL,
+  UNIQUE KEY uq_attendance_submission (submission_key),
+  INDEX idx_attendance_open (tracks_departure, time_out),
   INDEX idx_attendance_time_in (time_in),
   INDEX idx_attendance_user_time (user_id, time_in),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -101,8 +107,8 @@ CREATE TABLE IF NOT EXISTS books (
 -- ALTER TABLE books ADD COLUMN genre VARCHAR(100) NULL AFTER ddc;
 
 -- A patron's request to borrow a book, and the admin decision on it.
--- Approving a request increments the matching book's borrowed_copies;
--- marking it returned decrements it back down. user_id points at `users`
+-- Approval holds a copy for pickup; only explicit checkout increments borrowed_copies;
+-- marking a checked-out loan returned decrements it back down. user_id points at `users`
 -- when the patron has an account. Staff-entered records can store a typed
 -- borrower_name without creating a user account.
 -- approved_at/rejected_at/returned_at are separate columns (rather than one
@@ -113,16 +119,21 @@ CREATE TABLE IF NOT EXISTS borrow_requests (
   user_id        INT UNSIGNED  NULL,
   borrower_name  VARCHAR(150)  NULL,
   book_id        INT UNSIGNED  NOT NULL,
-  status         ENUM('pending','approved','rejected','returned') NOT NULL DEFAULT 'pending',
+  status         ENUM('pending','approved','rejected','returned','awaiting_pickup','checked_out') NOT NULL DEFAULT 'pending',
   requested_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   approved_at    TIMESTAMP     NULL,
+  checked_out_at TIMESTAMP     NULL,
   due_date       TIMESTAMP     NULL,
   rejected_at    TIMESTAMP     NULL,
   returned_at    TIMESTAMP     NULL,
+  pickup_token   CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  UNIQUE KEY uq_borrow_pickup_token (pickup_token),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Existing installations: apply sql/borrowing-lifecycle-migration.sql after backup.
+-- The legacy approved status means already checked out; new approvals use awaiting_pickup.
 -- If you already created this table with the old single `processed_at`
 -- column, run this instead:
 -- ALTER TABLE borrow_requests CHANGE processed_at approved_at TIMESTAMP NULL;
@@ -148,11 +159,9 @@ CREATE TABLE IF NOT EXISTS announcements (
   FOREIGN KEY (posted_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- A patron's place in line for a book that currently has zero copies
--- available (see borrow_requests for books that ARE available — reservations
--- are only for fully checked-out titles). 'waiting' = in the queue; 'ready'
--- = admin has flagged that a copy has freed up for this reservation
--- specifically; 'fulfilled' = the patron actually checked it out (this
+-- A patron's place in line when no unallocated copy is available: copies may
+-- already be checked out or held for another pickup. 'waiting' = in the queue; 'ready'
+-- = admin has held an available copy for this reservation specifically; 'fulfilled' = the patron actually checked it out (this
 -- increments the book's borrowed_copies, same as an approved borrow
 -- request); 'returned' = library staff confirmed the book was returned;
 -- 'cancelled' = withdrawn by patron or admin. Queue position is computed on
@@ -167,6 +176,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   pickup_at      DATETIME      NULL,
   ready_at       TIMESTAMP     NULL,
   fulfilled_at   TIMESTAMP     NULL,
+  due_date       TIMESTAMP     NULL,
   returned_at    TIMESTAMP     NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
@@ -191,3 +201,22 @@ CREATE TABLE IF NOT EXISTS sms_logs (
   created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+-- Optional pickup quotas; NULL means unlimited.
+-- NULL limits retain the original unlimited pickup scheduling policy.
+CREATE TABLE IF NOT EXISTS reservation_settings (
+  id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  daily_limit SMALLINT UNSIGNED NULL,
+  slot_limit SMALLINT UNSIGNED NULL
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO reservation_settings (id, daily_limit, slot_limit) VALUES (1, NULL, NULL);
+
+-- Phase 5 attendance policy: unlimited visits, departure tracking off by default.
+CREATE TABLE IF NOT EXISTS attendance_settings (
+  id TINYINT UNSIGNED PRIMARY KEY,
+  daily_visit_limit SMALLINT UNSIGNED NULL,
+  occupancy_limit SMALLINT UNSIGNED NULL,
+  track_departures TINYINT UNSIGNED NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
+INSERT IGNORE INTO attendance_settings (id) VALUES (1);

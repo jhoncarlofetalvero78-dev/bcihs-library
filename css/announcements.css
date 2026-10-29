@@ -391,3 +391,7 @@
 
 .extracted-style-1 { width:100%;height:100%;object-fit:cover; }
 .extracted-style-2 { display:none; }
+.announce-card h3,.announce-card p{overflow-wrap:anywhere;white-space:pre-wrap}
+
+/* Wide demo banners fill the card; other aspect ratios remain complete. */
+.public-page .announce-card .announcement-photo{display:block;width:100%;height:auto;max-height:420px;object-fit:contain;background:#f5f1ef}

@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transaction | BCIHS Library</title>
+<title>Transactions | BCIHS Library</title>
 <link rel="stylesheet" href="css/transactions.css?v=20261026-visible-tables">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261026-visible-tables">
+<link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
+<link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
+<link rel="stylesheet" href="css/library-ui.css?v=phase8">
+<link rel="stylesheet" href="css/phase9.css?v=20261028">
 </head>
-<body>
+<body class="admin-page transactions-page">
 
 <aside class="sidebar">
   <ul class="nav-list">
@@ -86,8 +91,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>
       </div>
       <div>
-        <h1>Transaction</h1>
-        <p>Complete history of every borrow request — requested, approved, returned, and rejected.</p>
+        <h1>Transactions</h1>
+        <p>Borrow requests and reservations — approval, physical checkout, return, and other recorded decisions.</p>
       </div>
     </div>
 
@@ -111,18 +116,22 @@
     </div>
 
     <div class="controls">
-      <input type="text" id="searchInput" placeholder="Search by student or book title…">
-      <select id="statusFilter">
+      <input type="text" id="searchInput" aria-label="Search transactions" placeholder="Search by student or book title…">
+      <select id="statusFilter" aria-label="Filter by status">
         <option value="">All statuses</option>
         <option value="pending">Pending</option>
-        <option value="approved">Currently Borrowed</option>
+        <option value="awaiting_pickup">Approved / Awaiting Pickup</option>
+        <option value="checked_out">Currently Checked Out</option>
+        <option value="waiting">Waiting Reservation</option>
+        <option value="ready">Ready Reservation</option>
+        <option value="cancelled">Cancelled Reservation</option>
         <option value="returned">Returned</option>
         <option value="rejected">Rejected</option>
       </select>
       <span class="date-label">From</span>
-      <input type="date" id="dateFrom">
+      <input type="date" id="dateFrom" aria-label="From date">
       <span class="date-label">To</span>
-      <input type="date" id="dateTo">
+      <input type="date" id="dateTo" aria-label="To date">
       <button class="export-btn" id="exportBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
         Export CSV
@@ -135,7 +144,7 @@
       <p class="loading-msg" id="loadingMsg">Loading transactions…</p>
       <table id="txTable">
         <thead>
-          <tr><th>Student Name</th><th>Book Title</th><th>Requested</th><th>Approved</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
+          <tr><th>Borrower Name</th><th>Book Title</th><th>Requested</th><th>Approved / Ready</th><th>Checked Out</th><th>Due Date</th><th>Returned</th><th>Status</th><th>Duration</th></tr>
         </thead>
         <tbody id="txBody"></tbody>
       </table>
@@ -143,7 +152,9 @@
   </main>
 </div>
 
-<script src="js/transactions.js"></script>
+<script src="js/library-ui.js?v=phase8"></script>
+<script src="js/borrowing-status.js?v=20261027-phase2b"></script>
+<script src="js/transactions.js?v=20261029-due"></script>
 <script src="js/admin-shell.js?v=20261026-visible-tables"></script>
 </body>
 </html>
