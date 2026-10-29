@@ -11,6 +11,7 @@ try {
     bookError(500, 'The library service could not start. Please try again.');
 }
 const BORROWING_DAYS = 14;
+require_once __DIR__ . '/loan-due.php';
 
 function borrowingId($value): int
 {

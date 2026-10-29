@@ -4,9 +4,6 @@ const validPickupToken = pickupToken.length === 64 && /^[a-f0-9]{64}$/.test(pick
 const pickupMessage = document.getElementById('pickupMessage');
 const pickupDetails = document.getElementById('pickupDetails');
 const checkoutButton = document.getElementById('checkoutButton');
-const handover = document.getElementById('checkoutConfirmation');
-const confirmHandover = document.getElementById('confirmHandover');
-const cancelHandover = document.getElementById('cancelHandover');
 const refreshPickup = document.getElementById('refreshPickup');
 const staffSignin = document.getElementById('staffSignin');
 let pickupRequest = null, pickupCsrf = '', pickupBusy = false;
@@ -41,7 +38,7 @@ function renderPickup(data) {
 
 async function loadPickup() {
   if (pickupBusy) return;
-  pickupRequest = null; pickupCsrf = ''; document.getElementById('pickupFields').replaceChildren(); pickupDetails.hidden = true; checkoutButton.hidden = true; handover.hidden = true; staffSignin.hidden = true;
+  pickupRequest = null; pickupCsrf = ''; document.getElementById('pickupFields').replaceChildren(); pickupDetails.hidden = true; checkoutButton.hidden = true; staffSignin.hidden = true;
   if (!validPickupToken) { pickupMessage.textContent = 'Invalid pickup QR. Ask the borrower to reopen their approved request.'; return; }
   pickupMessage.textContent = 'Checking pickup QR…'; refreshPickup.disabled = true;
   try {
@@ -56,27 +53,32 @@ async function loadPickup() {
   } finally { refreshPickup.disabled = false; }
 }
 
-checkoutButton.addEventListener('click', () => { handover.hidden = false; confirmHandover.focus(); });
-cancelHandover.addEventListener('click', () => { handover.hidden = true; checkoutButton.focus(); });
 refreshPickup.addEventListener('click', loadPickup);
-confirmHandover.addEventListener('click', async () => {
+checkoutButton.addEventListener('click', async () => {
   if (pickupBusy || !pickupRequest || checkoutButton.hidden) return;
-  pickupBusy = true; confirmHandover.disabled = true; cancelHandover.disabled = true; checkoutButton.disabled = true; refreshPickup.disabled = true;
+  pickupBusy = true; checkoutButton.disabled = true; refreshPickup.disabled = true;
+  let due = null;
   try {
+    if (!window.checkoutDue) throw new Error('Reload to load the due-date confirmation.');
+    due = await window.checkoutDue.choose({source:'borrow', id:Number(pickupRequest.id), csrfToken:pickupCsrf,
+      label:pickupRequest.full_name + ' — ' + pickupRequest.title});
+    if (!due) return;
     const response = await fetch('backend/borrow-request-action.php', {
       method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':pickupCsrf},
-      body:JSON.stringify({id:pickupRequest.id, action:'checkout', pickup_token:pickupToken})
+      body:JSON.stringify({id:pickupRequest.id, action:'checkout', pickup_token:pickupToken, due_preview_token:due.due_preview_token})
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Checkout was not completed. Recheck status before retrying.');
-    pickupMessage.textContent = 'Checkout confirmed. The existing 14-day loan has started.';
+    pickupMessage.textContent = 'Checkout confirmed.' + (data.due_date ? ' Due: ' + pickupDate(data.due_date) + '.' : '');
   } catch (error) { pickupMessage.textContent = (error.message || 'Connection interrupted.') + ' Recheck status before trying again.'; }
   finally {
-    // Recheck even after an interrupted response that may follow a committed checkout.
-    pickupBusy = false; confirmHandover.disabled = false; cancelHandover.disabled = false; checkoutButton.disabled = false;
-    const outcome = pickupMessage.textContent;
-    await loadPickup();
-    pickupMessage.textContent = outcome + ' ' + pickupMessage.textContent;
+    pickupBusy = false; checkoutButton.disabled = false; refreshPickup.disabled = false;
+    if (due) {
+      // The backend may have committed even if its response was interrupted.
+      const outcome = pickupMessage.textContent;
+      await loadPickup();
+      pickupMessage.textContent = outcome + ' ' + pickupMessage.textContent;
+    }
   }
 });
 loadPickup();

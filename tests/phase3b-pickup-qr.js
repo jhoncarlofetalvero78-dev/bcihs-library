@@ -20,7 +20,7 @@ function harness(file, search, allowProfileHtml=false) {
     };
   }
   const get=id=>{if(!elements.has(id))elements.set(id,node());return elements.get(id);};
-  const context=vm.createContext({window:{location:{search,href:''},addEventListener:(event,callback)=>events[event]=callback},document:{getElementById:get,createElement:node,hidden:false,querySelector:selector=>get(selector),
+  const context=vm.createContext({window:{checkoutDue:{choose:async()=>null},location:{search,href:''},addEventListener:(event,callback)=>events[event]=callback},document:{getElementById:get,createElement:node,hidden:false,querySelector:selector=>get(selector),
     addEventListener:(event,callback)=>events['document:'+event]=callback,
     querySelectorAll(selector){
       if(selector!=='.tab-btn')return [];
@@ -48,18 +48,19 @@ async function main(){
   verify(ui.get('pickupFields').children.some(n=>n.textContent===request.full_name),'student text remains literal without HTML interpretation');
   verify(ui.get('pickupFields').children.some(n=>n.textContent===request.title),'book title remains literal Unicode text');
   await ui.get('checkoutButton').listeners.click();
-  verify(!ui.get('checkoutConfirmation').hidden && ui.calls.length===1,'first click opens confirmation without checkout');
-  ui.get('cancelHandover').listeners.click();verify(ui.get('checkoutConfirmation').hidden,'cancel preserves the loan');
+  verify(ui.calls.length===1 && !ui.get('checkoutButton').disabled,'cancelling the due-date confirmation preserves the loan');
+  ui.context.window.checkoutDue.choose=async()=>({due_preview_token:'synthetic-preview',due_at:'2026-11-01 09:00:00'});
   let posted,release;
   ui.context.respond=(endpoint,options)=>{
     if(options.method==='POST') {posted=options;return new Promise(resolve=>release=resolve);}
     return Promise.resolve(response({...data,request:{...request,status:'checked_out'},eligible:false}));
   };
-  const saving=ui.get('confirmHandover').listeners.click();
+  const saving=ui.get('checkoutButton').listeners.click();
+  await new Promise(setImmediate);
   const count=ui.calls.length;
-  await ui.get('confirmHandover').listeners.click();
-  verify(ui.calls.length===count && ui.get('confirmHandover').disabled,'in-flight checkout suppresses repeated submission');
-  verify(JSON.parse(posted.body).pickup_token===token && JSON.parse(posted.body).action==='checkout','checkout uses the existing endpoint and exact token');
+  await ui.get('checkoutButton').listeners.click();
+  verify(ui.calls.length===count && ui.get('checkoutButton').disabled,'in-flight checkout suppresses repeated submission');
+  verify(JSON.parse(posted.body).pickup_token===token && JSON.parse(posted.body).action==='checkout' && JSON.parse(posted.body).due_preview_token==='synthetic-preview','checkout uses the existing endpoint and exact token');
   verify(posted.headers['X-CSRF-Token']==='test-csrf','checkout transmits session CSRF');
   release(response({success:true}));await saving;
   verify(ui.get('checkoutButton').hidden && ui.get('pickupMessage').textContent.includes('Checkout confirmed'),'success reloads used status and hides checkout');
@@ -75,7 +76,7 @@ async function main(){
     if(options.method==='POST'){posts++;return response({error:'Already checked out'},409);}
     return response({...data,eligible:false,request:{...request,status:'checked_out'}});
   };
-  await ui.get('confirmHandover').listeners.click();
+  await ui.get('checkoutButton').listeners.click();
   verify(posts===1 && ui.get('checkoutButton').hidden && ui.get('pickupMessage').textContent.includes('Already checked out'),'conflict rechecks current status');
   const invalid=harness('js/pickup-verification.js','?token=https://evil.invalid/');vm.runInContext('window.test={loadPickup}',invalid.context);await invalid.context.window.test.loadPickup();
   verify(invalid.calls.length===0 && invalid.get('pickupMessage').textContent.includes('Invalid'),'invalid token never enters a fetch or redirect');

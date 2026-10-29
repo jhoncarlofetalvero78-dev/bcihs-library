@@ -13,6 +13,7 @@ $selectProvider = static function (string $provider) use ($mockRoot): void {
     $config=['provider'=>$provider,'mode'=>$provider==='simulation'?'simulate':'live',
         'live_enabled'=>$provider!=='simulation','sender'=>'MockSchool',
         'unisms_secret'=>'SYNTHETIC_ONLY','unisms_verified_networks'=>$networks];
+    if ($provider === 'unisms') $config += ['unisms_delivery'=>'production','unisms_production_authorized'=>true,'live_test'=>null];
     file_put_contents($mockRoot.'/includes/sms-local.php','<?php return '.var_export($config,true).';');
     file_put_contents($mockRoot.'/includes/semaphore-api-key.php',"<?php return 'SYNTHETIC_ONLY';");
 };
@@ -79,7 +80,7 @@ foreach(['simulation','unisms','semaphore'] as $index=>$provider) {
     $assertNotification($provider,$uid,$phone,'checkout','reservation:'.$id,smsEventMessage('checkout',['title'=>'Phase8 book','due_date'=>$due]),$before);
     post('reservation-action',['id'=>$id,'action'=>'fulfill'],$staff,409);check(count($calls())===$before+($provider==='simulation'?0:1),'repeat reservation handover sends no SMS');
     $before=count($calls());$reset=session();
-    if ($provider==='semaphore') {
+    if ($provider!=='simulation') {
         post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset);
         $marker=$pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn();
         $assertNotification($provider,$uid,$phone,'password_reset','reset:'.$uid.':'.$marker,"BCIHS Library: Your password reset code is 123456. It expires in 15 minutes. If you didn't request this, ignore this message.",$before);
@@ -92,7 +93,7 @@ foreach(['simulation','unisms','semaphore'] as $index=>$provider) {
     } else {
         $marker=$pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn();
         post('forgot-password-request',['phone'=>$phone,'role'=>'teacher'],$reset,503);
-        check($pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn()===$marker && count($calls())===$before,'simulation or approval-only UniSMS guard never issues an undeliverable reset code');
+        check($pdo->query('SELECT reset_code FROM users WHERE id='.$uid)->fetchColumn()===$marker && count($calls())===$before,'simulation never issues an undeliverable reset code');
     }
 }
 // Interrupted transports reserve their log before transport; switching provider

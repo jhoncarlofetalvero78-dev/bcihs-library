@@ -12,7 +12,7 @@ try {
         'inventory'=>['all'],'loans'=>['all','checked_out','returned'],'returns'=>['all','returned'],
         'requests'=>['all','pending','awaiting_pickup','approved','checked_out','returned','rejected'],
         'overdue'=>['all','checked_out'],'reservations'=>['all','waiting','ready','fulfilled','returned','cancelled'],
-        'attendance'=>['all','time_in_only','inside','completed'],'users'=>['all','accepted','pending','rejected']
+        'attendance'=>['all'],'users'=>['all','accepted','pending','rejected']
     ];
     if (!is_string($report) || !isset($allowed[$report])) throw new DomainException('Choose a valid report.',422);
     $status=$_GET['status']??'all';
@@ -48,13 +48,12 @@ try {
         usort($records,static fn($a,$b)=>strcmp($b[$dateField]??'',$a[$dateField]??'') ?: strcmp($b['record_key'],$a['record_key']));
         $fields=['record_key','borrower_name','book_title'];
     } elseif ($report==='attendance') {
-        $scope='Time In date (PHT). Visits and distinct linked people are different counts. Occupancy is current across all dates.';
+        $scope='Time In date (PHT). Each recorded arrival is one visit; distinct linked people are counted separately.';
         $stmt=$pdo->prepare('SELECT id,user_id,student_name,student_identifier,year_level,section,year_section_snapshot,
-            time_in,time_out,tracks_departure FROM attendance WHERE time_in>=:start AND time_in<:end ORDER BY time_in DESC,id DESC');
+            time_in FROM attendance WHERE time_in>=:start AND time_in<:end ORDER BY time_in DESC,id DESC');
         $stmt->execute(['start'=>$range['from'].' 00:00:00','end'=>(new DateTimeImmutable($range['to']))->modify('+1 day')->format('Y-m-d').' 00:00:00']);
         $records=$stmt->fetchAll();
         foreach ($records as &$row) {
-            $row['status']=!(int)$row['tracks_departure']?'time_in_only':($row['time_out']?'completed':'inside');
             $row['year_section']=$row['user_id']!==null ? ($row['year_section_snapshot'] ?: trim($row['year_level'].' / '.$row['section'],' /')) : implode(' · ',array_filter([$row['year_level'],$row['year_section_snapshot'],$row['section']],static fn($value)=>$value!==null && $value!==''));
             $row['visitor_type']=$row['user_id']!==null?'Registered':'Manual / unlinked';
         }unset($row);
@@ -88,7 +87,7 @@ try {
         $summary['Total visits']=count($records);$summary['Unique registered people']=count($students);
         $summary['Manual / unlinked visits']=$walkIns;
         $summary['Registered repeat visits on same day']=count(array_filter($records,static fn($row)=>$row['repeat_visit']));
-        ksort($daily);$summary['Current occupancy (all dates)']=$current['occupancy']??'Not tracked';
+        ksort($daily);
         $summary['Days with visits']=count($daily);
     } elseif ($report==='users') {
         $summary['Accounts']=array_sum(array_column($records,'accounts'));

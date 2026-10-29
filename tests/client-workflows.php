@@ -38,8 +38,74 @@ post('statistical-report',$settings,$staff);[$code,$stat]=http('statistical-repo
 [$code,,$xlsx]=http('statistical-report?month=2026-09&months=3&school_year=2026-2027&format=xlsx','GET',null,$staff);check($code===200 && str_starts_with($xlsx,'PK'),'authenticated XLSX download');
 $file=tempnam(sys_get_temp_dir(),'client-xlsx-');try{file_put_contents($file,$xlsx);$zip=new ZipArchive();check($zip->open($file)===true && $zip->locateName('xl/charts/chart1.xml')!==false,'download includes native chart');$zip->close();}finally{unlink($file);}
 // Real write checks remain confined to this owned database.
-post('attendance-settings',['daily_visit_limit'=>null,'occupancy_limit'=>null,'track_departures'=>true],$staff);
+post('attendance-settings',['daily_visit_limit'=>null],$staff);
 [$code,$attendanceForm]=http('attendance-data','GET',null,$staff);
 $walk=post('attendance-add',['mode'=>'manual','student_name'=>'Client external fixture','year_level'=>'External visitor','visitor_type'=>'External visitor','section'=>'','organization'=>'','submission_key'=>$attendanceForm['formToken']],$staff);
 $visit=$pdo->query('SELECT * FROM attendance WHERE id='.(int)$walk['id'])->fetch();check($visit['user_id']===null && $visit['student_identifier']===null && $visit['section']==='','walk-in needs no ID, photo, organization or purpose');
-$occupancy=static fn()=>(int)$pdo->query('SELECT COUNT(*) FROM attendance WHERE tracks_departure=1 AND time_out IS NULL')->fetchColumn();$before=$occupancy();post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff);check($occupancy()===$before-1,'confirmed Time Out decrements occupancy');post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff,409);
+post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff,410);
+check($pdo->query('SELECT time_out FROM attendance WHERE id='.(int)$walk['id'])->fetchColumn()===null,'retired departure action leaves the new Time In intact');
+// Legacy flags and timestamps stay in storage but never reactivate departure behavior.
+$pdo->exec('UPDATE attendance_settings SET track_departures=1,occupancy_limit=1 WHERE id=1');
+$pdo->exec('UPDATE attendance SET tracks_departure=1,time_out=DATE_ADD(time_in,INTERVAL 30 MINUTE) WHERE id='.(int)$walk['id']);
+$historical=$pdo->query('SELECT * FROM attendance WHERE id='.(int)$walk['id'])->fetch();
+post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff,410);
+check($pdo->query('SELECT * FROM attendance WHERE id='.(int)$walk['id'])->fetch()===$historical,'historical departure columns and timestamps remain byte-identical');
+post('attendance-settings',['daily_visit_limit'=>null,'track_departures'=>true],$staff,422);
+post('attendance-settings',['daily_visit_limit'=>null,'occupancy_limit'=>1],$staff,422);
+[$code,$form]=http('attendance-data','GET',null,$libSession);
+check($code===200 && !isset($form['settings']['track_departures']) && !isset($form['inside']),'active attendance exposes only Time In and daily policy');
+$newWalk=post('attendance-add',['mode'=>'manual','student_name'=>'Time In only visitor','year_level'=>'External visitor','section'=>'','submission_key'=>$form['formToken']],$libSession);
+$newRow=$pdo->query('SELECT * FROM attendance WHERE id='.(int)$newWalk['id'])->fetch();
+check((int)$newRow['tracks_departure']===0 && $newRow['time_out']===null,'legacy tracking and occupancy settings cannot affect new Time In visits');
+[$code,$form]=http('attendance-data','GET',null,$staff);
+post('attendance-add',['mode'=>'registered','user_id'=>$student,'submission_key'=>$form['formToken']],$staff);
+[$code,$repeatForm]=http('attendance-data','GET',null,$staff);
+[$code,$repeat]=http('attendance-add','POST',['mode'=>'registered','user_id'=>$student,'submission_key'=>$repeatForm['formToken']],$staff);
+check($code===409 && ($repeat['code']??'')==='repeat_visit_confirmation_required','fresh same-day submissions require explicit return-visit confirmation');
+$repeatVisit=post('attendance-add',['mode'=>'registered','user_id'=>$student,'confirm_repeat'=>true,'submission_key'=>$repeatForm['formToken']],$staff);
+$replay=post('attendance-add',['mode'=>'registered','user_id'=>$student,'confirm_repeat'=>true,'submission_key'=>$repeatForm['formToken']],$staff);
+check($repeatVisit['id']===$replay['id'] && $replay['replayed'],'repeat-submit idempotency preserves one visit');
+foreach([null,$studentSession,$teacherSession,$visitorSession] as $unauthorized){
+ [$code]=http('attendance-data','GET',null,$unauthorized);check(in_array($code,[401,403],true),'attendance read requires staff');
+ [$code]=http('attendance-add','POST',['mode'=>'manual'],$unauthorized);check(in_array($code,[401,403],true),'attendance write requires staff');
+}
+[$code]=http('attendance-settings','POST',['daily_visit_limit'=>null],$staff,false);check($code===403,'daily policy still requires CSRF');
+
+[$code,$attendanceReport]=http('reports-data?report=attendance&period=month','GET',null,$staff);
+check($code===200 && !array_key_exists('Current occupancy (all dates)',$attendanceReport['summary']),'attendance report is arrival-based without occupancy');
+foreach($attendanceReport['records'] as $row)check(!array_key_exists('time_out',$row) && !array_key_exists('tracks_departure',$row) && !array_key_exists('status',$row),'active report omits departure fields without altering history');
+[$code]=http('reports-data?report=attendance&status=inside','GET',null,$staff);check($code===422,'retired report status cannot be selected');
+[$code,$dashboard]=http('dashboard-data','GET',null,$staff);check($code===200 && !array_key_exists('occupancy',$dashboard['current']),'dashboard has no inferred occupancy');
+$todayCount=(int)$pdo->query('SELECT COUNT(*) FROM attendance WHERE DATE(time_in)=CURDATE()')->fetchColumn();
+post('attendance-settings',['daily_visit_limit'=>$todayCount+1],$staff);
+$jobs=[];$multi=curl_multi_init();
+foreach([[$staff,'Daily final slot A'],[$libSession,'Daily final slot B']] as [$session,$name]){
+ [, $form]=http('attendance-data','GET',null,$session);
+ $c=curl_init($base.'/backend/attendance-add.php');
+ curl_setopt_array($c,[CURLOPT_POST=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_COOKIEFILE=>$session['cookie'],CURLOPT_HTTPHEADER=>['Content-Type: application/json','X-CSRF-Token: '.$session['token']],CURLOPT_POSTFIELDS=>json_encode(['mode'=>'manual','student_name'=>$name,'year_level'=>'External visitor','section'=>'','submission_key'=>$form['formToken']])]);
+ curl_multi_add_handle($multi,$c);$jobs[]=$c;
+}
+do{curl_multi_exec($multi,$running);if($running)curl_multi_select($multi,1);}while($running);
+$codes=[];foreach($jobs as $c){$codes[]=curl_getinfo($c,CURLINFO_RESPONSE_CODE);curl_multi_remove_handle($multi,$c);curl_close($c);}curl_multi_close($multi);sort($codes);
+check($codes===[200,409],'simultaneous arrivals cannot exceed the final daily slot');
+check((int)$pdo->query('SELECT COUNT(*) FROM attendance WHERE DATE(time_in)=CURDATE()')->fetchColumn()===$todayCount+1,'daily concurrency inserts only one visit');
+post('attendance-settings',['daily_visit_limit'=>null],$staff);
+// Saved announcements are published rows; order by publication time and then ID.
+$notices=[];
+foreach(['First public notice','Second public notice','Latest public notice'] as $title){
+ [, $announcementForm]=http('announcement-management-data','GET',null,$staff);
+ $notice=post('announcement-save',['title'=>$title,'body'=>str_repeat('Long notice content. ',100),'category'=>'Notice','submission_key'=>$announcementForm['submissionToken']],$staff);
+ $notices[]=$notice['id'];
+ $pdo->exec('UPDATE announcements SET created_at="2026-10-28 12:00:00" WHERE id='.(int)$notice['id']);
+}
+[$code,$latest]=http('announcements-data?latest=1','GET');check($code===200 && count($latest['announcements'])===1 && (int)$latest['announcements'][0]['id']===(int)end($notices),'homepage gets only the newest published notice with deterministic tie order');
+[$code,$twoLatest]=http('announcements-data?latest=2','GET');check($code===200 && array_map('intval',array_column($twoLatest['announcements'],'id'))===array_reverse(array_slice($notices,-2)),'homepage gets the two newest published notices in deterministic order');
+[$code]=http('announcements-data?latest=3','GET');check($code===422,'unsupported announcement limits are rejected');
+$pdo->exec('UPDATE announcements SET created_at="2026-10-29 12:00:00" WHERE id='.(int)$notices[0]);
+[$code,$dateLatest]=http('announcements-data?latest=1','GET');check((int)$dateLatest['announcements'][0]['id']===(int)$notices[0],'publication date takes precedence over record ID');
+$pdo->exec('UPDATE announcements SET created_at="2026-10-28 12:00:00" WHERE id='.(int)$notices[0]);
+[$code,$collection]=http('announcements-data','GET');check($code===200 && count($collection['announcements'])===3,'View All retains the complete published collection');
+post('announcement-delete',['id'=>array_pop($notices)],$staff);
+[$code,$latest]=http('announcements-data?latest=1','GET');check((int)$latest['announcements'][0]['id']===(int)end($notices),'removed latest notice falls back to the next visible notice');
+foreach($notices as $id)post('announcement-delete',['id'=>$id],$staff);
+[$code,$empty]=http('announcements-data?latest=1','GET');check($code===200 && $empty['announcements']===[],'homepage latest endpoint returns a clean empty collection');

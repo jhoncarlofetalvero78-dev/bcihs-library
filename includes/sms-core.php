@@ -56,6 +56,8 @@ function smsDispatch(array $config, $phone, string $message, callable $transport
     if (($config['mode'] ?? 'simulate') === 'simulate') return smsResult('simulated', 'simulation_no_network_no_credits');
     if (($config['mode'] ?? '') !== 'live' || ($config['live_enabled'] ?? false) !== true) return smsResult('skipped', 'live_sending_not_enabled');
     if ($provider !== 'unisms' && ($config['live_test'] ?? null) !== null) return smsResult('skipped', 'live_test_wrong_provider');
+    if ($provider === 'semaphore' && ($config['semaphore_sender_status'] ?? null) !== null
+        && $config['semaphore_sender_status'] !== 'approved') return smsResult('skipped', 'semaphore_sender_not_approved');
     if (empty($config['key'])) return smsResult('skipped', 'missing_provider_credentials');
     if ($provider === 'unisms') return smsUniDispatch($config, $phone, $message, $transport, $context);
     try {
@@ -74,16 +76,66 @@ function smsUniRestriction(array $config, string $phone, string $message): ?stri
     $network = ($config['unisms_verified_networks'] ?? [])[$phone] ?? '';
     if (!in_array($network, ['globe', 'dito'], true)) return 'unisms_network_not_verified';
     if (mb_strlen($message) > 160) return 'unisms_message_too_long';
+    if (smsUniSegments($message) !== 1) return 'unisms_message_segment_limit';
     if (preg_match('~(?:https?:|www\.|[\p{L}\p{N}-]+\.[\p{L}]{2,}|[\p{L}\p{N}-]+\s*:\s*//)~iu', $message)) return 'unisms_links_not_allowed';
     return null;
+}
+
+function smsUniSegments(string $message): int
+{
+    if ($message === '' || !mb_check_encoding($message, 'UTF-8')) return 0;
+    $basic = '@£$¥èéùìòÇ' . "\n" . 'Øø' . "\r" . 'ÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà';
+    $extended = "\f^{}\\[~]|€";
+    $septets = 0;
+    foreach (mb_str_split($message) as $character) {
+        if (mb_strpos($basic, $character) !== false) $septets++;
+        elseif (mb_strpos($extended, $character) !== false) $septets += 2;
+        else {
+            $units = strlen(mb_convert_encoding($message, 'UTF-16BE', 'UTF-8')) / 2;
+            return $units <= 70 ? 1 : (int)ceil($units / 67);
+        }
+    }
+    return $septets <= 160 ? 1 : (int)ceil($septets / 153);
+}
+
+function smsUniProductionReady(array $config): bool
+{
+    return ($config['provider'] ?? '') === 'unisms'
+        && ($config['mode'] ?? '') === 'live'
+        && ($config['live_enabled'] ?? false) === true
+        && is_string($config['key'] ?? null) && trim($config['key']) !== ''
+        && ($config['unisms_delivery'] ?? 'acceptance') === 'production'
+        && ($config['unisms_production_authorized'] ?? false) === true
+        && ($config['live_test'] ?? null) === null;
+}
+
+function smsUniProductionScope(array $context): bool
+{
+    $userId = $context['user_id'] ?? null;
+    $id = $context['event_id'] ?? null;
+    if (!is_int($userId) || $userId < 1 || !is_string($id)) return false;
+    return match ($context['event'] ?? '') {
+        'account_approved' => $id === 'account:' . $userId,
+        'borrow_ready', 'borrow_rejected' => preg_match('/^borrow:[1-9][0-9]*$/D', $id) === 1,
+        'reservation_ready' => preg_match('/^reservation:[1-9][0-9]*$/D', $id) === 1,
+        'checkout' => preg_match('/^(borrow|reservation):[1-9][0-9]*$/D', $id) === 1,
+        'password_reset' => preg_match('/^reset:' . $userId . ':[a-f0-9]{10}$/D', $id) === 1,
+        default => false,
+    };
 }
 
 function smsUniDispatch(array $config, string $phone, string $message, callable $transport, array $context = []): array
 {
     try {
-        $blocked = smsReserveLiveTest($config, $phone, $message, $context);
-        if ($blocked !== null) return smsResult('skipped', $blocked);
-        if (!smsRestoreLiveTest($config)) return smsResult('skipped', 'live_test_restore_failed');
+        $policy = $config['unisms_delivery'] ?? 'acceptance';
+        if ($policy === 'acceptance') {
+            $blocked = smsReserveLiveTest($config, $phone, $message, $context);
+            if ($blocked !== null) return smsResult('skipped', $blocked);
+            if (!smsRestoreLiveTest($config)) return smsResult('skipped', 'live_test_restore_failed');
+        } elseif ($policy === 'production') {
+            if (!smsUniProductionReady($config)) return smsResult('skipped', 'unisms_production_not_authorized');
+            if (!smsUniProductionScope($context)) return smsResult('skipped', 'unisms_event_not_authorized');
+        } else return smsResult('skipped', 'unisms_delivery_policy_invalid');
         $response = $transport(['provider' => 'unisms', 'secret' => $config['key'],
             'body' => ['recipient' => '+63' . substr($phone, 1), 'content' => $message, 'sender_id' => 'Unisoft']]);
         if (!empty($response['error'])) return smsResult('unknown', 'transport_interrupted_check_provider_before_retry');

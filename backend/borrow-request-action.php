@@ -13,6 +13,9 @@ try {
     if (!is_string($action) || !in_array($action, ['approve', 'reject', 'checkout', 'return'], true)) {
         throw new DomainException('Choose a valid borrowing action.', 422);
     }
+    if ($action !== 'checkout' && (isset($input['due_preview_token']) || isset($input['due_date']) || isset($input['days']))) {
+        throw new DomainException('Due dates can only be selected at checkout. Existing loan deadlines are unchanged.', 422);
+    }
     $lookup = $pdo->prepare('SELECT book_id FROM borrow_requests WHERE id = :id');
     $lookup->execute(['id' => $id]);
     $bookId = $lookup->fetchColumn();
@@ -52,8 +55,10 @@ try {
         if ($stock['available_copies'] < 1 || $stock['held_copies'] > $stock['available_copies']) {
             throw new DomainException('Pickup holds exceed physical stock. Review inventory before checkout.', 409);
         }
+        $checkoutAt = $pdo->query('SELECT NOW()')->fetchColumn();
+        $dueAt = checkoutLoanDue($input, 'borrow', $id, $checkoutAt);
         changeBorrowedCopies($pdo, (int) $bookId, 1);
-        $sql = 'UPDATE borrow_requests SET status = "checked_out", checked_out_at = NOW(), due_date = DATE_ADD(NOW(), INTERVAL ' . BORROWING_DAYS . ' DAY) WHERE id = :id';
+        $sql = 'UPDATE borrow_requests SET status = "checked_out", checked_out_at = :checkout_at, due_date = :due_at WHERE id = :id';
     } else {
         // "approved" is retained only for historical loans checked out by the old system.
         if (!in_array($status, ['checked_out', 'approved'], true)) throw new DomainException('Only checked-out books can be returned.', 409);
@@ -62,6 +67,7 @@ try {
     }
     $parameters = ['id' => $id];
     if ($action === 'approve') $parameters['pickup_token'] = bin2hex(random_bytes(32));
+    if ($action === 'checkout') $parameters += ['checkout_at'=>$checkoutAt, 'due_at'=>$dueAt];
     $pdo->prepare($sql)->execute($parameters);
     $pdo->commit();
     $recipient = $request['user_id'] ? (int)$request['user_id'] : null;
@@ -70,7 +76,7 @@ try {
     } elseif ($action === 'checkout') {
         notifyCheckoutEvent($pdo, $recipient, $id, $book['title']);
     }
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => true, 'due_date'=>$dueAt ?? null]);
 } catch (Throwable $exception) {
     borrowingFailure($pdo, $exception);
 }

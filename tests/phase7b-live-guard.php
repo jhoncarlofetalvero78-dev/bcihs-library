@@ -69,6 +69,18 @@ try {
     checkGuard(!str_contains($claimText,'09171234567')&&!str_contains($claimText,'MOCK_ONLY'),'claim contains neither phone nor credentials');
     $changed=$data;$changed['config']['live_test']['event_id']='account:901';$changed['context']['event_id']='account:901';$changed['context']['user_id']=901;
     checkGuard(guardDispatch($changed,$never)['reason']==='live_test_consumed','editing authorization cannot reset the fixed consumed claim');
+    $separate=guardFixture();
+    $separate['config']['live_test']['event_id']='account:901';
+    $separate['context']=['event'=>'account_approved','event_id'=>'account:901','user_id'=>901];
+    file_put_contents($separate['config']['configuration_file'],'<?php return '.var_export($separate['config'],true).';');
+    $separateCalls=0;
+    $separateMock=static function()use(&$separateCalls):array {
+        $separateCalls++;
+        return ['http'=>201,'body'=>'{"message":{"status":"pending","recipient":"+639171234567","reference_id":"msg_separate-mock"}}'];
+    };
+    checkGuard(guardDispatch($separate,$separateMock)['state']==='pending' && $separateCalls===1,'separately scoped fresh ledger permits exactly one new approval');
+    checkGuard(file_get_contents($claim)===$claimText,'separate acceptance preserves the old consumed claim byte-for-byte');
+    checkGuard(guardDispatch($separate,$never)['reason']==='live_test_consumed','fresh independently approved ledger cannot be reused');
     $cases=[
         'wrong event'=>static function(&$d){$d['context']['event']='checkout';},
         'wrong immutable event ID'=>static function(&$d){$d['context']['event_id']='account:901';},

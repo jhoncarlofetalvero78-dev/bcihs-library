@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+process.env.TZ = 'Pacific/Honolulu';
 let checks = 0;
 function verify(condition, label) { assert.ok(condition, label); checks++; }
 function page(script) {
@@ -14,7 +15,7 @@ function page(script) {
     return elements.get(id);
   }
   const context = vm.createContext({
-    window:{libraryUI:{confirm:async()=>true},location:{href:'http://localhost:8888/bcihs-library/browse-books.html',search:''}},
+    window:{checkoutDue:{choose:async()=>({due_preview_token:'synthetic-preview'})},libraryUI:{confirm:async()=>true},location:{href:'http://localhost:8888/bcihs-library/browse-books.html',search:''}},
     document:{getElementById:element, querySelectorAll(){return [];}, addEventListener(){}, createElement(){return {
       set textContent(value){this.innerHTML=String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}, innerHTML:''};}},
     fetch:(url,options)=>{requests.push({url,options});return new Promise(()=>{});},
@@ -58,7 +59,7 @@ staff.run('allRequests = '+JSON.stringify([{...base,status:'awaiting_pickup'}])+
 await new Promise(resolve=>setImmediate(resolve));
 const checkout=staff.requests.find(item=>item.url==='backend/borrow-request-action.php');
 verify(checkout.options.headers['X-CSRF-Token']==='test-token','librarian action includes the session token');
-verify(JSON.parse(checkout.options.body).action==='checkout','physical checkout is an explicit action');
+verify(JSON.parse(checkout.options.body).action==='checkout' && JSON.parse(checkout.options.body).due_preview_token==='synthetic-preview','physical checkout uses the confirmed due-date preview');
 const cancelled=page('borrow-requests.js');
 cancelled.context.window.libraryUI.confirm=async()=>false;
 cancelled.run('allRequests = '+JSON.stringify([{...base,status:'pending'}])+";window.act(1,'approve');");
@@ -78,6 +79,7 @@ verify(!catalog.requests.some(item=>/borrow-request-process|reservation-process/
 catalog.run('window.requestBook(123);window.requestBook(123);');
 verify(catalog.requests.filter(item=>item.url==='backend/borrow-request-process.php').length===1,'repeated catalog clicks submit at most one in-flight request');
 const transactions=page('transactions.js');
+verify(staff.run("formatDate('2026-10-29 00:30:00')").includes('29') && transactions.run("formatDate('2026-10-29 00:30:00')").includes('29'),'due dates remain on the Philippine day on an overseas device');
 verify(!transactions.run('durationFor('+JSON.stringify({...base,status:'awaiting_pickup',approved_at:'2026-10-01 09:00:00'})+')').includes('ongoing'),'awaiting pickup has no running loan duration');
 verify(transactions.run('durationFor('+JSON.stringify({...base,status:'checked_out',approved_at:'2026-10-01 09:00:00',checked_out_at:'2026-10-27 09:00:00'})+')').includes('ongoing'),'duration begins only at checkout');
 console.log('Completed '+checks+' Phase 2B JavaScript checks.');

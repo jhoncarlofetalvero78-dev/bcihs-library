@@ -2,7 +2,7 @@
 window.reporting = {
   labels: {all:'All statuses',pending:'Pending',awaiting_pickup:'Approved / Awaiting Pickup',approved:'Checked Out (legacy)',checked_out:'Checked Out',
     returned:'Returned',rejected:'Rejected',waiting:'Waiting',ready:'Ready for Pickup',fulfilled:'Fulfilled / Checked Out',cancelled:'Cancelled',
-    accepted:'Accepted',time_in_only:'Time In only',inside:'Inside',completed:'Completed'},
+    accepted:'Accepted'},
   label(value) { return this.labels[value] || value || '—'; },
   csvCell(value) {
     let text=String(value ?? '');
@@ -16,7 +16,7 @@ window.reporting = {
       loans:loan,returns:loan,overdue:loan,
       requests:[['record_key','Record'],['borrower_name','Borrower'],['book_title','Book title'],['created_at','Requested (PHT)'],['approved_at','Approved (PHT)'],['borrowed_at','Checked out (PHT)'],['due_date','Due date'],['returned_at','Returned (PHT)'],['status','Current status']],
       reservations:[['record_key','Record'],['borrower_name','Borrower'],['book_title','Book title'],['created_at','Created (PHT)'],['pickup_at','Scheduled pickup (PHT)'],['approved_at','Ready (PHT)'],['borrowed_at','Checked out (PHT)'],['due_date','Due date'],['returned_at','Returned (PHT)'],['status','Current status']],
-      attendance:[['id','Visit'],['visitor_type','Visitor type'],['student_name','Name'],['student_identifier','School ID'],['year_section','Year / section or department'],['time_in','Time In (PHT)'],['time_out','Time Out (PHT)'],['status','Visit status'],['repeat_visit','Same-day repeat (registered)']],
+      attendance:[['id','Visit'],['visitor_type','Visitor type'],['student_name','Name'],['student_identifier','School ID'],['year_section','Year / section or department'],['time_in','Time In (PHT)'],['repeat_visit','Same-day repeat (registered)']],
       users:[['role','Role'],['status','Current approval status'],['accounts','Accounts']]
     };
     return definitions[type] || [];

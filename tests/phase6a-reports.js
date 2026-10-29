@@ -31,7 +31,7 @@ const attendance={...base,report:'attendance',summary:{'Total visits':2,'Unique 
 csv=reporting.csv(attendance,'Library Attendance','Student','all');
 verify(csv.includes('"Total visits","2"') && csv.includes('"Unique registered students","1"'),'CSV visit and identity totals distinct');
 verify(csv.includes('"2026-10-27","2"'),'daily totals included in attendance CSV');
-verify(csv.includes('"Time In only","No"') && csv.includes('"Completed","Yes"'),'status and repeat flags match displayed records');
+verify(!csv.includes('Time Out') && !csv.includes('Visit status') && csv.includes('Same-day repeat (registered)'),'Time In reports retain repeat flags without departure columns');
 const nodes=new Map();
 function node(){return{value:'',hidden:false,disabled:false,textContent:'',innerHTML:'',listeners:{},appendChild(){},addEventListener(event,callback){this.listeners[event]=callback;}};}
 const el=id=>{if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);};

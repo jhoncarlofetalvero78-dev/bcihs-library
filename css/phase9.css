@@ -30,6 +30,7 @@
   .admin-page .nav-list li.active a,.admin-page .nav-list a[aria-current=page]{background:#fff;color:#64131b;box-shadow:0 2px 5px #26040b15}
   .admin-page .sidebar .topbar-subtitle{color:#e2cacc}
   .admin-page .topbar{background:#fff;color:var(--ui-text);border-bottom:1px solid var(--ui-border);box-shadow:none;min-height:76px}
+  .admin-page .topbar-account,.admin-page .account-name{color:var(--ui-text)}
   .admin-page .account-role{color:var(--ui-muted)}
   .admin-page .account-avatar{background:#f3e6e4;color:var(--ui-primary)}
   .admin-page main{padding:30px 32px 48px}
@@ -74,8 +75,8 @@
   .reports-page .official-controls details{border-top:1px solid var(--ui-border);padding-top:14px;margin-top:16px}
   summary{cursor:pointer;font-weight:600}
   .manage-announcements-page .announcement-card img,.announce-card img{object-fit:contain;background:#f2eeeb;max-height:260px}
-  /* Public school identity: compact navigation and quiet opaque reading surfaces. */
-  .public-page{background:#faf7f5;background-image:none;color:var(--ui-text)}
+  /* Public school identity: subtle campus photography and opaque reading surfaces. */
+  :is(.public-page,.catalog-page){background:linear-gradient(#64131b08,#64131b0d),linear-gradient(#faf7f5eb,#faf7f5f0),url('../images/school-entrance.png') center/cover fixed;color:var(--ui-text)}
   .public-page>header,.auth-page>header{background:#fff;color:var(--ui-primary);border-bottom:1px solid var(--ui-border);box-shadow:0 3px 16px #32131b06;padding:18px 4vw}
   .public-page>header{display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:24px;align-items:center}
   .public-page .brand,.auth-page .brand{order:0;flex-basis:auto;gap:12px;min-width:0}
@@ -85,13 +86,13 @@
   .public-page #mainNav ul{gap:4px;flex-wrap:wrap;justify-content:center}
   .public-page #mainNav li a{background:transparent;color:#5e5354;border:0;border-radius:6px;font-size:.85rem;font-weight:600;padding:10px 12px;box-shadow:none;min-height:44px;display:flex;align-items:center}
   .public-page #mainNav li.active a,.public-page #mainNav li a:hover{background:#f3e7e4;color:var(--ui-primary)}
-  .public-page .login-menu,.public-page .profile-pill{position:relative;right:auto;top:auto;order:0;margin:0;transform:none}
+  .public-page .login-menu,.public-page .profile-pill{position:relative;right:auto;top:auto;bottom:auto;order:0;margin:0;transform:none}
   .public-page .login-btn{background:var(--ui-primary);color:#fff;border-radius:8px;padding:10px 16px;min-height:44px;box-shadow:none;transform:none;font-size:.83rem}
   .public-page .profile-pill{background:#f5efec;color:var(--ui-primary);padding:8px 12px;border:1px solid var(--ui-border);border-radius:8px;min-width:0;max-width:230px}
   .public-page .profile-pill .avatar-icon{background:var(--ui-primary);color:#fff}
   .public-page .profile-name{font-size:.85rem;overflow-wrap:anywhere}
   .public-page .profile-role{font-size:.75rem;color:var(--ui-muted)}
-  .public-page .hero{min-height:540px;padding:80px max(5vw,24px);background:linear-gradient(90deg,#351016f5 0%,#351016e8 38%,#35101620 100%),url('../images/school-entrance.png') center 48%/cover}
+  .public-page .hero{min-height:580px;padding:80px max(5vw,24px);background:linear-gradient(90deg,#351016f5 0%,#351016e8 38%,#35101620 100%),url('../images/school-entrance.png') center 48%/cover}
   .public-page .hero-content{background:none;backdrop-filter:none;box-shadow:none;padding:0;border-radius:0;max-width:620px;color:#fff}
   .public-page .hero h1{font:600 clamp(2.4rem,4vw,4.3rem)/1.08 system-ui,sans-serif;color:#fff;letter-spacing:-.045em;max-width:12ch;margin:12px 0 20px}
   .public-page .hero h2{font:500 1rem/1.5 system-ui,sans-serif;color:#ead8d5;margin:0 0 18px}
@@ -148,9 +149,9 @@
   .catalog-page .top-bar h1{color:var(--ui-primary);font-weight:650}
   .catalog-page .book-grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:20px}
   :is(.catalog-page,.public-page) .book-card{padding:16px;gap:8px;display:flex;flex-direction:column;background:#fff}
-  .catalog-page .book-cover,.public-page .book-cover{height:190px;background:#eee6e1;border:1px solid #e0d5d0;border-radius:8px}
+  .catalog-page .book-cover,.public-page .book-cover{width:calc(100% + 32px);max-width:none;height:190px;margin:-16px -16px 4px;flex-shrink:0;overflow:hidden;background:#eee6e1;border:0;border-radius:13px 13px 0 0}
   :is(.catalog-page,.public-page) .book-cover svg{stroke:#85645f}
-  :is(.catalog-page,.public-page) .book-cover img{object-fit:contain;width:100%;height:100%}
+  :is(.catalog-page,.public-page) .book-cover img{object-fit:cover;object-position:center;width:100%;height:100%;border-radius:0;display:block}
   :is(.catalog-page,.public-page) .book-card :is(h3,h4){font-size:1rem;font-weight:650;line-height:1.4;color:var(--ui-text)}
   :is(.catalog-page,.public-page) .book-card :is(.author,.genre,.isbn,.call-number,.book-details){color:#62666f;font-size:.8rem;line-height:1.5}
   .catalog-page .borrow-btn{margin-top:auto;width:100%}
@@ -186,6 +187,7 @@
   @media(max-width:760px){
     .admin-page main{padding:24px 16px 40px}.admin-page .topbar{min-height:64px}
     .admin-page .page-head h1{font-size:1.5rem}.admin-page .stat-value{font-size:1.7rem}
+    :is(.public-page,.catalog-page){background-attachment:scroll}
     .public-page .hero{padding:52px 24px;min-height:490px;background-image:linear-gradient(90deg,#351016ec,#3510169e),url('../images/school-entrance.png')}
     .public-page .hero h1{font-size:2.8rem}.public-page .section{padding:32px 20px}
     .public-page .two-col{grid-template-columns:1fr;gap:32px}.public-page .cards-row{grid-template-columns:1fr}
@@ -294,4 +296,32 @@
 }
 @media screen {
   .public-page .profile-toggle{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+}
+
+/* Keep the complete staff navigation together, without a nested scrollbar. */
+@media screen {
+  .admin-page .sidebar{padding:14px 12px}
+  .admin-page .sidebar-header{padding-bottom:14px;margin-bottom:10px}
+  .admin-page .sidebar>.nav-list:not(.logout-item){overflow:visible;max-height:none;gap:2px}
+  .admin-page .sidebar .nav-list li a{min-height:44px;margin:0;padding:8px 12px;font-size:.86rem;line-height:1.4}
+  .admin-page .sidebar.is-collapsed .nav-list li a{font-size:0;gap:0;padding-left:0;padding-right:0}
+  .admin-page .sidebar .nav-divider{margin:10px 4px}
+  .admin-dashboard-page .page-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px 24px;margin-bottom:28px}
+  .admin-dashboard-page .page-head>div{flex:1 1 320px;min-width:0}
+  .admin-dashboard-page .page-head p{margin:10px 0 0;line-height:1.6}
+  .admin-dashboard-page .page-head>.ui-primary{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;white-space:nowrap;text-decoration:none}
+  @media(min-width:761px) and (max-height:720px){
+    body.admin-page{height:auto;min-height:100dvh;overflow:visible}
+    .admin-page .sidebar{height:auto;min-height:100dvh;align-self:stretch}
+    .admin-page .sidebar>.nav-list:not(.logout-item){flex:0 0 auto}
+    .admin-page .main-wrap{height:auto;min-height:100dvh}
+    .admin-page main{overflow:visible;flex:1}
+  }
+  @media(max-width:760px){
+    .admin-page .sidebar{padding:8px 16px}
+    .admin-page .sidebar-header{padding:0;margin:0}
+    .admin-page .sidebar:not(.is-collapsed)>.nav-list:not(.logout-item){max-height:none;overflow:visible}
+    .admin-dashboard-page .page-head{align-items:flex-start}
+    .admin-dashboard-page .page-head>.ui-primary{margin-top:0}
+  }
 }

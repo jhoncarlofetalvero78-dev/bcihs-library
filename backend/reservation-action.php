@@ -18,6 +18,9 @@ try {
         throw new DomainException('Choose a valid reservation action.', 422);
     }
     if (!$isStaff && !in_array($action, ['cancel', 'schedule'], true)) bookError(403, 'Only library staff can confirm pickup or return.');
+    if ($action !== 'fulfill' && (isset($input['due_preview_token']) || isset($input['due_date']) || isset($input['days']))) {
+        throw new DomainException('Due dates can only be selected at checkout. Existing loan deadlines are unchanged.', 422);
+    }
     $pickupAt = $action === 'schedule' ? validatePickupAt($pdo, $input['pickup_at'] ?? null) : null;
     if ($action === 'schedule' && $pickupAt === null) throw new DomainException('Choose a valid future weekday pickup time.', 422);
     $lookup = $pdo->prepare('SELECT book_id FROM reservations WHERE id = :id');
@@ -55,8 +58,10 @@ try {
             ? $stock['available_copies'] > 0 && $stock['held_copies'] <= $stock['available_copies']
             : $stock['requestable_copies'] > 0;
         if (!$available) throw new DomainException('No copy is available for this reservation; other pickup holds are protected.', 409);
+        $checkoutAt = $pdo->query('SELECT NOW()')->fetchColumn();
+        $dueAt = checkoutLoanDue($input, 'reservation', $id, $checkoutAt);
         changeBorrowedCopies($pdo, (int) $bookId, 1);
-        $sql = 'UPDATE reservations SET status = "fulfilled", fulfilled_at = NOW(), due_date = DATE_ADD(NOW(), INTERVAL ' . BORROWING_DAYS . ' DAY) WHERE id = :id';
+        $sql = 'UPDATE reservations SET status = "fulfilled", fulfilled_at = :checkout_at, due_date = :due_at WHERE id = :id';
     } elseif ($action === 'return') {
         if ($status !== 'fulfilled') throw new DomainException('Only checked-out reservations can be returned.', 409);
         changeBorrowedCopies($pdo, (int) $bookId, -1);
@@ -72,7 +77,7 @@ try {
         $pdo->prepare('UPDATE reservations SET pickup_at = :pickup WHERE id = :id')->execute(['pickup' => $pickupAt, 'id' => $id]);
         $sql = null;
     }
-    if ($sql) $pdo->prepare($sql)->execute(['id' => $id]);
+    if ($sql) $pdo->prepare($sql)->execute(['id' => $id] + ($action === 'fulfill' ? ['checkout_at'=>$checkoutAt,'due_at'=>$dueAt] : []));
     $pdo->commit();
     if ($action === 'ready') {
         notifyLibraryEvent($pdo, (int)$reservation['user_id'], 'reservation_ready', $id,
@@ -80,7 +85,7 @@ try {
     } elseif ($action === 'fulfill') {
         notifyCheckoutEvent($pdo, (int)$reservation['user_id'], $id, $book['title'], 'reservation');
     }
-    echo json_encode(['success' => true]);
+    echo json_encode(['success' => true, 'due_date'=>$dueAt ?? null]);
 } catch (Throwable $exception) {
     borrowingFailure($pdo, $exception);
 }

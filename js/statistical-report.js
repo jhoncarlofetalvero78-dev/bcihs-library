@@ -12,6 +12,30 @@
     wrapper.textContent = `${label} ${field}`; input.id = `signatory_${key}_${field}`; input.maxLength = 80; wrapper.append(input); el('signatoryForm').append(wrapper);
   }
   const save = document.createElement('button'); save.type = 'submit'; save.className = 'apply-filter-btn'; save.textContent = 'Save signatories'; el('signatoryForm').append(save); save.disabled = true;
+  function periodPreview() {
+    const month = el('officialMonth').value, count = Number(el('officialMonths').value);
+    const year = el('officialYear').value;
+    const schoolYear = /^([1-9]\d{3})-([1-9]\d{3})$/.exec(year);
+    if (!/^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(month) || month < '1001-01' || month > '9998-12'
+      || !Number.isInteger(count) || count < 1 || count > 12 || !schoolYear || Number(schoolYear[2]) !== Number(schoolYear[1]) + 1) {
+      el('officialPeriodPreview').textContent = 'Choose a report month, 1–12 chart months, and consecutive school years (for example, 2026-2027).';
+      return false;
+    }
+    const end = new Date(month + '-01T00:00:00Z'), start = new Date(end);
+    start.setUTCMonth(start.getUTCMonth() - count + 1);
+    const label = date => date.toLocaleDateString('en-PH', {month:'long',year:'numeric',timeZone:'UTC'});
+    el('officialPeriodPreview').textContent = `Table: ${label(end)} only. Chart: ${count === 1 ? label(end) : label(start) + ' to ' + label(end)} (${count} month${count === 1 ? '' : 's'}).`;
+    return true;
+  }
+  function selectionChanged() {
+    report = null; loadedParameters = '';
+    el('officialOutput').hidden = true; save.disabled = true;
+    ['officialExcel','officialCsv','officialPrint'].forEach(id => el(id).disabled = true);
+    periodPreview();
+    el('officialMessage').textContent = 'Selection changed. Choose Show official reports to update the table and chart.';
+  }
+  ['officialMonth','officialMonths','officialYear'].forEach(id => el(id).addEventListener('input', selectionChanged));
+  periodPreview();
   function chart(data) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
     const width = 1050, height = 450, left = 70, top = 90, bottom = 320, plotWidth = 950;
@@ -68,9 +92,9 @@
     chart(data);el('officialOutput').hidden=false;
   }
   el('officialFilters').addEventListener('submit',async event=>{
-    event.preventDefault();if(loading)return;loading=true;report=null;el('officialLoad').disabled=true;el('officialMessage').textContent='Loading circulation statistics…';
+    event.preventDefault();if(loading)return;if(!periodPreview()){el('officialMessage').textContent='Check the reporting period selections.';return;}loading=true;report=null;el('officialLoad').disabled=true;el('officialMessage').textContent='Loading circulation statistics…';
     ['officialExcel','officialCsv','officialPrint'].forEach(id=>el(id).disabled=true);el('officialOutput').hidden=true;
-    try{const params=parameters().toString();const response=await fetch('backend/statistical-report.php?'+params,{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not load statistics.');report=data;loadedParameters=params;render(data);save.disabled=false;['officialExcel','officialCsv','officialPrint'].forEach(id=>el(id).disabled=false);el('officialMessage').textContent=`${data.total} checkout(s) in ${data.monthLabel}. ${data.legacy} legacy dated loan(s) included in comparison; ${data.undated} undated loan record(s) excluded. ${data.rows.some(row=>row.key==='UNMAPPED')?'Unmapped circulation is included separately; review catalog classifications.':''}`;
+    try{const params=parameters().toString();const response=await fetch('backend/statistical-report.php?'+params,{credentials:'same-origin',cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not load statistics.');if(params!==parameters().toString()){el('officialMessage').textContent='Selection changed. Choose Show official reports to update the table and chart.';return;}report=data;loadedParameters=params;render(data);save.disabled=false;['officialExcel','officialCsv','officialPrint'].forEach(id=>el(id).disabled=false);el('officialMessage').textContent=`${data.total} checkout(s) in ${data.monthLabel}. ${data.legacy} legacy dated loan(s) included in comparison; ${data.undated} undated loan record(s) excluded. ${data.rows.some(row=>row.key==='UNMAPPED')?'Unmapped circulation is included separately; review catalog classifications.':''}`;
     }catch(error){el('officialMessage').textContent=error.message;}finally{loading=false;el('officialLoad').disabled=false;}
   });
   el('signatoryForm').addEventListener('submit',async event=>{event.preventDefault();if(!report||save.disabled)return;save.disabled=true;try{const body={};for(const key of Object.keys(report.settings))body[key]=el('signatory_'+key).value;const response=await fetch('backend/statistical-report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':report.csrfToken},body:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not save signatories.');report.settings=data.settings;render(report);el('signatoryMessage').textContent='Signatories saved for future report exports.';}catch(error){el('signatoryMessage').textContent=error.message;}finally{save.disabled=false;}});

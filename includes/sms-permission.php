@@ -75,18 +75,25 @@ function smsDeliveryStatus(array $permission, array $config): array
     } elseif (in_array($provider, ['unisms','semaphore'], true) && ($config['mode'] ?? '') === 'live'
         && ($config['live_enabled'] ?? false) === true && !empty($config['key'])) {
         if ($provider === 'semaphore' && ($config['live_test'] ?? null) === null) {
-            $ready = true;
-            $message = 'Private live gates are enabled. Provider restrictions and duplicate protection still apply. Paid credits may be used.';
+            $ready = ($config['semaphore_sender_status'] ?? null) === null || $config['semaphore_sender_status'] === 'approved';
+            $message = $ready ? 'Private live gates are enabled. Provider restrictions and duplicate protection still apply. Paid credits may be used.'
+                : 'The intended Semaphore Sender Name is pending approval. No Semaphore submission is allowed.';
         } elseif ($provider === 'unisms') {
             $test = $config['live_test'] ?? null;
-            $ready = is_array($test) && ($test['enabled'] ?? false) === true
-                && is_int($test['issued_at'] ?? null) && is_int($test['expires_at'] ?? null)
-                && $test['issued_at'] <= time() && $test['issued_at'] >= time() - 600
-                && $test['expires_at'] > time() && $test['expires_at'] - $test['issued_at'] <= 600
-                && is_string($test['directory'] ?? null) && is_dir($test['directory'])
-                && !file_exists($test['directory'] . '/unisms-live-test.claim');
-            $message = $ready ? 'UniSMS is limited to its separately authorized one-attempt account-approval test. All guard checks still apply.'
-                : 'UniSMS live-test authorization is unavailable, expired or consumed. Sending is blocked.';
+            if (($config['unisms_delivery'] ?? 'acceptance') === 'production') {
+                $ready = smsUniProductionReady($config);
+                $message = $ready ? 'Private UniSMS production authorization is enabled. Verified Globe/DITO recipients and one-segment content restrictions still apply. Paid credits may be used.'
+                    : 'UniSMS production delivery is not separately authorized, or a live-test scope is still configured. Sending is blocked.';
+            } elseif (($config['unisms_delivery'] ?? 'acceptance') === 'acceptance') {
+                $ready = is_array($test) && ($test['enabled'] ?? false) === true
+                    && is_int($test['issued_at'] ?? null) && is_int($test['expires_at'] ?? null)
+                    && $test['issued_at'] <= time() && $test['issued_at'] >= time() - 600
+                    && $test['expires_at'] > time() && $test['expires_at'] - $test['issued_at'] <= 600
+                    && is_string($test['directory'] ?? null) && is_dir($test['directory'])
+                    && !file_exists($test['directory'] . '/unisms-live-test.claim');
+                $message = $ready ? 'UniSMS is limited to its separately authorized one-attempt account-approval test. All guard checks still apply.'
+                    : 'UniSMS live-test authorization is unavailable, expired or consumed. Sending is blocked.';
+            } else $message = 'UniSMS delivery policy is invalid. Sending is blocked.';
         }
         if ($ready) $mode = 'Live';
     }

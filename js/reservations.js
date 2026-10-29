@@ -194,7 +194,14 @@
   window.act = async function(id, action) {
     if (activeActions.has(id)) return;
     const prompts = {ready:'Hold an available copy for this reservation? This does not check it out.', fulfill:'Confirm physical handover and start this loan now?', return:'Confirm the physical book has been returned?', cancel:'Cancel this reservation and release any hold?'};
-    if (!prompts[action] || !await window.libraryUI.confirm(prompts[action], {danger:action === "cancel",confirmLabel:({ready:"Mark Ready",fulfill:"Confirm Checkout",return:"Confirm return",cancel:"Cancel reservation"})[action]})) return;
+    if (!prompts[action]) return;
+    let due = null;
+    if (action === 'fulfill') {
+      const row = allReservations.find(item => Number(item.id) === Number(id));
+      if (!row || !window.checkoutDue) { showToast('Reload to review the checkout due date.'); return; }
+      due = await window.checkoutDue.choose({source:'reservation', id:Number(id), csrfToken, label:row.student_name + ' — ' + row.book_title});
+      if (!due) return;
+    } else if (!await window.libraryUI.confirm(prompts[action], {danger:action === 'cancel',confirmLabel:({ready:'Mark Ready',return:'Confirm return',cancel:'Cancel reservation'})[action]})) return;
     activeActions.add(id);
     applyFilters();
     const labels = { ready: 'marked ready', fulfill: 'fulfilled', cancel: 'cancelled', return: 'marked returned' };
@@ -202,7 +209,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
-      body: JSON.stringify({ id, action })
+      body: JSON.stringify({ id, action, ...(due ? {due_preview_token:due.due_preview_token} : {}) })
     })
       .then(async res => {
         const data = await res.json();

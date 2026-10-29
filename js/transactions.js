@@ -23,7 +23,7 @@
     if (!mysqlDatetime) return '—';
     const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
 
   function durationFor(tx) {

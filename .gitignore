@@ -7,3 +7,23 @@
 
 /vendor/
 /includes/report-local.json
+/includes/borrowing-policy.json
+/includes/.borrowing-policy*
+
+# Private deployment inputs, exports and runtime evidence.
+/.env
+/.env.*
+!/.env.example
+/activation.json
+/config.php
+*.sql.gz
+*.sql.zip
+*.zip
+*.bak
+*.log
+*.claim
+# Uploaded library records stay local; keep upload security rules tracked.
+/uploads/announcements/*
+!/uploads/announcements/.htaccess
+/uploads/books/*
+!/uploads/books/.htaccess

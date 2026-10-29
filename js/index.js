@@ -184,11 +184,12 @@
       return;
     }
 
-    holder.innerHTML = list.slice(0, 3).map(a => `
+    holder.innerHTML = list.slice(0, 2).map(a => `
       <div class="announcement-item">
         <div class="top-row"><h4>${escapeHtml(a.title)}</h4><span class="badge ${escapeHtml(a.category)}">${escapeHtml(a.category)}</span></div>
         ${a.image_path ? `<img class="announcement-photo" src="${escapeHtml(a.image_path)}" alt="Photo for ${escapeHtml(a.title)}">` : ''}
-        <p>${escapeHtml(a.body)}</p>
+        <p class="announcement-preview">${escapeHtml(a.body)}</p>
+        <button class="announcement-more" type="button" aria-expanded="false">Read more</button>
         <span class="date">&#128276; ${formatDate(a.created_at)}</span>
       </div>
     `).join('');
@@ -196,13 +197,18 @@
     document.querySelectorAll('.announcement-item').forEach(item => {
       item.addEventListener('click', () => {
         const paragraph = item.querySelector('p');
-        if (paragraph) paragraph.classList.toggle('expanded');
+        if (paragraph) {
+          const expanded = paragraph.classList.toggle('expanded');
+          const button = item.querySelector('.announcement-more');
+          button.setAttribute('aria-expanded', String(expanded));
+          button.textContent = expanded ? 'Show less' : 'Read more';
+        }
       });
     });
   }
 
   function loadAnnouncements() {
-    fetch('backend/announcements-data.php', { credentials: 'same-origin' })
+    fetch('backend/announcements-data.php?latest=2', { credentials: 'same-origin', cache: 'no-store' })
       .then(res => res.ok ? res.json() : Promise.reject())
       .then(data => {
         const list = Array.isArray(data.announcements) ? data.announcements : [];

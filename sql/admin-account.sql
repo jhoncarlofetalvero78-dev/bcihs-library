@@ -1,5 +1,16 @@
--- Run after creating the admins table, with the target database selected.
--- Re-running this script resets the libraryadmin password to the configured value.
-INSERT INTO admins (username, password_hash)
-VALUES ('libraryadmin', '$2y$10$TSJlvCMvJgglKeUOV2lN5eqG6n6Wq.cbfh4FBtxnSJuGIhZ8On7fe')
-ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
+-- Administrator setup instructions only. This file intentionally runs no SQL.
+-- No predefined password, password hash, or reusable account reset is supplied.
+--
+-- For a NEW local administrator, open an interactive terminal in the project
+-- directory and run: php scripts/create-local-admin.php
+-- See LOCAL_SETUP.md for the MAMP PHP command and private database configuration.
+-- The helper prompts for a unique username and a hidden password, hashes it with
+-- password_hash(), and refuses to overwrite an existing administrator.
+--
+-- For Hostinger, follow HOSTINGER-NO-SSH-ACTIVATION.md. Keep generated password
+-- preparation files and activation markers private and outside the repository.
+-- Never upload an account-creation or password-reset helper into public_html.
+--
+-- The historical administrator seed remains in older commits. If its credential
+-- is still used by any installation, rotate that account through an authorized
+-- private procedure. Removing this seed does not rotate an existing password.

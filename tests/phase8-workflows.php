@@ -168,16 +168,14 @@ try {
     post('attendance-add',['mode'=>'registered','user_id'=>$teacher,'submission_key'=>$visit['formToken']],$staff,409);
     post('attendance-add',['mode'=>'registered','user_id'=>$teacher,'submission_key'=>$visit['formToken'],'confirm_repeat'=>true],$staff);
     check((int)$pdo->query('SELECT COUNT(*) FROM attendance')->fetchColumn()===2,'explicit repeated visit creates only the requested second visit');
-    post('attendance-settings',['daily_visit_limit'=>2,'occupancy_limit'=>null,'track_departures'=>true],$staff);
+    post('attendance-settings',['daily_visit_limit'=>2],$staff);
     [$status,$quotaForm]=http('attendance-data','GET',null,$staff);
     post('attendance-add',['mode'=>'manual','student_name'=>'Quota fixture','year_level'=>'Visitor','section'=>'N/A','submission_key'=>$quotaForm['formToken']],$staff,409);
-    post('attendance-settings',['daily_visit_limit'=>null,'occupancy_limit'=>1,'track_departures'=>true],$staff);
+    post('attendance-settings',['daily_visit_limit'=>null],$staff);
     [$status,$attendance]=http('attendance-data','GET',null,$staff);
     $walk=post('attendance-add',['mode'=>'manual','student_name'=>'Phase8 external visitor','year_level'=>'Visitor','section'=>'N/A','submission_key'=>$attendance['formToken']],$staff);
-    [$status,$occupancyForm]=http('attendance-data','GET',null,$staff);
-    post('attendance-add',['mode'=>'manual','student_name'=>'Occupancy fixture','year_level'=>'Visitor','section'=>'N/A','submission_key'=>$occupancyForm['formToken']],$staff,409);
-    post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff);
-    post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff,409);
+    post('attendance-time-out',['id'=>$walk['id'],'confirm_departure'=>true],$staff,410);
+    check($pdo->query('SELECT time_out FROM attendance WHERE id='.(int)$walk['id'])->fetchColumn()===null,'retired departure endpoint cannot write a timestamp');
     // All generic reports work; snapshots ignore irrelevant invalid dates.
     foreach(['inventory','loans','returns','requests','overdue','reservations','attendance','users'] as $report){
         [$status,$reportData]=http('reports-data?report='.$report.'&period=month','GET',null,$staff);
@@ -193,6 +191,7 @@ try {
     if (getenv('BCIHS_SMS_ACCEPTANCE_ROOT')) {
         require __DIR__.'/sms-permission-workflows.php';
         require __DIR__.'/sms-acceptance-workflows.php';
+        require __DIR__.'/flexible-due-workflows.php';
     }
     $profile=post('profile-update',['full_name'=>'Phase8 teacher changed','phone'=>'09170000002','department'=>'Science','email'=>'discarded@example.invalid'],$teacherSession);
     check($profile['success']===true && $pdo->query('SELECT department FROM users WHERE id='.$teacher)->fetchColumn()==='Science','teacher profile persists permitted fields');

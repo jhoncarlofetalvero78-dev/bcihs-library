@@ -35,6 +35,18 @@ users.get('cancelAccountAction').listeners.click();verify(users.get('accountConf
 const announcements=harness('js/manage-announcements.js','renderCards,applyFilters,formatDate,loadAnnouncements');
 const publicAnnouncements=harness('js/announcements.js','render');
 const homepage=harness('js/index.js','renderAnnouncements,buildBookMarkup');
+homepage.api.renderAnnouncements([{id:9,title:'Newest notice',body:'Latest details',category:'Notice',created_at:'2026-10-29 09:00:00'},{id:8,title:'Older notice',body:'Old details',category:'General',created_at:'2026-10-28 09:00:00'},{id:7,title:'Third notice',body:'Earlier details',category:'General',created_at:'2026-10-27 09:00:00'}]);
+verify((homepage.get('announceList').innerHTML.match(/class="announcement-item"/g)||[]).length===2 && homepage.get('announceList').innerHTML.includes('Older notice') && !homepage.get('announceList').innerHTML.includes('Third notice'),'homepage displays only the two latest notices');
+verify(homepage.get('announceList').innerHTML.includes('aria-expanded="false"') && homepage.get('announceList').innerHTML.includes('Read more'),'latest notice has a keyboard-accessible expansion button');
+homepage.api.renderAnnouncements([]);verify(homepage.get('announceList').innerHTML.includes('No announcements yet'),'homepage no-publication empty state');
+let expanded=false;const more={attributes:{},setAttribute(key,value){this.attributes[key]=value;},textContent:''};
+const paragraph={classList:{toggle(){expanded=!expanded;return expanded;}}};
+const card={listeners:{},addEventListener(event,callback){this.listeners[event]=callback;},querySelector(selector){return selector==='p'?paragraph:more;}};
+homepage.context.document.querySelectorAll=()=>[card];
+homepage.api.renderAnnouncements([{title:'Notice',body:'Long notice body',category:'Notice'}]);
+card.listeners.click();verify(more.attributes['aria-expanded']==='true' && more.textContent==='Show less','latest card expands full content with accessible state');
+card.listeners.click();verify(more.attributes['aria-expanded']==='false' && more.textContent==='Read more','latest card collapses without navigation');
+homepage.context.document.querySelectorAll=()=>[];
 // Parse actual generated markup. Unlike the old fake DOM, text-node serialization
 // deliberately leaves quotes untouched; production must encode attribute values.
 function parseMarkup(markup) {

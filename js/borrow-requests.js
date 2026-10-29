@@ -39,7 +39,7 @@
     if (!mysqlDatetime) return '—';
     const d = borrowing.date(mysqlDatetime);
     if (isNaN(d)) return mysqlDatetime;
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone:'Asia/Manila' });
   }
 
   function formatDateTime(mysqlDatetime) {
@@ -51,7 +51,8 @@
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Manila'
     });
   }
 
@@ -102,7 +103,6 @@
         allRequests = data.requests || [];
         csrfToken = data.csrfToken || '';
         checkoutToken = data.manualCheckoutToken || '';
-        document.getElementById('dueDate').min = data.serverDate || '';
         document.getElementById('loadingMsg').style.display = 'none';
         document.getElementById('requestsTable').style.display = 'table';
         document.getElementById('countBadge').style.display = 'block';
@@ -250,7 +250,6 @@
       item => `${item.title} — ${item.author} (${borrowing.requestable(item)} available)`,
       item => item.title
     );
-    const dueDate = document.getElementById('dueDate').value;
 
     if (!borrowerName) {
       showToast('Type the borrower name.');
@@ -265,14 +264,16 @@
 
     const save = document.getElementById('manualCheckoutBtn');
     if (save.disabled) return;
-    if (!await window.libraryUI.confirm(`Confirm that ${borrowerName} is receiving the physical copy of ${book.title} now? This starts the loan and updates inventory.`, {title:"Confirm physical checkout",confirmLabel:"Confirm Checkout"})) return;
+    if (!window.checkoutDue) { showToast('Reload to load the due-date confirmation.'); return; }
+    const due = await window.checkoutDue.choose({source:'manual', id:Number(book.id), csrfToken, label:borrowerName + ' — ' + book.title});
+    if (!due) return;
     save.disabled = true;
     savingManual = true;
     fetch('backend/borrow-request-add.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       credentials: 'same-origin',
-      body: JSON.stringify({ borrower_name: borrowerName, book_id: Number(book.id), due_date: dueDate || null, confirm_checkout: true, checkout_token: checkoutToken })
+      body: JSON.stringify({ borrower_name: borrowerName, book_id: Number(book.id), due_preview_token: due.due_preview_token, confirm_checkout: true, checkout_token: checkoutToken })
     })
       .then(async res => {
         const data = await res.json();
@@ -295,17 +296,23 @@
     const prompts = {
       approve: 'Approve this request and hold one copy for pickup? This does not check out the book.',
       reject: 'Reject this request and release any pickup hold?',
-      checkout: 'Confirm that the physical book is being handed to this borrower now? The 14-day loan starts now.',
+      checkout: 'Confirm that the physical book is being handed to this borrower now? Review the approved borrowing period and due date before confirmation.',
       return: 'Confirm that the physical book has been returned to the library?'
     };
-    if (!prompts[action] || !await window.libraryUI.confirm(`${request.student_name} — ${request.book_title}\n\n${prompts[action]}`, {danger:action === "reject", confirmLabel:({approve:"Approve for pickup",reject:"Reject request",checkout:"Confirm Checkout",return:"Confirm return"})[action]})) return;
+    if (!prompts[action]) return;
+    let due = null;
+    if (action === 'checkout') {
+      if (!window.checkoutDue) { showToast('Reload to load the due-date confirmation.'); return; }
+      due = await window.checkoutDue.choose({source:'borrow', id:Number(id), csrfToken, label:request.student_name + ' — ' + request.book_title});
+      if (!due) return;
+    } else if (!await window.libraryUI.confirm(`${request.student_name} — ${request.book_title}\n\n${prompts[action]}`, {danger:action === 'reject', confirmLabel:({approve:'Approve for pickup',reject:'Reject request',return:'Confirm return'})[action]})) return;
     activeActions.add(id);
     applyFilters();
     try {
       const response = await fetch('backend/borrow-request-action.php', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({id, action})
+        body: JSON.stringify({id, action, ...(due ? {due_preview_token:due.due_preview_token} : {})})
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not update that request.');

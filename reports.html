@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/x-icon" href="favicon.ico?v=20261029-2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reports | BCIHS Library</title>
-<link rel="stylesheet" href="css/reports.css?v=20261027-phase6a">
+<link rel="stylesheet" href="css/reports.css?v=20261029-client">
 <link rel="stylesheet" href="css/admin-shell.css?v=20261022-shell-collapse-fix">
 <link rel="stylesheet" href="css/borrowing.css?v=20261027-phase2b-review">
 <link rel="stylesheet" href="css/ui-refinements.css?v=20261027-phase3a">
@@ -113,11 +114,12 @@
       <h2 id="officialHeading">Official School Statistical Reports</h2>
       <p>Monthly circulation counts actual checkout transactions, including reservation loans and returned books in their checkout month. It is not current inventory. School year is a report label; confirm it with the librarian.</p>
       <form id="officialFilters" class="report-filters">
-        <label>Ending / table month <input id="officialMonth" type="month" required></label>
-        <label>Comparison months <input id="officialMonths" type="number" min="1" max="12" value="3" required></label>
-        <label>School year <input id="officialYear" pattern="[0-9]{4}-[0-9]{4}" placeholder="YYYY-YYYY" required></label>
+        <div class="date-filter"><label for="officialMonth">Report month</label><input id="officialMonth" type="month" min="1001-01" max="9998-12" aria-describedby="officialMonthHelp" required><small id="officialMonthHelp">The table shows this month. The comparison chart ends with this month.</small></div>
+        <div class="date-filter"><label for="officialMonths">Months in comparison chart</label><input id="officialMonths" type="number" min="1" max="12" step="1" value="3" aria-describedby="officialMonthsHelp" required><small id="officialMonthsHelp">Include the report month and the months immediately before it (1–12 months).</small></div>
+        <div class="date-filter"><label for="officialYear">School year</label><input id="officialYear" pattern="[0-9]{4}-[0-9]{4}" placeholder="YYYY-YYYY" aria-describedby="officialYearHelp" required><small id="officialYearHelp">A report heading only. Confirm the school year with the librarian.</small></div>
         <button type="submit" class="apply-filter-btn" id="officialLoad">Show official reports</button>
       </form>
+      <p id="officialPeriodPreview" role="status" aria-live="polite"></p>
       <p id="officialMessage" role="status" aria-live="polite"></p>
       <div class="report-actions"><button type="button" class="print-btn" id="officialExcel" disabled>Export formatted Excel (.xlsx)</button><button type="button" class="print-btn" id="officialCsv" disabled>Raw circulation CSV</button><button type="button" class="print-btn" id="officialPrint" disabled>Print official table and chart</button></div>
       <details><summary>Configure report signatories (staff only)</summary><p>Enter verified current names/titles. Blank is allowed; example officeholders are not prefilled. Settings apply to future exports only.</p><form id="signatoryForm" class="report-filters"></form><p id="signatoryMessage" role="status"></p></details>
@@ -131,9 +133,9 @@
 
 <script src="js/library-ui.js?v=phase8"></script>
 <script src="js/borrowing-status.js?v=20261027-phase2b"></script>
-<script src="js/reporting.js?v=20261027-phase6a"></script>
-<script src="js/statistical-report.js"></script>
-<script src="js/reports.js?v=20261027-phase6a"></script>
+<script src="js/reporting.js?v=20261029-client"></script>
+<script src="js/statistical-report.js?v=20261029-client"></script>
+<script src="js/reports.js?v=20261029-client"></script>
 <script src="js/admin-shell.js?v=20261022-attendance-nav5"></script>
 </body>
 </html>

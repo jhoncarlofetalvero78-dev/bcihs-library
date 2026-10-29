@@ -13,8 +13,10 @@ try {
     if (!is_string($role) || !in_array($role, ['', 'student', 'teacher', 'librarian', 'staff', 'employee', 'visitor'], true)
         || !$phone) throw new DomainException('Enter the Philippine mobile number registered to your account.', 422);
     // Check before creating a code or changing account recovery fields.
-    $delivery = smsDeliveryStatus(smsPermissionState($pdo), smsConfig());
-    if ($delivery['delivery_mode'] !== 'Live' || $delivery['provider'] === 'unisms') {
+    $config = smsConfig();
+    $delivery = smsDeliveryStatus(smsPermissionState($pdo), $config);
+    if ($delivery['delivery_mode'] !== 'Live'
+        || ($delivery['provider'] === 'unisms' && !smsUniProductionReady($config))) {
         unset($_SESSION['password_recovery']);
         throw new DomainException('SMS password recovery is currently unavailable. Contact library staff for identity-verified assistance. No recovery code was issued.', 503);
     }

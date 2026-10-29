@@ -52,7 +52,6 @@ function reportCurrentSummary(PDO $pdo, array $books, array $transactions): arra
     $totals['users']=(int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
     $totals['accepted_students']=(int)$pdo->query('SELECT COUNT(*) FROM users WHERE role="student" AND account_status="accepted"')->fetchColumn();
     $totals['attendance_today']=attendanceCounts($pdo,date('Y-m-d'));
-    $totals['occupancy']= (int)attendanceSettings($pdo)['track_departures'] ? attendanceOccupancy($pdo) : null;
     $totals['undated_loan_records']=count(array_filter($transactions,static fn($row)=>in_array($row['status'],['approved','checked_out','fulfilled','returned'],true) && $row['borrowed_at']===null));
     $totals['inventory_matches_loans']=true;
     foreach ($books as $book) if ((int)$book['borrowed_copies']!==($outstandingByBook[$book['id']]??0)) $totals['inventory_matches_loans']=false;

@@ -15,8 +15,40 @@ function smsSettings(): array
         'provider' => $provider !== false ? $provider : ($local['provider'] ?? 'simulation'),
         'live_enabled' => $enabled !== false ? $enabled === '1' : ($local['live_enabled'] ?? false) === true,
         'sender' => $sender !== false ? $sender : ($local['sender'] ?? ''),
+        'semaphore_sender_status' => $local['semaphore_sender_status'] ?? null,
         'live_test' => $local['live_test'] ?? null,
+        'unisms_delivery' => $local['unisms_delivery'] ?? 'acceptance',
+        'unisms_production_authorized' => ($local['unisms_production_authorized'] ?? false) === true,
         'unisms_verified_networks' => is_array($local['unisms_verified_networks'] ?? null) ? $local['unisms_verified_networks'] : []];
+}
+
+function smsSafeDiagnosticSummary(array $local, array $settings, array $permission, bool $privateConfigReadable, bool $privateConfigModeSafe, bool $consumedPreviousClaim, bool $consumedLatestClaim = false): array
+{
+    $provider = in_array($settings['provider'] ?? '', ['simulation', 'unisms', 'semaphore'], true)
+        ? $settings['provider'] : 'disabled';
+    $mode = in_array($settings['mode'] ?? '', ['simulate', 'live'], true) ? $settings['mode'] : 'invalid';
+    $delivery = smsDeliveryStatus($permission, $settings);
+    return [
+        'private_config_readable' => $privateConfigReadable,
+        'private_config_permissions_safe' => $privateConfigModeSafe,
+        'provider' => $provider,
+        'configured_mode' => $mode,
+        'effective_delivery' => $delivery['delivery_mode'],
+        'configuration_ready' => $delivery['configuration_ready'],
+        'semaphore_sender_configured' => is_string($settings['sender'] ?? null) && trim($settings['sender']) !== '',
+        'semaphore_sender_status' => in_array($settings['semaphore_sender_status'] ?? null, ['pending','approved'], true)
+            ? $settings['semaphore_sender_status'] : 'unconfigured',
+        'unisms_delivery_policy' => in_array($settings['unisms_delivery'] ?? 'acceptance', ['acceptance','production'], true)
+            ? ($settings['unisms_delivery'] ?? 'acceptance') : 'invalid',
+        'unisms_secret_present' => is_string($local['unisms_secret'] ?? null) && trim($local['unisms_secret']) !== '',
+        'live_enabled' => ($settings['live_enabled'] ?? false) === true,
+        'unisms_production_authorized' => ($settings['unisms_production_authorized'] ?? false) === true,
+        'live_test_authorization_armed' => ($local['live_test']['enabled'] ?? false) === true,
+        'previous_account_364_claim_consumed' => $consumedPreviousClaim,
+        'account_368_claim_consumed' => $consumedLatestClaim,
+        'notification_permission_available' => ($permission['available'] ?? false) === true,
+        'notifications_allowed' => ($permission['allowed'] ?? false) === true,
+    ];
 }
 
 function smsConfig(): array
@@ -108,7 +140,9 @@ function send_sms(PDO $pdo, ?int $userId, ?string $phone, string $message, strin
         $query = $pdo->prepare('UPDATE sms_logs SET status=:status,response=:response WHERE id=:id');
         $query->execute(['status' => smsStorageState($result['state']),
             'response' => json_encode($metadata, JSON_THROW_ON_ERROR), 'id' => $id]);
-        return in_array($result['state'], ['queued','pending','accepted','sent','retrying','simulated'], true);
+        // A mode change during recovery must not leave a code that was only simulated.
+        return in_array($result['state'], ['queued','pending','accepted','sent','retrying','simulated'], true)
+            && ($event !== 'password_reset' || $result['state'] !== 'simulated');
     } catch (Throwable $exception) {
         error_log('Library notification could not be completed; review SMS logs.');
         return false;

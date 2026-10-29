@@ -153,9 +153,9 @@ try {
     foreach([[$a['id'],$yesterday.' 23:59:59',0,null],[$a['id'],$today.' 00:00:00',0,null],[$a['id'],$today.' 09:00:00',1,$today.' 09:30:00'],[null,$today.' 10:00:00',0,null]] as [$uid,$time,$tracking,$out]) {
         $insert->execute(['user'=>$uid,'name'=>$prefix.' Visitor','identifier'=>$prefix.'-ID','time'=>$time,'tracking'=>$tracking,'out'=>$out]);$visits[]=(int)$pdo->lastInsertId();
     }
-    $r=report($staff,'attendance',$search+['period'=>'today']);verify(count($r['records'])===3 && $r['summary']['Unique registered students']===1 && $r['summary']['Registered repeat visits on same day']===1 && $r['summary']['Manual / unlinked visits']===1,'attendance visit, identity, repeat and manual counts distinct');
-    verify($r['daily'][$today]===3 && $r['records'][0]['time_out']===null,'attendance daily totals preserve blank untracked departures');
-    $filtered=report($staff,'attendance',$search+['period'=>'today','status'=>'completed']);verify(count($filtered['records'])===1 && $filtered['records'][0]['repeat_visit'],'status filtering retains actual same-day repeat classification');
+    $r=report($staff,'attendance',$search+['period'=>'today']);verify(count($r['records'])===3 && $r['summary']['Unique registered people']===1 && $r['summary']['Registered repeat visits on same day']===1 && $r['summary']['Manual / unlinked visits']===1,'attendance visit, identity, repeat and manual counts distinct');
+    verify($r['daily'][$today]===3 && !array_key_exists('time_out',$r['records'][0]),'attendance daily totals retain all arrivals without departure fields');
+    [$code]=http('reports-data?'.http_build_query(['report'=>'attendance']+$search+['period'=>'today','status'=>'completed']),'GET',null,$staff);verify($code===422,'retired departure status filter is refused');
     [$code,$attendance]=http('attendance-data?date='.$today,'GET',null,$staff);verify($attendance['summary']['visits']===$r['current']['attendance_today']['visits'],'report current attendance agrees with Phase 5 endpoint');
     $r=report($staff,'attendance',$search+['period'=>'custom','from'=>$yesterday,'to'=>$yesterday]);verify(count($r['records'])===1,'Philippine midnight boundary excludes next day');
     $r=report($staff,'users',['period'=>'month']);verify(!isset($r['records'][0]['email'],$r['records'][0]['full_name'],$r['records'][0]['password_hash']),'user statistics are grouped without confidential identities');
@@ -181,7 +181,7 @@ try {
     verify($r['current']['undated_loan_records']>=1 && !array_filter($r['records'],static fn($row)=>$row['source']==='borrow' && (int)$row['id']===$undatedId),'missing checkout timestamp is flagged, not fabricated as an actual checkout event');
     verify(localRowSnapshot($pdo)===$readOnlyBefore,'report generation never repairs or rewrites source records');
     $r=report($staff,'attendance',$search+['period'=>'custom','from'=>$yesterday,'to'=>$today]);
-    verify($r['summary']['Total visits']===4 && $r['summary']['Unique registered students']===1 && $r['summary']['Days with visits']===2,'multi-day attendance distinguishes distinct students from student-day visits');
+    verify($r['summary']['Total visits']===4 && $r['summary']['Unique registered people']===1 && $r['summary']['Days with visits']===2,'multi-day attendance distinguishes distinct students from student-day visits');
     $pdo->prepare('UPDATE users SET role="teacher" WHERE id=:id')->execute(['id'=>$staffUser['id']]);
     [$code]=http('reports-data','GET',null,$staff);verify($code===403,'stale librarian role cannot view reports');
 } catch(Throwable $e){fwrite(STDERR,$e instanceof PDOException?"Local reporting fixture database operation failed.\n":$e->getMessage().PHP_EOL);$failed=true;}

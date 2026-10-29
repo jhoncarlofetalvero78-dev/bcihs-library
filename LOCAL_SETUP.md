@@ -93,8 +93,10 @@ If interrupted terminal input stops displaying characters, run `stty sane`.
 Both commands refuse remote hosts and database names other than `bcihs_library`
 before connecting. Web requests to the commands receive `404`.
 
-Do **not** run `sql/admin-account.sql`: it installs a predefined hash and resets
-an existing `libraryadmin` password when rerun.
+`sql/admin-account.sql` now contains instructions only; it creates or resets no
+accounts. Older Git versions contained a predefined administrator hash. If that
+credential is still used by any installation, rotate it through an authorized
+private procedure. Use the interactive helper above to create a new local account.
 
 ## Verify your login
 

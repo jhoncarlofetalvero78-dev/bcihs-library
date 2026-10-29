@@ -29,7 +29,7 @@ function attendanceId($value): int
 
 function attendanceSettings(PDO $pdo, bool $lock = false): array
 {
-    $row = $pdo->query('SELECT * FROM attendance_settings WHERE id = 1' . ($lock ? ' FOR UPDATE' : ''))->fetch();
+    $row = $pdo->query('SELECT id,daily_visit_limit FROM attendance_settings WHERE id = 1' . ($lock ? ' FOR UPDATE' : ''))->fetch();
     if (!$row) throw new RuntimeException('Attendance settings missing.');
     return $row;
 }
@@ -40,11 +40,6 @@ function attendanceCounts(PDO $pdo, string $date): array
         COALESCE(SUM(user_id IS NULL),0) AS walk_in_visits FROM attendance WHERE time_in >= :start AND time_in < :end');
     $stmt->execute(['start'=>$date . ' 00:00:00', 'end'=>(new DateTimeImmutable($date))->modify('+1 day')->format('Y-m-d') . ' 00:00:00']);
     return array_map('intval', $stmt->fetch());
-}
-
-function attendanceOccupancy(PDO $pdo): int
-{
-    return (int)$pdo->query('SELECT COUNT(*) FROM attendance WHERE tracks_departure = 1 AND time_out IS NULL')->fetchColumn();
 }
 
 function attendanceFormToken(): string

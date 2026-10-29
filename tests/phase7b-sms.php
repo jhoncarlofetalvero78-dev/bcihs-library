@@ -112,6 +112,7 @@ try {
     $db->transaction=true;notifyLibraryEvent($db,1,'account_approved',99);verify(count($db->rows)===6,'notification never executes inside business transaction');$db->transaction=false;
     send_sms($db,1,'bad','Message','borrow_ready','bad-phone');verify(smsLogMetadata(end($db->rows))['state']==='skipped','invalid recipient is recorded honestly');
     send_sms($db,1,'09123456789','Code 123456','password_reset','reset-1');verify(!str_contains(end($db->rows)['message'],'123456'),'password reset secret never stored in staff log');
+    verify(send_sms($db,1,'09123456789','Code 654321','password_reset','reset-mode-changed')===false,'recovery simulation cannot count as a submitted code after a mode change');
     $db->lockAvailable=false;$before=count($db->rows);send_sms($db,1,'09123456789','Message','checkout','busy');verify(count($db->rows)===$before,'another request holding event lock prevents duplicate attempt');$db->lockAvailable=true;
     $db->fail=true;verify(send_sms($db,1,'09123456789','Message')===false,'logging failure cannot throw or corrupt main operation');$db->fail=false;
     verify(smsLogMetadata(['status'=>'sent','response'=>'RAW SECRET'])['state']==='legacy_sent','historical sent remains unverified without modifying row');

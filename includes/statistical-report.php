@@ -20,7 +20,7 @@ function statisticalReport(array $books, array $transactions, string $month, int
 {
     $end = DateTimeImmutable::createFromFormat('!Y-m',$month);
     if (!$end || $end->format('Y-m') !== $month || $month<'1001-01' || $month>'9998-12' || $months<1 || $months>12
-        || !preg_match('/^([1-9]\d{3})-([1-9]\d{3})$/D',$schoolYear,$sy) || (int)$sy[2] !== (int)$sy[1]+1) throw new DomainException('Choose a valid ending month, 1–12 comparison months, and consecutive school years (YYYY-YYYY).',422);
+        || !preg_match('/^([1-9]\d{3})-([1-9]\d{3})$/D',$schoolYear,$sy) || (int)$sy[2] !== (int)$sy[1]+1) throw new DomainException('Choose a valid report month, 1–12 months in the comparison chart, and consecutive school years (YYYY-YYYY).',422);
     $periods=[];for($i=$months-1;$i>=0;$i--) $periods[]=$end->modify('-'.$i.' months')->format('Y-m');
     $categories=statisticalCategories();$categories['UNMAPPED']='Unmapped classification — review catalog';
     $values=[];foreach($categories as $key=>$label)$values[$key]=array_fill_keys($periods,0);

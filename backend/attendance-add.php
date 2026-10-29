@@ -23,7 +23,7 @@ try {
     if ($mode === 'manual' && isset($input['visitor_type'])) $year = $input['visitor_type'];
     $hash = hash('sha256', json_encode([$mode,$userId,$name,$year,$section,$organization], JSON_THROW_ON_ERROR));
     $pdo->beginTransaction();
-    // One policy lock serializes every entry, departure and capacity change.
+    // Serialize entries and daily-limit changes, including duplicate submissions.
     $settings = attendanceSettings($pdo, true);
     $stmt = $pdo->prepare('SELECT id, student_name, time_in, submission_hash FROM attendance WHERE submission_key = :key');
     $stmt->execute(['key'=>$key]);
@@ -43,9 +43,6 @@ try {
         $user = $stmt->fetch();
         if (!$user || !in_array($user['role'], ['student','teacher'], true) || $user['account_status'] !== 'accepted') throw new DomainException('Select an approved student or teacher account.', 422);
         $name = $user['full_name']; $studentIdentifier = $user['student_id'] ?: $user['id_number']; $yearSection = $user['role'] === 'teacher' ? mb_substr('Teacher/Faculty · ' . ($user['department'] ?: 'Not specified'), 0, 50) : $user['year_section'];
-        $stmt = $pdo->prepare('SELECT id FROM attendance WHERE user_id = :id AND tracks_departure = 1 AND time_out IS NULL LIMIT 1');
-        $stmt->execute(['id'=>$userId]);
-        if ($stmt->fetch()) throw new DomainException('This visitor already has an open visit. Confirm departure before another Time In.', 409);
         $stmt = $pdo->prepare('SELECT id FROM attendance WHERE user_id = :id AND time_in >= :start AND time_in < :end LIMIT 1');
         $stmt->execute(['id'=>$userId,'start'=>$today . ' 00:00:00','end'=>(new DateTimeImmutable($today))->modify('+1 day')->format('Y-m-d') . ' 00:00:00']);
         if ($stmt->fetch() && ($input['confirm_repeat'] ?? false) !== true) {
@@ -58,14 +55,11 @@ try {
     if ($settings['daily_visit_limit'] !== null && attendanceCounts($pdo, $today)['visits'] >= (int)$settings['daily_visit_limit']) {
         throw new DomainException('Today’s visit capacity has been reached.', 409);
     }
-    if ($settings['occupancy_limit'] !== null && attendanceOccupancy($pdo) >= (int)$settings['occupancy_limit']) {
-        throw new DomainException('Current occupancy capacity has been reached. Record confirmed departures first.', 409);
-    }
     $stmt = $pdo->prepare('INSERT INTO attendance (user_id, student_name, year_level, section, student_identifier,
         year_section_snapshot, tracks_departure, submission_key, submission_hash, time_in)
-        VALUES (:user,:name,:year,:section,:identifier,:snapshot,:tracking,:key,:hash,NOW())');
+        VALUES (:user,:name,:year,:section,:identifier,:snapshot,0,:key,:hash,NOW())');
     $stmt->execute(['user'=>$userId,'name'=>$name,'year'=>$year,'section'=>$section,'identifier'=>$studentIdentifier,
-        'snapshot'=>$yearSection,'tracking'=>$settings['track_departures'],'key'=>$key,'hash'=>$hash]);
+        'snapshot'=>$yearSection,'key'=>$key,'hash'=>$hash]);
     $id = (int)$pdo->lastInsertId();
     $stmt = $pdo->prepare('SELECT time_in FROM attendance WHERE id = :id'); $stmt->execute(['id'=>$id]);
     $time = $stmt->fetchColumn();

@@ -31,8 +31,9 @@ function smsTransport(array $payload): array
 
 PHP;
 file_put_contents($path, substr($code,0,$start).$mock.substr($code,$end));
-// The production guard permits account approval only. Adapter integration for
-// other events uses a copy-only stub; the real guard runs in its separate suite.
+// Legacy permission probes use a copy-only acceptance guard stub. The actual
+// production policy runs unchanged in the workflow matrix; the real one-attempt
+// acceptance guard runs in its separate concurrency/fault-injection suite.
 $path = $directory.'/includes/sms-live-test.php';
 $code = file_get_contents($path);
 $code = str_replace(['function smsReserveLiveTest(', 'function smsRestoreLiveTest('],
